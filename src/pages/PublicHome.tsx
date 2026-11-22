@@ -83,7 +83,6 @@ export function PublicHome() {
           <h2 className="mt-6 max-w-[12ch] font-display text-5xl font-medium leading-[0.92] tracking-[-0.03em] text-ivory-50 sm:text-6xl">
             {clinic.doctor_name}
           </h2>
-          <p className="font-kannada mt-3 text-xl text-ivory-400">ಡಾ. ಎಲ್. ಎಸ್. ಮಲತೇಶ</p>
           <p className="mt-3 text-sm leading-relaxed text-ivory-400 sm:text-base">
             MBBS (Kasturba Medical College) • DOMS, FGO (KMC, Manipal)
           </p>
