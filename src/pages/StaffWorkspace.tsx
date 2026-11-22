@@ -170,9 +170,8 @@ export function StaffWorkspace() {
   return (
     <div className="page-shell">
       <header className="no-print mb-6">
-        <span className="step-badge">Tier 2 · Front Desk & OT Workspace</span>
-        <h1 className="mt-2 font-display text-3xl font-extrabold text-slate-900 sm:text-4xl">Patient Desk & Clinical Records</h1>
-        <p className="mt-1 text-xs text-slate-500">Fast non-unique phone search, top-down invoice billing, 1-page bilingual discharge summaries, and recall reminders.</p>
+        <p className="eyebrow">Staff</p>
+        <h1 className="mt-2 font-display text-4xl text-ivory-50">Today's desk</h1>
       </header>
       <div className="no-print mb-6 space-y-4">
         <div className="flex w-full gap-2">
