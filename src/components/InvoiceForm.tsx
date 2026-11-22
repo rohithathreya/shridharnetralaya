@@ -8,12 +8,12 @@ import {
   Loader2,
   Receipt,
   Search,
-  Filter,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { formatINR } from '../lib/dates';
 import { shareInvoiceOnWhatsApp } from '../lib/whatsapp';
 import { PrintableInvoice } from './PrintableInvoice';
+import { CustomSelect, CustomSelectOption } from './CustomSelect';
 import type {
   ClinicSettings,
   Invoice,
@@ -25,7 +25,13 @@ import type {
 } from '../types/database';
 
 const CATEGORIES: ServiceCategory[] = ['Consultation', 'Diagnostic', 'Procedure', 'Surgery', 'Optical', 'Other'];
-const PAYMENT_MODES: PaymentMode[] = ['Cash', 'UPI', 'Card', 'TPA / Scheme'];
+
+const PAYMENT_MODE_OPTIONS: CustomSelectOption[] = [
+  { value: 'Cash', label: 'Cash', sublabel: 'Direct cash at reception' },
+  { value: 'UPI', label: 'UPI / QR Code', sublabel: 'Instant GPay / PhonePe / Paytm' },
+  { value: 'Card', label: 'Card (POS Machine)', sublabel: 'Debit / Credit card swipe' },
+  { value: 'TPA / Scheme', label: 'TPA / Insurance Scheme', sublabel: 'Cashless / Reimbursement' },
+];
 
 interface InvoiceFormProps {
   patient: Patient;
@@ -49,6 +55,17 @@ export function InvoiceForm({ patient, clinic, catalog, onCreated }: InvoiceForm
   const [error, setError] = useState('');
   const [savedInvoice, setSavedInvoice] = useState<Invoice | null>(null);
   const [step, setStep] = useState(0);
+
+  const categoryOptions: CustomSelectOption[] = useMemo(() => {
+    return [
+      { value: 'All', label: `All Services (${catalog.length} items)` },
+      ...CATEGORIES.map((c) => ({
+        value: c,
+        label: c,
+        sublabel: `${catalog.filter((x) => x.category === c).length} items configured`,
+      })),
+    ];
+  }, [catalog]);
 
   const filteredCatalog = useMemo(() => {
     return catalog.filter((c) => {
@@ -223,32 +240,23 @@ export function InvoiceForm({ patient, clinic, catalog, onCreated }: InvoiceForm
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h3 className="font-display text-2xl text-ivory-50">Select services</h3>
-              <p className="mt-0.5 text-xs text-ivory-400">Click any service to add to bill. Click again to increase quantity.</p>
+              <p className="mt-0.5 text-xs text-ivory-400">Tap any item to add. Tap again to increment quantity.</p>
             </div>
             {items.length > 0 && (
               <span className="rounded-full bg-gold-400/20 px-3 py-1 text-xs font-bold text-gold-500">
-                {items.length} item(s) in bill · {formatINR(total)}
+                {items.length} item(s) · {formatINR(total)}
               </span>
             )}
           </div>
 
-          {/* Clean Dropdown for Category + Quick Search */}
+          {/* Custom Select for Category + Search */}
           <div className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <label className="label-field">Filter Category</label>
-              <select
-                value={activeCat}
-                onChange={(e) => setActiveCat(e.target.value as ServiceCategory | 'All')}
-                className="input-field font-medium"
-              >
-                <option value="All">All Categories ({catalog.length} items)</option>
-                {CATEGORIES.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <CustomSelect
+              label="Filter Category"
+              value={activeCat}
+              onChange={(val) => setActiveCat(val as ServiceCategory | 'All')}
+              options={categoryOptions}
+            />
 
             <div>
               <label className="label-field">Quick Search</label>
@@ -414,25 +422,14 @@ export function InvoiceForm({ patient, clinic, catalog, onCreated }: InvoiceForm
             </div>
           </div>
 
-          {/* Payment Mode & Details - Using clean Dropdown */}
+          {/* Payment Mode & Details - Using CustomSelect */}
           <div className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <label className="label-field">Payment Mode</label>
-              <select
-                value={paymentMode}
-                onChange={(e) => setPaymentMode(e.target.value as PaymentMode)}
-                className="input-field font-semibold"
-              >
-                {PAYMENT_MODES.map((mode) => (
-                  <option key={mode} value={mode}>
-                    {mode === 'Cash' ? '💵 Cash' :
-                     mode === 'UPI' ? '📱 UPI / QR Code' :
-                     mode === 'Card' ? '💳 Card (POS Machine)' :
-                     '🛡️ TPA / Scheme Claim'}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <CustomSelect
+              label="Payment Mode"
+              value={paymentMode}
+              onChange={(val) => setPaymentMode(val as PaymentMode)}
+              options={PAYMENT_MODE_OPTIONS}
+            />
 
             <div>
               <label className="label-field">Reference / UTR / Claim No. (Optional)</label>

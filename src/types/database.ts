@@ -188,7 +188,7 @@ export const DEFAULT_CLINIC_SETTINGS: ClinicSettings = {
   address: 'Eye Hospital Road, Near Gramadevate Temple, Magadi, Karnataka 562120',
   phone: '7026046677',
   emergency_phone: '7026046677',
-  timings: 'Mon - Sat: 9:30 AM - 2:00 PM & 4:30 PM - 7:30 PM | Sun: Emergency & Post-Op Only',
+  timings: 'Mon - Sat: 10:00 AM - 5:00 PM (By Prior Appointment) | Sun: Closed (Emergency / Post-Op On-Call)',
   default_head_bath_days: 14,
   google_maps_url: 'https://maps.google.com/?q=Shridhar+Netralaya+Magadi+Karnataka+562120',
 };

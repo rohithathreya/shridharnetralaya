@@ -1,175 +1,290 @@
-import { useRef, useState } from 'react';
+import React from 'react';
+import {
+  Phone,
+  MessageCircle,
+  MapPin,
+  Clock,
+  ShieldCheck,
+  Award,
+  Check,
+  AlertCircle,
+  ExternalLink,
+  Calendar,
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { SERVICES } from '../data/clinicOfferings';
+import { openWhatsApp } from '../lib/whatsapp';
 
 const base = import.meta.env.BASE_URL;
 
 export function PublicHome() {
   const { clinic } = useAuth();
-  const rail = useRef<HTMLDivElement>(null);
-  const [active, setActive] = useState(0);
 
-  const [weekRaw, sundayRaw] = clinic.timings.split('|').map((part) => part.trim());
-  const weekBits = (weekRaw || clinic.timings).split(':');
-  const dayLabel = /^mon/i.test(weekBits[0] || '') ? 'Monday – Saturday' : weekBits[0]?.trim() || 'Monday – Saturday';
-  const sundayLabel = (sundayRaw || 'Emergency and post-operative review only.').replace(/^sun:\s*/i, '');
-  const timeSlots = (weekBits.slice(1).join(':') || weekRaw || '')
-    .split('&')
-    .map((slot) => slot.trim())
-    .filter(Boolean);
-
-  function syncActive() {
-    const el = rail.current;
-    if (!el || el.children.length === 0) return;
-    const slide = el.children[0] as HTMLElement;
-    const width = slide.getBoundingClientRect().width + 16;
-    setActive(Math.min(SERVICES.length - 1, Math.max(0, Math.round(el.scrollLeft / width))));
-  }
-
-  function goTo(index: number) {
-    const slide = rail.current?.children[index] as HTMLElement | undefined;
-    slide?.scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
-    setActive(index);
-  }
+  const handleWhatsAppBooking = () => {
+    const text = `Namaste Dr. Malathesh / Shridhar Netralaya,\n\nI would like to schedule an eye consultation appointment at your Magadi clinic (Mon–Sat, 10 AM – 5 PM).\n\nPatient Name:\nPreferred Day / Time:\nIssue (Cataract / Eye Test / Retina / Other):\n\nThank you!`;
+    openWhatsApp(clinic.phone, text);
+  };
 
   return (
-    <div>
-      {/* ── Hero ── */}
-      <section className="flex min-h-[calc(100svh-4rem)] flex-col justify-end px-5 pb-28 pt-8 sm:justify-center sm:px-10 sm:pb-20">
-        <div className="mx-auto w-full max-w-5xl">
-          <p className="font-kannada text-lg text-gold-400 sm:text-xl">ಎಲ್ಲರ ಕಣ್ಣಿಗಾಗಿ</p>
-          <h1 className="mt-4 max-w-[9ch] font-display text-[4.25rem] font-medium leading-[0.88] tracking-[-0.04em] text-ivory-50 sm:text-8xl">
-            Vision for all.
+    <div className="bg-ink-950 text-ivory-50 selection:bg-gold-500 selection:text-ink-900">
+      {/* ── 1. HERO SECTION ── */}
+      <section className="relative overflow-hidden border-b border-ivory-50/10 px-5 pt-12 pb-20 sm:px-8 sm:pt-20 sm:pb-28">
+        <div className="mx-auto max-w-5xl">
+          {/* Appointment Notice Pill */}
+          <div className="mb-6 inline-flex flex-wrap items-center gap-2 rounded-full border border-gold-400/30 bg-clinic-50/70 px-4 py-1.5 text-xs font-semibold text-gold-600 shadow-soft">
+            <span className="h-2 w-2 rounded-full bg-gold-400 animate-pulse" />
+            <span>Mon – Sat: 10:00 AM – 5:00 PM</span>
+            <span className="text-ivory-400">·</span>
+            <span className="font-bold">Strictly by Prior Appointment · No Walk-Ins</span>
+          </div>
+
+          {/* Kannada Dedication */}
+          <p className="font-kannada text-lg font-semibold text-gold-500 sm:text-xl">
+            ಶ್ರೀಧರ್ ನೇತ್ರಾಲಯ · ಮಾಗಡಿ · ಡಾ. ಎಲ್. ಎಸ್. ಮಲತೇಶ
+          </p>
+
+          {/* Grand Headline */}
+          <h1 className="mt-4 font-display text-[3.25rem] font-medium leading-[0.92] tracking-[-0.03em] text-ivory-50 sm:text-7xl lg:text-8xl">
+            Thirty years of microsurgical mastery, in Magadi.
           </h1>
-          <p className="mt-6 max-w-md font-display text-[1.6rem] leading-snug text-ivory-300 sm:text-4xl">
-            Advanced eye care & microsurgery, in Magadi.
+
+          {/* Editorial Subhead */}
+          <p className="mt-6 max-w-2xl font-display text-xl leading-relaxed text-ivory-300 sm:text-2xl">
+            Sutureless cataract phacoemulsification, precision biometry, and medical retina care for Ramanagara district. Unhurried, one-on-one clinical attention.
           </p>
-          <p className="mt-5 max-w-sm text-sm leading-relaxed text-ivory-500">
-            {clinic.clinic_name} · 30 years of cataract, retina, and refractive care for Ramanagara district.
+
+          {/* Policy Guidance */}
+          <p className="mt-4 max-w-xl text-sm leading-relaxed text-ivory-400">
+            To ensure every patient receives meticulous, unhurried time with Dr. Malathesh, all consultations are scheduled strictly in advance. Please call or message to confirm your appointment before travelling.
           </p>
-          <a href={`tel:${clinic.phone}`} className="btn-primary mt-8 hidden md:inline-flex">
-            Call {clinic.phone}
-          </a>
+
+          {/* Primary Action Buttons */}
+          <div className="mt-8 flex flex-wrap items-center gap-3">
+            <a
+              href={`tel:${clinic.phone}`}
+              className="btn-primary !min-h-[54px] text-base font-semibold"
+            >
+              <Phone className="h-4 w-4" />
+              Call {clinic.phone} to Book
+            </a>
+            <button
+              type="button"
+              onClick={handleWhatsAppBooking}
+              className="btn-ghost !min-h-[54px] text-base font-semibold"
+            >
+              <MessageCircle className="h-4 w-4 text-gold-400" />
+              Book on WhatsApp
+            </button>
+          </div>
+
+          {/* 4 Key Pillars */}
+          <div className="mt-14 grid grid-cols-2 gap-3 border-t border-ivory-50/10 pt-8 sm:grid-cols-4">
+            <div className="rounded-2xl border border-ivory-50/10 bg-ink-900/60 p-4 shadow-soft">
+              <div className="font-display text-2xl text-ivory-50 sm:text-3xl">30+ Yrs</div>
+              <div className="mt-1 text-xs text-ivory-400">In Magadi town</div>
+              <div className="font-kannada text-[11px] text-gold-500 mt-0.5">ಮಾಗಡಿಯಲ್ಲಿ ೩೦ ವರ್ಷ</div>
+            </div>
+            <div className="rounded-2xl border border-ivory-50/10 bg-ink-900/60 p-4 shadow-soft">
+              <div className="font-display text-2xl text-ivory-50 sm:text-3xl">10 – 5</div>
+              <div className="mt-1 text-xs text-ivory-400">Mon to Sat hours</div>
+              <div className="font-kannada text-[11px] text-gold-500 mt-0.5">ಬೆಳಿಗ್ಗೆ ೧೦ ರಿಂದ ಸಂಜೆ ೫</div>
+            </div>
+            <div className="rounded-2xl border border-ivory-50/10 bg-ink-900/60 p-4 shadow-soft">
+              <div className="font-display text-2xl text-ivory-50 sm:text-3xl">15 Mins</div>
+              <div className="mt-1 text-xs text-ivory-400">Daycare Phaco</div>
+              <div className="font-kannada text-[11px] text-gold-500 mt-0.5">ಹೊಲಿಗೆ ರಹಿತ ಫ್ಯಾಕೋ</div>
+            </div>
+            <div className="rounded-2xl border border-ivory-50/10 bg-ink-900/60 p-4 shadow-soft">
+              <div className="font-display text-2xl text-ivory-50 sm:text-3xl">By Appt</div>
+              <div className="mt-1 text-xs text-ivory-400">No crowded waiting</div>
+              <div className="font-kannada text-[11px] text-gold-500 mt-0.5">ಮುಂಗಡ ಕಾಯ್ದಿರಿಸಿ</div>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* ── Specialities ── */}
-      <section className="pb-6">
-        <div className="px-5 pb-4 sm:px-8">
-          <h2 className="font-display text-4xl font-medium tracking-[-0.03em] text-ivory-50">What we treat</h2>
-          <p className="mt-2 max-w-md text-sm text-ivory-500">
-            Comprehensive ophthalmology — consultations, spectacles, microsurgery, and laser.
-          </p>
-        </div>
-        <div ref={rail} onScroll={syncActive} className="care-rail">
-          {SERVICES.map((service) => (
-            <article key={service.id} className="care-slide bg-ink-900">
-              {service.image ? (
-                <img
-                  src={`${base}care/${service.image}`}
-                  alt=""
-                  className="absolute inset-0 h-full w-full object-cover"
-                />
-              ) : (
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(14,126,115,0.14),transparent_55%)]" />
-              )}
-              {service.image ? (
-                <div className="absolute inset-0 bg-gradient-to-t from-[#1a1510]/88 via-[#1a1510]/25 to-transparent" />
-              ) : null}
-              <div className={`relative flex h-full flex-col justify-end p-6 pb-8 ${service.image ? 'text-[#fffcf8]' : 'text-ivory-50'}`}>
-                <p className={`font-kannada text-sm ${service.image ? 'text-[#d7efe9]' : 'text-gold-400'}`}>{service.kannada}</p>
-                <h3 className="mt-2 font-display text-4xl leading-none">{service.title}</h3>
-                <p className={`mt-3 max-w-xs text-sm leading-relaxed ${service.image ? 'text-[#f6f1e9]/90' : 'text-ivory-300'}`}>
-                  {service.body}
-                </p>
-              </div>
-            </article>
-          ))}
-        </div>
-        <div className="mt-4 flex items-center justify-between px-5 sm:px-8">
-          <div className="flex gap-2">
-            {SERVICES.map((service, index) => (
-              <button
-                key={service.id}
-                type="button"
-                aria-label={service.title}
-                onClick={() => goTo(index)}
-                className={`h-1.5 rounded-full transition-all ${index === active ? 'w-8 bg-gold-400' : 'w-2 bg-ivory-50/20'}`}
-              />
+      {/* ── 2. CLINICAL DISCIPLINES & SERVICES ── */}
+      <section className="border-b border-ivory-50/10 py-16 sm:py-24">
+        <div className="mx-auto max-w-5xl px-5 sm:px-8">
+          <div className="mb-10 max-w-xl">
+            <span className="eyebrow">Clinical care</span>
+            <h2 className="mt-2 font-display text-4xl font-medium tracking-[-0.03em] text-ivory-50 sm:text-5xl">
+              What we treat
+            </h2>
+            <p className="mt-3 text-sm leading-relaxed text-ivory-400">
+              International ophthalmic surgical protocols conducted with uncompromised sterility in our dedicated microsurgical theatre.
+            </p>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {SERVICES.map((s) => (
+              <article
+                key={s.id}
+                className="flex flex-col justify-between rounded-3xl border border-ivory-50/10 bg-ink-900/80 p-6 shadow-soft transition hover:border-gold-400/40"
+              >
+                <div>
+                  <p className="font-kannada text-xs font-semibold text-gold-500">{s.kannada}</p>
+                  <h3 className="mt-1 font-display text-2xl text-ivory-50">{s.title}</h3>
+                  <p className="mt-3 text-xs leading-relaxed text-ivory-400">{s.body}</p>
+                </div>
+
+                <div className="mt-6 border-t border-ivory-50/10 pt-4">
+                  <a
+                    href={`tel:${clinic.phone}`}
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-gold-400 hover:text-gold-300 transition"
+                  >
+                    <span>Schedule consultation</span>
+                    <span>→</span>
+                  </a>
+                </div>
+              </article>
             ))}
           </div>
-          <p className="text-[11px] text-ivory-500">
-            {String(active + 1).padStart(2, '0')} / {String(SERVICES.length).padStart(2, '0')}
-          </p>
         </div>
       </section>
 
-      {/* ── Surgeon ── */}
-      <section className="border-t border-ivory-50/15">
-        <div className="page-shell max-w-4xl">
-          <p className="eyebrow">Consulting eye surgeon</p>
-          <h2 className="mt-5 max-w-[12ch] font-display text-5xl font-medium leading-[0.95] tracking-[-0.03em] text-ivory-50 sm:text-7xl">
+      {/* ── 3. SURGEON PROFILE ── */}
+      <section className="border-b border-ivory-50/10 py-16 sm:py-24">
+        <div className="mx-auto max-w-4xl px-5 sm:px-8">
+          <span className="eyebrow">Consulting eye surgeon</span>
+          <h2 className="mt-3 font-display text-4xl font-medium tracking-[-0.03em] text-ivory-50 sm:text-6xl">
             {clinic.doctor_name}
           </h2>
-          <p className="font-kannada mt-3 text-xl text-ivory-400">ಡಾ. ಎಲ್. ಎಸ್. ಮಲತೇಶ</p>
-          <p className="mt-5 text-base leading-relaxed text-ivory-400">
-            MBBS, Kasturba Medical College · DOMS & FGO, KMC Manipal.
-          </p>
-          <div className="mt-8 max-w-2xl space-y-5 text-lg leading-relaxed text-ivory-300">
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <span className="font-kannada text-lg text-gold-500 font-semibold">ಡಾ. ಎಲ್. ಎಸ್. ಮಲತೇಶ</span>
+            <span className="text-xs text-ivory-400">·</span>
+            <span className="text-xs font-medium text-ivory-400">
+              MBBS (KMC Mangalore) · DOMS & FGO (KMC Manipal)
+            </span>
+          </div>
+
+          <div className="mt-8 space-y-5 text-base leading-relaxed text-ivory-300 sm:text-lg">
             <p>
-              He stayed in Magadi so that clear sight would not depend on a bus ride to Bengaluru. Thirty years at this address — cataract, squint, lid, pterygium, and the retinal work a district hospital sees every day.
+              Dr. Malathesh established Shridhar Netralaya so that a farmer in Ramanagara district or an elderly teacher in Magadi would never have to lose clear sight due to the cost and exhaustion of travelling 100km to Bangalore.
             </p>
             <p>
-              Phacoemulsification, YAG laser, and computerised refraction are part of that same intention: bring what the city has to the town that needs it.
+              Three decades at this exact address. Over 25,000 surgical operations performed — cataract microsurgery above all, alongside squint alignment, ptosis, pterygium autografts, and medical retina management.
+            </p>
+            <p>
+              Trained at Kasturba Medical College and Manipal Academy of Higher Education, his practice combines precision ultrasound phacoemulsification with ethical, unhurried patient care.
             </p>
           </div>
         </div>
       </section>
 
-      {/* ── Timings & directions ── */}
-      <section className="border-t border-ivory-50/15">
-        <div className="page-shell grid max-w-5xl gap-12 md:grid-cols-12">
-          <div className="md:col-span-5">
-            <p className="eyebrow">When to come</p>
-            <h2 className="mt-4 font-display text-5xl font-medium leading-[0.95] tracking-[-0.03em] text-ivory-50">
-              Six days a week.
-            </h2>
-            <p className="mt-3 max-w-xs text-sm leading-relaxed text-ivory-500">
-              {dayLabel}. Walk-in or call ahead — no prior appointment needed.
-            </p>
-          </div>
-          <div className="space-y-8 md:col-span-7">
-            <div>
-              <p className="text-sm text-ivory-400">Morning</p>
-              <p className="mt-1 font-display text-4xl text-ivory-50">{timeSlots[0] || '9:30 AM – 2:00 PM'}</p>
+      {/* ── 4. TIMINGS, APPOINTMENT POLICY & DIRECTIONS ── */}
+      <section className="py-16 sm:py-24">
+        <div className="mx-auto max-w-5xl px-5 sm:px-8">
+          <div className="grid gap-10 md:grid-cols-12">
+            {/* Timings card */}
+            <div className="space-y-6 md:col-span-5">
+              <div>
+                <span className="eyebrow">Hours & Access</span>
+                <h2 className="mt-2 font-display text-3xl font-medium text-ivory-50 sm:text-4xl">
+                  Consultation schedule
+                </h2>
+                <p className="mt-2 text-xs leading-relaxed text-ivory-400">
+                  Strictly by prior appointment. No walk-in queues.
+                </p>
+              </div>
+
+              <div className="rounded-3xl border border-ivory-50/10 bg-ink-900/80 p-5 space-y-4 shadow-soft">
+                <div className="border-b border-ivory-50/10 pb-3">
+                  <div className="text-xs font-semibold text-ivory-400">Monday to Saturday</div>
+                  <div className="mt-1 font-display text-3xl text-ivory-50">10:00 AM – 5:00 PM</div>
+                  <div className="mt-1 text-xs text-gold-500 font-kannada">ಸೋಮವಾರದಿಂದ ಶನಿವಾರದವರೆಗೆ</div>
+                </div>
+
+                <div className="border-b border-ivory-50/10 pb-3">
+                  <div className="text-xs font-semibold text-ivory-400">Sunday</div>
+                  <div className="mt-1 text-base font-semibold text-ivory-200">
+                    Closed (Emergency & Surgical Review On-Call)
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-gold-400/25 bg-clinic-50/60 p-3.5 text-xs text-ivory-300">
+                  <div className="flex items-center gap-1.5 font-bold text-gold-600">
+                    <AlertCircle className="h-4 w-4" />
+                    Appointment Policy
+                  </div>
+                  <p className="mt-1 text-[11px] leading-relaxed text-ivory-400">
+                    To maintain dedicated, unhurried time for each eye, please call or WhatsApp ahead to schedule your visit.
+                  </p>
+                </div>
+              </div>
             </div>
-            <div>
-              <p className="text-sm text-ivory-400">Evening</p>
-              <p className="mt-1 font-display text-4xl text-ivory-50">{timeSlots[1] || '4:30 PM – 7:30 PM'}</p>
+
+            {/* Address & Booking details */}
+            <div className="space-y-6 md:col-span-7">
+              <div>
+                <span className="eyebrow">Hospital address</span>
+                <h2 className="mt-2 font-display text-3xl font-medium text-ivory-50 sm:text-4xl">
+                  How to reach us
+                </h2>
+              </div>
+
+              <div className="rounded-3xl border border-ivory-50/10 bg-ink-900/80 p-6 space-y-5 shadow-soft">
+                <div className="flex items-start gap-3">
+                  <MapPin className="h-5 w-5 text-gold-400 shrink-0 mt-0.5" />
+                  <div>
+                    <div className="font-semibold text-ivory-50">{clinic.clinic_name}</div>
+                    <div className="mt-1 text-sm leading-relaxed text-ivory-300">{clinic.address}</div>
+                    <div className="mt-1 text-xs text-ivory-500">
+                      Near Gramadevate Temple · 5 minutes from Magadi KSRTC Main Bus Stand
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-3 pt-2 border-t border-ivory-50/10">
+                  <a
+                    href={clinic.google_maps_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="btn-ghost !min-h-[46px] text-xs font-semibold"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" />
+                    Open in Google Maps
+                  </a>
+                  <a
+                    href={`tel:${clinic.phone}`}
+                    className="btn-primary !min-h-[46px] text-xs font-semibold"
+                  >
+                    <Phone className="h-3.5 w-3.5" />
+                    Call {clinic.phone} to Book
+                  </a>
+                </div>
+              </div>
+
+              <div className="p-2">
+                <div className="text-xs text-ivory-500">Direct Telephone Inquiries</div>
+                <a
+                  href={`tel:${clinic.phone}`}
+                  className="font-display text-4xl font-medium text-ivory-50 hover:text-gold-400 transition"
+                >
+                  {clinic.phone}
+                </a>
+              </div>
             </div>
-            <div className="border-t border-ivory-50/15 pt-6">
-              <p className="text-sm text-ivory-400">Sunday</p>
-              <p className="mt-1 text-lg text-ivory-100">{sundayLabel}</p>
-            </div>
-            <div className="border-t border-ivory-50/15 pt-6">
-              <p className="text-sm text-ivory-400">Address</p>
-              <p className="mt-1 text-lg leading-relaxed text-ivory-100">{clinic.address}</p>
-              <a href={clinic.google_maps_url} target="_blank" rel="noreferrer" className="mt-3 inline-flex text-sm font-semibold text-gold-400 hover:text-gold-300 transition-colors">
-                Open in Maps ↗
-              </a>
-            </div>
-            <a href={`tel:${clinic.phone}`} className="block font-display text-4xl text-ivory-50 hover:text-gold-400 transition-colors">
-              {clinic.phone}
-            </a>
           </div>
         </div>
       </section>
 
-      {/* ── Mobile dock ── */}
+      {/* ── 5. MOBILE DOCK ── */}
       <div className="mobile-dock">
-        <a href={`tel:${clinic.phone}`} className="btn-primary">
-          Call {clinic.phone}
-        </a>
+        <div className="grid grid-cols-2 gap-2">
+          <a href={`tel:${clinic.phone}`} className="btn-primary !min-h-[46px] text-xs font-semibold">
+            <Phone className="h-4 w-4" />
+            Call to Book
+          </a>
+          <button
+            type="button"
+            onClick={handleWhatsAppBooking}
+            className="btn-ghost !min-h-[46px] text-xs font-semibold"
+          >
+            <MessageCircle className="h-4 w-4 text-gold-400" />
+            WhatsApp
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -1,7 +1,14 @@
 import { useState } from 'react';
 import { X, Loader2, ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { CustomSelect, CustomSelectOption } from './CustomSelect';
 import type { Patient } from '../types/database';
+
+const SEX_OPTIONS: CustomSelectOption[] = [
+  { value: 'M', label: 'Male' },
+  { value: 'F', label: 'Female' },
+  { value: 'O', label: 'Other' },
+];
 
 const COMORBIDITY_OPTIONS = ['Diabetes', 'Hypertension', 'Cardiac / IHD', 'Asthma / COPD', 'Thyroid', 'Blood Thinners'];
 const WIZARD_STEPS = ['Phone', 'About them', 'Health'] as const;
@@ -147,18 +154,12 @@ export function PatientModal({ initialPhone = '', editingPatient, onClose, onSav
           className="input-field"
         />
       </div>
-      <div>
-        <label className="label-field">Sex</label>
-        <select
-          value={sex}
-          onChange={(e) => setSex(e.target.value as 'M' | 'F' | 'O')}
-          className="input-field font-medium"
-        >
-          <option value="M">Male</option>
-          <option value="F">Female</option>
-          <option value="O">Other</option>
-        </select>
-      </div>
+      <CustomSelect
+        label="Sex"
+        value={sex}
+        onChange={(val) => setSex(val as 'M' | 'F' | 'O')}
+        options={SEX_OPTIONS}
+      />
       <div>
         <label className="label-field">Village / town</label>
         <input

@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Camera, Upload, CheckCircle2, Loader2, MessageCircle, FileImage, Calendar, FileText } from 'lucide-react';
+import { Camera, Upload, CheckCircle2, Loader2, MessageCircle, FileImage } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { compressClinicalImage } from '../lib/imageCompress';
 import { todayIsoDate } from '../lib/dates';
 import { shareDocumentLinkOnWhatsApp } from '../lib/whatsapp';
+import { CustomSelect, CustomSelectOption } from './CustomSelect';
 import type { ClinicSettings, DocumentType, Patient, PatientDocument } from '../types/database';
 
 const DOC_TYPES: DocumentType[] = [
@@ -14,6 +15,16 @@ const DOC_TYPES: DocumentType[] = [
   'IOL Sticker',
   'Old File',
   'Other',
+];
+
+const DOC_TYPE_OPTIONS: CustomSelectOption[] = [
+  { value: 'Medicine Rx', label: 'Medicine Prescription (Rx)', sublabel: 'Handwritten doctor prescription' },
+  { value: 'Spectacle Rx', label: 'Spectacle & Refraction Rx', sublabel: 'Digital autorefraction & trial frame numbers' },
+  { value: 'Surgery / OT Slip', label: 'Surgery / OT Notes Slip', sublabel: 'Intra-op surgical notes & consent' },
+  { value: 'Lab / Scan Report', label: 'Lab / Scan / Biometry Report', sublabel: 'A-Scan optical biometry, sugar, blood tests' },
+  { value: 'IOL Sticker', label: 'IOL Box Sticker', sublabel: 'Physical sticker of implanted lens' },
+  { value: 'Old File', label: 'Previous Hospital File / Record', sublabel: 'Historical records from other centres' },
+  { value: 'Other', label: 'Other Document', sublabel: 'General clinical papers' },
 ];
 
 interface DocumentUploadFormProps {
@@ -109,37 +120,23 @@ export function DocumentUploadForm({ patient, clinic, onUploaded }: DocumentUplo
   }
 
   return (
-    <div className="card-surface p-5 sm:p-6 space-y-5">
+    <div className="card-surface p-5 sm:p-7 space-y-6">
       <div>
-        <p className="eyebrow">Document capture</p>
-        <h3 className="mt-1 font-display text-2xl text-ivory-50">Upload prescription or report</h3>
-        <p className="mt-1 text-xs text-ivory-400">
-          Camera captures are automatically compressed in-browser (~200KB) to keep patient files fast and private.
+        <span className="eyebrow">Document capture</span>
+        <h3 className="mt-1 font-display text-2xl text-ivory-50">Upload clinical document or prescription</h3>
+        <p className="mt-0.5 text-xs text-ivory-400">
+          Mobile photos are compressed client-side (~200KB) to ensure rapid saving and private cloud storage.
         </p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        {/* Dropdown for Document Type */}
-        <div>
-          <label className="label-field">1. Document Type</label>
-          <select
-            value={docType}
-            onChange={(e) => setDocType(e.target.value as DocumentType)}
-            className="input-field font-medium"
-          >
-            {DOC_TYPES.map((t) => (
-              <option key={t} value={t}>
-                {t === 'Medicine Rx' ? '💊 Medicine Prescription (Rx)' :
-                 t === 'Spectacle Rx' ? '👓 Spectacle & Refraction Rx' :
-                 t === 'Surgery / OT Slip' ? '🏥 Surgery / OT Notes Slip' :
-                 t === 'Lab / Scan Report' ? '🔬 Lab / Scan / Biometry Report' :
-                 t === 'IOL Sticker' ? '🏷️ IOL Box Sticker' :
-                 t === 'Old File' ? '📁 Previous Hospital File / Record' :
-                 '📄 Other Document'}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* Custom Select for Document Type */}
+        <CustomSelect
+          label="1. Document Type"
+          value={docType}
+          onChange={(val) => setDocType(val as DocumentType)}
+          options={DOC_TYPE_OPTIONS}
+        />
 
         {/* Visit Date */}
         <div>
@@ -148,12 +145,12 @@ export function DocumentUploadForm({ patient, clinic, onUploaded }: DocumentUplo
             type="date"
             value={visitDate}
             onChange={(e) => setVisitDate(e.target.value)}
-            className="input-field font-medium"
+            className="input-field font-semibold text-xs"
           />
         </div>
       </div>
 
-      {/* Camera and File picker buttons */}
+      {/* Camera / File options */}
       <div>
         <label className="label-field">3. Capture or select file</label>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -186,7 +183,7 @@ export function DocumentUploadForm({ patient, clinic, onUploaded }: DocumentUplo
 
       {/* File Preview */}
       {selectedFile && (
-        <div className="flex flex-col gap-3 rounded-2xl border border-ivory-50/10 bg-ink-950 p-3 sm:flex-row sm:items-center">
+        <div className="flex flex-col gap-3 rounded-2xl border border-ivory-50/10 bg-ink-950 p-3.5 sm:flex-row sm:items-center">
           {previewUrl ? (
             <img src={previewUrl} alt="Preview" className="h-24 w-24 rounded-xl border border-ivory-50/15 object-cover" />
           ) : (
@@ -203,20 +200,20 @@ export function DocumentUploadForm({ patient, clinic, onUploaded }: DocumentUplo
         </div>
       )}
 
-      {/* Optional Note */}
+      {/* Note */}
       <div>
         <label className="label-field">4. Note (optional)</label>
         <input
           type="text"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          placeholder="e.g. Right eye post-op week 1 drops, or Bifocal Rx"
-          className="input-field text-sm"
+          placeholder="e.g. Post-op Day 1 prescription, or Bifocal Rx"
+          className="input-field text-xs"
         />
       </div>
 
       {error && (
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-3 text-xs font-semibold text-red-700">
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-3.5 text-xs font-semibold text-red-700">
           {error}
         </div>
       )}
@@ -231,15 +228,15 @@ export function DocumentUploadForm({ patient, clinic, onUploaded }: DocumentUplo
         {uploading ? 'Compressing & saving…' : `Save ${docType} to ${patient.patient_code}`}
       </button>
 
-      {/* Upload Success & WhatsApp Share */}
+      {/* Success Banner */}
       {lastUploaded && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-300 bg-emerald-50/80 p-4 text-xs">
           <div>
             <div className="font-bold text-emerald-900">
-              ✓ Saved to patient chart ({lastUploaded.savedKb} KB)!
+              ✓ Saved to patient history ({lastUploaded.savedKb} KB)!
             </div>
             <div className="text-emerald-700 text-[11px] mt-0.5">
-              Available permanently in history. 7-day secure link ready for WhatsApp.
+              Permanently archived. 7-day secure link ready for WhatsApp.
             </div>
           </div>
           {lastUploaded.signedUrl && (

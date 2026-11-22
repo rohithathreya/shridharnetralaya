@@ -14,13 +14,13 @@ import {
   ShieldAlert,
   Check,
   CheckCheck,
-  ChevronDown,
 } from 'lucide-react';
 import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from '../lib/supabase';
 import { addDaysIso, nowLocalDateTimeInput } from '../lib/dates';
 import { blobToBase64, compressClinicalImage } from '../lib/imageCompress';
 import { shareDischargeSummaryOnWhatsApp } from '../lib/whatsapp';
 import { PrintableDischargeSummary } from './PrintableDischargeSummary';
+import { CustomSelect, CustomSelectOption } from './CustomSelect';
 import type {
   ClinicSettings,
   DischargeSummary,
@@ -31,19 +31,43 @@ import type {
   SurgicalProtocol,
 } from '../types/database';
 
-const ANESTHESIA_OPTIONS = [
-  'Topical',
-  'Peribulbar',
-  'Sub-Tenon',
-  'Local Infiltration',
-  'General',
+const ANESTHESIA_OPTIONS: CustomSelectOption[] = [
+  { value: 'Topical', label: 'Topical Anaesthesia', sublabel: 'Numbing eye drops · Zero injections' },
+  { value: 'Peribulbar', label: 'Peribulbar Block', sublabel: 'Local ophthalmic block' },
+  { value: 'Sub-Tenon', label: 'Sub-Tenon Anaesthesia', sublabel: 'Blunt cannula infusion' },
+  { value: 'Local Infiltration', label: 'Local Infiltration', sublabel: 'Minor lid / skin procedure' },
+  { value: 'General', label: 'General Anaesthesia', sublabel: 'Full systemic anaesthesia' },
 ];
 
-const DRESSING_OPTIONS = [
-  'Dark Glasses',
-  'Pad & Bandage',
-  'Clear Protective Shield',
-  'None',
+const DRESSING_OPTIONS: CustomSelectOption[] = [
+  { value: 'Dark Glasses', label: 'Dark Glasses', sublabel: 'Standard post-phaco protective eyewear' },
+  { value: 'Pad & Bandage', label: 'Pad & Bandage', sublabel: 'Sterile closed eye dressing' },
+  { value: 'Clear Protective Shield', label: 'Clear Protective Shield', sublabel: 'Perforated plastic eye shield' },
+  { value: 'None', label: 'None', sublabel: 'Open eye' },
+];
+
+const EYE_OPTIONS: CustomSelectOption[] = [
+  { value: 'RE (OD)', label: 'Right Eye — RE (OD)', sublabel: 'Oculus Dexter' },
+  { value: 'LE (OS)', label: 'Left Eye — LE (OS)', sublabel: 'Oculus Sinister' },
+  { value: 'BE (OU)', label: 'Both Eyes — BE (OU)', sublabel: 'Oculus Uterque' },
+];
+
+const CASE_TYPE_OPTIONS: CustomSelectOption[] = [
+  { value: 'Day Care', label: 'Day Care', sublabel: 'Same-day discharge within 2 hours' },
+  { value: 'In-Patient', label: 'In-Patient', sublabel: 'Overnight ward observation' },
+];
+
+const BILLING_SCHEME_OPTIONS: CustomSelectOption[] = [
+  { value: 'Cash', label: 'Cash / Private', sublabel: 'Direct patient payment' },
+  { value: 'TPA / Insurance', label: 'TPA / Private Insurance', sublabel: 'Cashless / Reimbursement claim' },
+  { value: 'Ayushman Bharat (AB-ArK)', label: 'Ayushman Bharat (AB-ArK)', sublabel: 'Govt. scheme package' },
+  { value: 'Yashaswini', label: 'Yashaswini', sublabel: 'Farmers healthcare scheme' },
+];
+
+const DISCHARGE_STATUS_OPTIONS: CustomSelectOption[] = [
+  { value: 'Routine', label: 'Routine / Planned', sublabel: 'Discharged stable and comfortable' },
+  { value: 'DAMA', label: 'Against Medical Advice (DAMA)', sublabel: 'Patient requested early leave' },
+  { value: 'Referred', label: 'Referred', sublabel: 'Transferred for tertiary evaluation' },
 ];
 
 const COMORBIDITY_OPTIONS = [
@@ -112,7 +136,6 @@ export function DischargeSummaryForm({
   const [preparedBy, setPreparedBy] = useState('OT Assistant');
 
   // Tracking prefilled vs confirmed fields
-  // When a field is prefilled, it gets a subtle orange border + a subtle tick button to confirm
   const [prefilledFields, setPrefilledFields] = useState<Record<string, boolean>>({});
   const [confirmedFields, setConfirmedFields] = useState<Record<string, boolean>>({});
 
@@ -182,7 +205,7 @@ export function DischargeSummaryForm({
     if (proto.default_in_clinic_meds) prefillMap.in_clinic_meds = true;
 
     setPrefilledFields((prev) => ({ ...prev, ...prefillMap }));
-    setConfirmedFields({}); // reset confirmations so staff checks them
+    setConfirmedFields({});
   }
 
   function applyAiExtraction(ext: Record<string, unknown>) {
@@ -334,7 +357,7 @@ export function DischargeSummaryForm({
           if (!res.ok) throw new Error(data.error || 'Voice extraction failed');
           if (data.extraction) {
             applyAiExtraction(data.extraction);
-            setAiMessage('Voice commands applied. Verify the prefilled fields below.');
+            setAiMessage('Voice orders applied. Please verify fields below.');
           }
         } catch (err) {
           setError(err instanceof Error ? err.message : 'Voice transcription failed');
@@ -419,7 +442,6 @@ export function DischargeSummaryForm({
     onCreated(ds);
   }
 
-  // Render a subtle tick confirmation button for any prefilled row
   function renderConfirmTick(key: string) {
     const isUnconfirmed = isFieldPrefilledAndUnconfirmed(key);
     if (!prefilledFields[key]) return null;
@@ -429,43 +451,52 @@ export function DischargeSummaryForm({
         <button
           type="button"
           onClick={() => confirmField(key)}
-          className="inline-flex items-center gap-1 rounded-md border border-amber-400 bg-amber-100/90 px-2 py-1 text-[11px] font-semibold text-amber-900 transition hover:bg-amber-200"
+          className="inline-flex items-center gap-1 rounded-md border border-amber-400 bg-amber-100/90 px-2 py-0.5 text-[11px] font-bold text-amber-900 transition hover:bg-amber-200"
           title="Tap to confirm prefilled value"
         >
-          <Check className="h-3.5 w-3.5 text-amber-800" />
+          <Check className="h-3 w-3 text-amber-800" />
           <span>Confirm</span>
         </button>
       );
     }
 
     return (
-      <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 border border-emerald-200">
+      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700">
         <Check className="h-3 w-3" />
         Verified
       </span>
     );
   }
 
-  // Input styling based on whether field is prefilled
   function fieldClass(key: string) {
     if (isFieldPrefilledAndUnconfirmed(key)) {
-      return 'border-amber-400 bg-amber-50/50 text-amber-950 focus:border-amber-500 ring-1 ring-amber-300/40';
+      return 'border-amber-400 bg-amber-50/70 text-amber-950 focus:border-amber-500 ring-1 ring-amber-300/40';
     }
     return '';
   }
 
+  // Protocol options for CustomSelect
+  const protocolOptions: CustomSelectOption[] = protocols
+    .filter((p) => p.is_active)
+    .map((p) => ({
+      value: p.id,
+      label: p.short_label,
+      sublabel: p.procedure_name,
+      badge: p.default_anesthesia,
+    }));
+
   if (savedSummary) {
     return (
       <div className="space-y-4">
-        <div className="no-print flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-300 bg-emerald-50/80 p-4">
-          <div className="flex items-center gap-2.5">
-            <CheckCircle2 className="h-6 w-6 text-emerald-700" />
+        <div className="no-print flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-emerald-300 bg-emerald-50/80 p-5">
+          <div className="flex items-center gap-3">
+            <CheckCircle2 className="h-6 w-6 text-emerald-700 shrink-0" />
             <div>
               <div className="text-sm font-bold text-emerald-950">
                 Discharge Summary {savedSummary.summary_no} Saved ({savedSummary.operated_eye})
               </div>
               <div className="text-xs text-emerald-800">
-                Ready for 1-page A4 print & WhatsApp delivery. Patient next follow-up updated automatically.
+                1-page bilingual discharge summary ready for print & WhatsApp delivery.
               </div>
             </div>
           </div>
@@ -496,7 +527,7 @@ export function DischargeSummaryForm({
           </div>
         </div>
 
-        <div className="overflow-x-auto rounded-2xl border border-ivory-50/10 bg-white p-3 shadow-soft">
+        <div className="overflow-x-auto rounded-3xl border border-ivory-50/10 bg-white p-4 shadow-soft">
           <PrintableDischargeSummary clinic={clinic} patient={patient} summary={savedSummary} />
         </div>
       </div>
@@ -504,15 +535,15 @@ export function DischargeSummaryForm({
   }
 
   return (
-    <div className="space-y-6">
-      {/* 1. Header & Protocol Selection Dropdown */}
-      <div className="card-surface p-5 sm:p-6 space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="space-y-6 pt-2">
+      {/* 1. Protocol Preset & Tools (Custom Select Dropdown) */}
+      <div className="card-surface p-5 sm:p-7 space-y-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ivory-50/10 pb-4">
           <div>
-            <p className="eyebrow">Clinical protocol</p>
-            <h3 className="mt-1 font-display text-2xl text-ivory-50">Surgical Discharge Summary</h3>
+            <span className="eyebrow">Surgical Protocol</span>
+            <h3 className="mt-1 font-display text-2xl text-ivory-50">Discharge summary generator</h3>
             <p className="mt-0.5 text-xs text-ivory-400">
-              Select a surgical protocol below. Defaults will pre-fill automatically for your review.
+              Select a surgical preset below. Standard medications and follow-up dates fill in automatically.
             </p>
           </div>
 
@@ -520,7 +551,7 @@ export function DischargeSummaryForm({
           <div className="flex flex-wrap gap-2">
             <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-ivory-50/15 bg-ink-950 px-3.5 py-2 text-xs font-semibold text-ivory-50 shadow-soft hover:border-gold-400/40">
               {aiLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4 text-gold-400" />}
-              <span>Scan Rx / IOL Photo</span>
+              <span>Scan Rx / IOL</span>
               <input
                 type="file"
                 accept="image/*"
@@ -546,61 +577,42 @@ export function DischargeSummaryForm({
           </div>
         </div>
 
-        {/* Surgical Protocol Dropdown (Replaces chip set) */}
+        {/* Surgical Protocol Custom Dropdown & Eye Selector */}
         <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className="label-field">1. Choose Surgical Protocol Preset</label>
-            <div className="relative">
-              <select
-                value={selectedProtocolId}
-                onChange={(e) => {
-                  const id = e.target.value;
-                  const proto = protocols.find((p) => p.id === id);
-                  if (proto) applyProtocol(proto);
-                  else setSelectedProtocolId('');
-                }}
-                className="input-field font-semibold text-sm pr-10"
-              >
-                <option value="">-- Choose Protocol (or Enter Custom Surgery) --</option>
-                {protocols
-                  .filter((p) => p.is_active)
-                  .map((proto) => (
-                    <option key={proto.id} value={proto.id}>
-                      {proto.short_label} — {proto.name}
-                    </option>
-                  ))}
-              </select>
-            </div>
-          </div>
+          <CustomSelect
+            label="1. Surgical Protocol Preset"
+            value={selectedProtocolId}
+            onChange={(val) => {
+              const proto = protocols.find((p) => p.id === val);
+              if (proto) applyProtocol(proto);
+              else setSelectedProtocolId('');
+            }}
+            options={protocolOptions}
+            placeholder="-- Choose Protocol (Phaco, SICS, Pterygium...) --"
+          />
 
-          <div>
-            <label className="label-field">2. Operated Eye</label>
-            <select
-              value={operatedEye}
-              onChange={(e) => setOperatedEye(e.target.value as OperatedEye)}
-              className="input-field font-semibold text-sm"
-            >
-              <option value="RE (OD)">Right Eye — RE (OD)</option>
-              <option value="LE (OS)">Left Eye — LE (OS)</option>
-              <option value="BE (OU)">Both Eyes — BE (OU)</option>
-            </select>
-          </div>
+          <CustomSelect
+            label="2. Operated Eye"
+            value={operatedEye}
+            onChange={(val) => setOperatedEye(val as OperatedEye)}
+            options={EYE_OPTIONS}
+          />
         </div>
 
-        {/* Unconfirmed Prefilled Notice Banner */}
+        {/* Unconfirmed Prefilled Banner */}
         {unconfirmedCount > 0 && (
-          <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-amber-300 bg-amber-50/70 p-3 text-xs text-amber-950">
-            <div className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-300 bg-amber-50/80 p-3.5 text-xs text-amber-950">
+            <div className="flex items-center gap-2.5">
+              <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
               <span>
-                <strong>{unconfirmedCount} prefilled field(s)</strong> highlighted in orange. Check each row and tap{' '}
-                <strong className="underline">Confirm</strong> to verify.
+                <strong>{unconfirmedCount} prefilled field(s)</strong> highlighted in warm orange. Review and tap{' '}
+                <strong className="underline">Confirm</strong> on each row.
               </span>
             </div>
             <button
               type="button"
               onClick={confirmAllFields}
-              className="inline-flex items-center gap-1 rounded-lg bg-amber-200/80 px-2.5 py-1 text-xs font-bold text-amber-900 hover:bg-amber-300"
+              className="inline-flex items-center gap-1 rounded-lg bg-amber-200/90 px-3 py-1 text-xs font-bold text-amber-900 hover:bg-amber-300 transition"
             >
               <CheckCheck className="h-3.5 w-3.5" />
               Confirm All
@@ -609,7 +621,7 @@ export function DischargeSummaryForm({
         )}
 
         {aiMessage && (
-          <div className="flex items-start gap-2 rounded-2xl border border-gold-400/30 bg-gold-400/10 p-3 text-xs text-ivory-50">
+          <div className="flex items-start gap-2.5 rounded-2xl border border-gold-400/30 bg-gold-400/10 p-3.5 text-xs text-ivory-50">
             <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-gold-400" />
             <div>
               <div className="font-semibold">{aiMessage}</div>
@@ -626,13 +638,13 @@ export function DischargeSummaryForm({
       </div>
 
       {/* 2. Surgical & Diagnostic Details */}
-      <div className="card-surface p-5 sm:p-6 space-y-5">
-        <h4 className="font-display text-xl text-ivory-50">Surgical & Clinical Details</h4>
+      <div className="card-surface p-5 sm:p-7 space-y-5">
+        <h4 className="font-display text-xl text-ivory-50">Surgical & Clinical Specifications</h4>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          {/* Diagnosis with subtle prefill tick */}
+          {/* Diagnosis */}
           <div>
-            <div className="mb-1 flex items-center justify-between">
+            <div className="mb-1.5 flex items-center justify-between">
               <label className="label-field mb-0">Final Diagnosis *</label>
               {renderConfirmTick('diagnosis')}
             </div>
@@ -648,9 +660,9 @@ export function DischargeSummaryForm({
             />
           </div>
 
-          {/* Procedure Name with subtle prefill tick */}
+          {/* Procedure */}
           <div>
-            <div className="mb-1 flex items-center justify-between">
+            <div className="mb-1.5 flex items-center justify-between">
               <label className="label-field mb-0">Procedure Performed *</label>
               {renderConfirmTick('procedure_name')}
             </div>
@@ -667,65 +679,42 @@ export function DischargeSummaryForm({
           </div>
         </div>
 
-        {/* Dropdowns for Anesthesia and Dressing (Replaces long chip sets) */}
+        {/* Anesthesia & Eye Dressing Custom Dropdowns */}
         <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <div className="mb-1 flex items-center justify-between">
-              <label className="label-field mb-0">Anesthesia</label>
-              {renderConfirmTick('anesthesia')}
-            </div>
-            <select
-              value={anesthesia}
-              onChange={(e) => {
-                setAnesthesia(e.target.value);
-                confirmField('anesthesia');
-              }}
-              className={`input-field font-semibold ${fieldClass('anesthesia')}`}
-            >
-              {ANESTHESIA_OPTIONS.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt === 'Topical' ? 'Topical (Eye Drops - No Injection)' :
-                   opt === 'Peribulbar' ? 'Peribulbar Block' :
-                   opt === 'Sub-Tenon' ? 'Sub-Tenon Anesthesia' :
-                   opt === 'Local Infiltration' ? 'Local Infiltration' :
-                   'General Anesthesia'}
-                </option>
-              ))}
-            </select>
-          </div>
+          <CustomSelect
+            label="Anesthesia"
+            value={anesthesia}
+            onChange={(val) => {
+              setAnesthesia(val);
+              confirmField('anesthesia');
+            }}
+            options={ANESTHESIA_OPTIONS}
+            prefilled={Boolean(prefilledFields.anesthesia)}
+            confirmed={Boolean(confirmedFields.anesthesia)}
+            onConfirm={() => confirmField('anesthesia')}
+          />
 
-          <div>
-            <div className="mb-1 flex items-center justify-between">
-              <label className="label-field mb-0">Eye Dressing at Discharge</label>
-              {renderConfirmTick('dressing_status')}
-            </div>
-            <select
-              value={dressingStatus}
-              onChange={(e) => {
-                setDressingStatus(e.target.value);
-                confirmField('dressing_status');
-              }}
-              className={`input-field font-semibold ${fieldClass('dressing_status')}`}
-            >
-              {DRESSING_OPTIONS.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt === 'Dark Glasses' ? 'Dark Glasses (Sunglasses)' :
-                   opt === 'Pad & Bandage' ? 'Pad & Bandage' :
-                   opt === 'Clear Protective Shield' ? 'Clear Protective Shield' :
-                   'None'}
-                </option>
-              ))}
-            </select>
-          </div>
+          <CustomSelect
+            label="Eye Dressing at Discharge"
+            value={dressingStatus}
+            onChange={(val) => {
+              setDressingStatus(val);
+              confirmField('dressing_status');
+            }}
+            options={DRESSING_OPTIONS}
+            prefilled={Boolean(prefilledFields.dressing_status)}
+            confirmed={Boolean(confirmedFields.dressing_status)}
+            onConfirm={() => confirmField('dressing_status')}
+          />
         </div>
 
-        {/* IOL Details (Box Sticker Backup) */}
+        {/* IOL Details (Backup Sticker Box) */}
         <div className="rounded-2xl border border-ivory-50/10 bg-ink-950 p-4 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="label-field mb-0">IOL / Lens Implant Details</span>
+            <span className="label-field mb-0">IOL / Lens Implant Details (Box Sticker Backup)</span>
             {renderConfirmTick('iol')}
           </div>
-          <div className="grid gap-2.5 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-3">
             <input
               type="text"
               value={iolModel}
@@ -733,7 +722,7 @@ export function DischargeSummaryForm({
                 setIolModel(e.target.value);
                 confirmField('iol');
               }}
-              placeholder="Lens Brand / Model (e.g. Alcon AcrySof)"
+              placeholder="Lens Model (e.g. Alcon AcrySof)"
               className={`input-field text-xs font-semibold ${fieldClass('iol')}`}
             />
             <input
@@ -759,68 +748,68 @@ export function DischargeSummaryForm({
           </div>
         </div>
 
-        {/* Pre-op Vitals Snapshot (compact) */}
+        {/* Pre-op Vision & Vitals */}
         <div>
           <label className="label-field">Pre-Operative Vitals & Vision Snapshot</label>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-6">
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-6">
             <div>
-              <span className="text-[10px] text-ivory-500 font-semibold block mb-1">VA (RE)</span>
+              <span className="text-[10px] text-ivory-400 font-semibold block mb-1">VA (RE)</span>
               <input
                 type="text"
                 value={vaRe}
                 onChange={(e) => setVaRe(e.target.value)}
                 placeholder="6/36"
-                className="input-field !min-h-[42px] text-xs"
+                className="input-field !min-h-[42px] text-xs font-semibold"
               />
             </div>
             <div>
-              <span className="text-[10px] text-ivory-500 font-semibold block mb-1">VA (LE)</span>
+              <span className="text-[10px] text-ivory-400 font-semibold block mb-1">VA (LE)</span>
               <input
                 type="text"
                 value={vaLe}
                 onChange={(e) => setVaLe(e.target.value)}
                 placeholder="6/18"
-                className="input-field !min-h-[42px] text-xs"
+                className="input-field !min-h-[42px] text-xs font-semibold"
               />
             </div>
             <div>
-              <span className="text-[10px] text-ivory-500 font-semibold block mb-1">IOP (RE)</span>
+              <span className="text-[10px] text-ivory-400 font-semibold block mb-1">IOP (RE)</span>
               <input
                 type="text"
                 value={iopRe}
                 onChange={(e) => setIopRe(e.target.value)}
                 placeholder="14 mmHg"
-                className="input-field !min-h-[42px] text-xs"
+                className="input-field !min-h-[42px] text-xs font-semibold"
               />
             </div>
             <div>
-              <span className="text-[10px] text-ivory-500 font-semibold block mb-1">IOP (LE)</span>
+              <span className="text-[10px] text-ivory-400 font-semibold block mb-1">IOP (LE)</span>
               <input
                 type="text"
                 value={iopLe}
                 onChange={(e) => setIopLe(e.target.value)}
                 placeholder="15 mmHg"
-                className="input-field !min-h-[42px] text-xs"
+                className="input-field !min-h-[42px] text-xs font-semibold"
               />
             </div>
             <div>
-              <span className="text-[10px] text-ivory-500 font-semibold block mb-1">Pre-Op BP</span>
+              <span className="text-[10px] text-ivory-400 font-semibold block mb-1">Pre-Op BP</span>
               <input
                 type="text"
                 value={bp}
                 onChange={(e) => setBp(e.target.value)}
                 placeholder="130/80"
-                className="input-field !min-h-[42px] text-xs"
+                className="input-field !min-h-[42px] text-xs font-semibold"
               />
             </div>
             <div>
-              <span className="text-[10px] text-ivory-500 font-semibold block mb-1">RBS Sugar</span>
+              <span className="text-[10px] text-ivory-400 font-semibold block mb-1">RBS Sugar</span>
               <input
                 type="text"
                 value={rbs}
                 onChange={(e) => setRbs(e.target.value)}
                 placeholder="124 mg/dL"
-                className="input-field !min-h-[42px] text-xs"
+                className="input-field !min-h-[42px] text-xs font-semibold"
               />
             </div>
           </div>
@@ -830,7 +819,7 @@ export function DischargeSummaryForm({
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className="label-field">Comorbidities (Systemic Conditions)</label>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-1.5 pt-0.5">
               {COMORBIDITY_OPTIONS.map((item) => {
                 const active = comorbidities.includes(item);
                 return (
@@ -842,10 +831,10 @@ export function DischargeSummaryForm({
                         prev.includes(item) ? prev.filter((x) => x !== item) : [...prev, item]
                       )
                     }
-                    className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                    className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
                       active
                         ? 'bg-gold-500 text-ink-900 shadow-soft'
-                        : 'border border-ivory-50/15 bg-ink-950 text-ivory-400'
+                        : 'border border-ivory-50/15 bg-ink-950 text-ivory-400 hover:border-ivory-50/30'
                     }`}
                   >
                     {active ? '✓ ' : '+ '}
@@ -857,7 +846,7 @@ export function DischargeSummaryForm({
           </div>
 
           <div>
-            <div className="mb-1 flex items-center justify-between">
+            <div className="mb-1.5 flex items-center justify-between">
               <label className="label-field mb-0">Drug Allergies *</label>
               {renderConfirmTick('allergies')}
             </div>
@@ -869,7 +858,11 @@ export function DischargeSummaryForm({
                 confirmField('allergies');
               }}
               placeholder="e.g. NKDA, or Ciprofloxacin"
-              className={`input-field font-bold text-xs ${allergies.toUpperCase() !== 'NKDA' ? 'text-red-700 bg-red-50/50 border-red-300' : ''}`}
+              className={`input-field font-bold text-xs ${
+                allergies.toUpperCase() !== 'NKDA'
+                  ? 'text-red-700 bg-red-50/60 border-red-300'
+                  : ''
+              }`}
             />
           </div>
         </div>
@@ -877,38 +870,38 @@ export function DischargeSummaryForm({
         {/* Timestamps */}
         <div className="grid gap-3 sm:grid-cols-3">
           <div>
-            <label className="label-field">Admission Time</label>
+            <label className="label-field">Admission Date & Time</label>
             <input
               type="datetime-local"
               value={admissionAt}
               onChange={(e) => setAdmissionAt(e.target.value)}
-              className="input-field !min-h-[44px] text-xs font-medium"
+              className="input-field !min-h-[46px] text-xs font-medium"
             />
           </div>
           <div>
-            <label className="label-field">Surgery Time</label>
+            <label className="label-field">Surgery Date & Time</label>
             <input
               type="datetime-local"
               value={surgeryAt}
               onChange={(e) => setSurgeryAt(e.target.value)}
-              className="input-field !min-h-[44px] text-xs font-medium"
+              className="input-field !min-h-[46px] text-xs font-medium"
             />
           </div>
           <div>
-            <label className="label-field">Discharge Time</label>
+            <label className="label-field">Discharge Date & Time</label>
             <input
               type="datetime-local"
               value={dischargeAt}
               onChange={(e) => setDischargeAt(e.target.value)}
-              className="input-field !min-h-[44px] text-xs font-medium"
+              className="input-field !min-h-[46px] text-xs font-medium"
             />
           </div>
         </div>
       </div>
 
       {/* 3. Post-Operative Eye Drops & Medications */}
-      <div className="card-surface p-5 sm:p-6 space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-ivory-50/10 pb-3">
+      <div className="card-surface p-5 sm:p-7 space-y-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ivory-50/10 pb-4">
           <div className="flex items-center gap-2">
             <h4 className="font-display text-xl text-ivory-50">Post-Op Eye Drops & Tablets</h4>
             {renderConfirmTick('eye_drops')}
@@ -943,11 +936,11 @@ export function DischargeSummaryForm({
         </div>
 
         {/* Drops Editor */}
-        <div className="space-y-2">
+        <div className="space-y-2.5">
           {eyeDrops.map((d, idx) => (
             <div
               key={idx}
-              className={`grid gap-2 rounded-2xl border p-2.5 sm:grid-cols-12 ${
+              className={`grid gap-2.5 rounded-2xl border p-3 sm:grid-cols-12 ${
                 isFieldPrefilledAndUnconfirmed('eye_drops')
                   ? 'border-amber-400/80 bg-amber-50/40'
                   : 'border-ivory-50/10 bg-ink-950'
@@ -1003,20 +996,20 @@ export function DischargeSummaryForm({
             </div>
           ))}
           {eyeDrops.length === 0 && (
-            <div className="rounded-2xl border border-dashed border-ivory-50/15 p-4 text-center text-xs text-ivory-400">
-              No eye drops added. Select a protocol above or click &ldquo;+ Add Drop&rdquo;.
+            <div className="rounded-2xl border border-dashed border-ivory-50/15 p-6 text-center text-xs text-ivory-400">
+              No eye drops selected. Choose a surgical protocol above or tap &ldquo;+ Add Drop&rdquo;.
             </div>
           )}
         </div>
 
-        {/* Oral Tablets Editor */}
+        {/* Oral Tablets */}
         {oralMeds.length > 0 && (
-          <div className="space-y-2 pt-2 border-t border-ivory-50/10">
+          <div className="space-y-2.5 pt-3 border-t border-ivory-50/10">
             <span className="label-field">Oral Medications</span>
             {oralMeds.map((m, idx) => (
               <div
                 key={idx}
-                className="grid gap-2 rounded-2xl border border-ivory-50/10 bg-ink-950 p-2.5 sm:grid-cols-12"
+                className="grid gap-2.5 rounded-2xl border border-ivory-50/10 bg-ink-950 p-3 sm:grid-cols-12"
               >
                 <input
                   type="text"
@@ -1070,14 +1063,14 @@ export function DischargeSummaryForm({
         )}
       </div>
 
-      {/* 4. Discharge Orders, Follow-Ups & Safety Verification */}
-      <div className="card-surface p-5 sm:p-6 space-y-5">
-        <h4 className="font-display text-xl text-ivory-50">Follow-Up & Discharge Orders</h4>
+      {/* 4. Follow-Up & Discharge Orders (Custom Select Dropdowns) */}
+      <div className="card-surface p-5 sm:p-7 space-y-5">
+        <h4 className="font-display text-xl text-ivory-50">Follow-Up Dates & Clinical Sign-Off</h4>
 
-        {/* Follow-up dates with subtle prefill tick */}
+        {/* Follow-up dates */}
         <div className="grid gap-3 sm:grid-cols-4">
           <div>
-            <div className="mb-1 flex items-center justify-between">
+            <div className="mb-1.5 flex items-center justify-between">
               <label className="label-field mb-0">1st Follow-Up (Day 1)</label>
               {renderConfirmTick('follow_up')}
             </div>
@@ -1110,8 +1103,8 @@ export function DischargeSummaryForm({
             />
           </div>
           <div>
-            <div className="mb-1 flex items-center justify-between">
-              <label className="label-field mb-0">Avoid Water (Days)</label>
+            <div className="mb-1.5 flex items-center justify-between">
+              <label className="label-field mb-0">Avoid Water / Bath (Days)</label>
               {renderConfirmTick('head_bath')}
             </div>
             <input
@@ -1128,32 +1121,22 @@ export function DischargeSummaryForm({
           </div>
         </div>
 
-        {/* Case Type, Scheme & Condition Dropdowns */}
-        <div className="grid gap-3 sm:grid-cols-3">
-          <div>
-            <label className="label-field">Case Type</label>
-            <select
-              value={caseType}
-              onChange={(e) => setCaseType(e.target.value as 'Day Care' | 'In-Patient')}
-              className="input-field font-medium text-xs"
-            >
-              <option value="Day Care">Day Care (Same Day)</option>
-              <option value="In-Patient">In-Patient</option>
-            </select>
-          </div>
-          <div>
-            <label className="label-field">Billing Scheme</label>
-            <select
-              value={billingCategory}
-              onChange={(e) => setBillingCategory(e.target.value)}
-              className="input-field font-medium text-xs"
-            >
-              <option value="Cash">Cash / Private</option>
-              <option value="TPA / Insurance">TPA / Private Insurance</option>
-              <option value="Ayushman Bharat (AB-ArK)">Ayushman Bharat (AB-ArK)</option>
-              <option value="Yashaswini">Yashaswini</option>
-            </select>
-          </div>
+        {/* Case Type, Scheme & Condition Custom Dropdowns */}
+        <div className="grid gap-4 sm:grid-cols-3">
+          <CustomSelect
+            label="Case Type"
+            value={caseType}
+            onChange={(val) => setCaseType(val as 'Day Care' | 'In-Patient')}
+            options={CASE_TYPE_OPTIONS}
+          />
+
+          <CustomSelect
+            label="Billing Scheme"
+            value={billingCategory}
+            onChange={(val) => setBillingCategory(val)}
+            options={BILLING_SCHEME_OPTIONS}
+          />
+
           <div>
             <label className="label-field">Prepared By (Staff)</label>
             <input
@@ -1161,18 +1144,38 @@ export function DischargeSummaryForm({
               value={preparedBy}
               onChange={(e) => setPreparedBy(e.target.value)}
               placeholder="OT Assistant"
-              className="input-field text-xs"
+              className="input-field text-xs font-semibold"
             />
           </div>
         </div>
 
-        {/* Clinical Safety Sign-Off */}
-        <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-gold-400/30 bg-gold-400/10 p-4 transition hover:bg-gold-400/15">
+        {/* Discharge Status Custom Dropdown & Condition */}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <CustomSelect
+            label="Discharge Status"
+            value={dischargeStatus}
+            onChange={(val) => setDischargeStatus(val as 'Routine' | 'DAMA' | 'Referred')}
+            options={DISCHARGE_STATUS_OPTIONS}
+          />
+
+          <div>
+            <label className="label-field">Condition at Discharge</label>
+            <input
+              type="text"
+              value={dischargeCondition}
+              onChange={(e) => setDischargeCondition(e.target.value)}
+              className="input-field text-xs font-semibold"
+            />
+          </div>
+        </div>
+
+        {/* Mandatory Pre-Print Clinical Safety Verification */}
+        <label className="flex cursor-pointer items-start gap-3.5 rounded-2xl border border-gold-400/30 bg-gold-400/10 p-4 transition hover:bg-gold-400/15">
           <input
             type="checkbox"
             checked={safetyVerified}
             onChange={(e) => setSafetyVerified(e.target.checked)}
-            className="mt-0.5 h-5 w-5 rounded-lg border-gold-400 text-gold-500"
+            className="mt-0.5 h-5 w-5 rounded border-gold-400 text-gold-500 focus:ring-gold-400/20"
           />
           <div className="text-xs">
             <div className="flex items-center gap-1.5 font-bold text-ivory-50">
@@ -1186,20 +1189,20 @@ export function DischargeSummaryForm({
         </label>
 
         {error && (
-          <div className="flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 p-3 text-xs font-semibold text-red-700">
+          <div className="flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 p-3.5 text-xs font-semibold text-red-700">
             <AlertTriangle className="h-4 w-4 shrink-0" />
             {error}
           </div>
         )}
       </div>
 
-      {/* Sticky Save Action */}
-      <div className="sticky bottom-0 z-10 border-t border-ivory-50/10 bg-ink-950/95 py-3 backdrop-blur">
+      {/* Sticky Save Action Bar */}
+      <div className="sticky bottom-0 z-20 border-t border-ivory-50/10 bg-ink-950/95 py-3.5 backdrop-blur-xl">
         <button
           type="button"
           disabled={saving}
           onClick={handleSave}
-          className="btn-primary w-full"
+          className="btn-primary w-full shadow-lift"
         >
           {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" />}
           Generate & Save Discharge Summary
