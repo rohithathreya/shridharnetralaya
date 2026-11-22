@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { ClinicMark } from './ClinicMark';
 
 export function Navbar() {
-  const { role, clinic, logout } = useAuth();
+  const { clinic } = useAuth();
   const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
 
@@ -29,11 +29,6 @@ export function Navbar() {
           <Link to="/staff" className={linkClass('/staff')}>
             Staff
           </Link>
-          {role && (
-            <button type="button" onClick={logout} className="nav-pill nav-pill-idle">
-              Lock
-            </button>
-          )}
         </nav>
 
         <button
@@ -52,18 +47,6 @@ export function Navbar() {
             <Link to="/staff" className={linkClass('/staff')} onClick={() => setOpen(false)}>
               Staff
             </Link>
-            {role && (
-              <button
-                type="button"
-                onClick={() => {
-                  logout();
-                  setOpen(false);
-                }}
-                className="btn-ghost"
-              >
-                Lock session
-              </button>
-            )}
           </div>
         </div>
       )}
