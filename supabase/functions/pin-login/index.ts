@@ -65,6 +65,18 @@ Deno.serve(async (req) => {
 
     let signInRes = await authClient.auth.signInWithPassword({ email, password });
 
+    if (
+      !signInRes.error &&
+      signInRes.data.user &&
+      signInRes.data.user.app_metadata?.clinic_role !== verifiedRole
+    ) {
+      await adminClient.auth.admin.updateUserById(signInRes.data.user.id, {
+        app_metadata: { clinic_role: verifiedRole },
+        password,
+      });
+      signInRes = await authClient.auth.signInWithPassword({ email, password });
+    }
+
     if (signInRes.error) {
       // First login ever (or key rotated): create or update the internal role user
       const { data: usersPage } = await adminClient.auth.admin.listUsers({ page: 1, perPage: 50 });

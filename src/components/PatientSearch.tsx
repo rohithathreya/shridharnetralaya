@@ -60,59 +60,60 @@ export function PatientSearch({ onSelectPatient, onRequestNewPatient }: PatientS
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-        <label className="mb-2 block text-sm font-bold text-slate-800">
-          Step 1: Search Patient by Mobile Number, Name, or Patient ID
-        </label>
+      <div className="card-surface p-4 sm:p-5">
+        <label className="label-field">Step 1 · Search patient</label>
+        <p className="mb-3 text-sm text-slate-400">
+          Mobile number, name, or patient ID · multiple family members can share one phone
+        </p>
         <div className="flex flex-col gap-2.5 sm:flex-row">
           <div className="relative flex-1">
-            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500" />
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Enter 10-digit mobile number (e.g. 9845012345) or name..."
-              className="w-full rounded-xl border-2 border-slate-200 py-3.5 pl-11 pr-10 text-base font-semibold text-slate-900 placeholder:font-normal focus:border-clinic-600 focus:outline-none"
+              placeholder="9845012345 or patient name…"
+              className="input-field py-3.5 pl-11 pr-10 text-base"
             />
             {searching && (
-              <Loader2 className="absolute right-3.5 top-1/2 h-5 w-5 -translate-y-1/2 animate-spin text-clinic-600" />
+              <Loader2 className="absolute right-3.5 top-1/2 h-5 w-5 -translate-y-1/2 animate-spin text-clinic-400" />
             )}
           </div>
           <button
             type="button"
             onClick={() => onRequestNewPatient(phoneDigits.length >= 6 ? phoneDigits : '')}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-clinic-600 px-5 py-3.5 text-sm font-bold text-white shadow-sm hover:bg-clinic-700"
+            className="btn-primary py-3.5"
           >
             <UserPlus className="h-5 w-5" />
-            <span>New Patient</span>
+            New Patient
           </button>
         </div>
 
         {query.trim().length >= 2 && !searching && (
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-clinic-50 px-3.5 py-2.5 text-xs font-medium text-clinic-900">
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-clinic-500/20 bg-clinic-900/20 px-3.5 py-2.5 text-xs text-clinic-200">
             <span>
               {results.length === 0
-                ? `No patient found for "${query}".`
-                : `Found ${results.length} patient(s) matching "${query}". Multiple family members can share one phone number.`}
+                ? `No match for “${query}”.`
+                : `${results.length} patient(s) found.`}
             </span>
             <button
               type="button"
               onClick={() => onRequestNewPatient(phoneDigits)}
-              className="rounded-lg bg-white px-3 py-1.5 font-bold text-clinic-700 shadow-sm ring-1 ring-clinic-200 hover:bg-clinic-100"
+              className="rounded-lg border border-white/10 bg-obsidian-800 px-3 py-1.5 font-bold text-clinic-300 hover:bg-obsidian-700"
             >
-              + Add New Member {phoneDigits ? `on ${phoneDigits}` : ''}
+              + Add member {phoneDigits ? `· ${phoneDigits}` : ''}
             </button>
           </div>
         )}
       </div>
 
       <div>
-        <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-500">
-          {query.trim().length >= 2 ? 'Matching Patients — Tap to Open' : 'Recent Patients'}
+        <h3 className="label-field mb-3">
+          {query.trim().length >= 2 ? 'Matching patients' : 'Recent patients'}
         </h3>
         {displayList.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
-            No patients yet. Click <strong>New Patient</strong> above to register the first patient.
+          <div className="rounded-2xl border border-dashed border-white/10 bg-obsidian-900/40 p-10 text-center text-sm text-slate-500">
+            No patients yet. Use <span className="text-clinic-400">New Patient</span> above to register the first one.
           </div>
         ) : (
           <div className="grid gap-2.5 sm:grid-cols-2">
@@ -121,33 +122,33 @@ export function PatientSearch({ onSelectPatient, onRequestNewPatient }: PatientS
                 key={p.id}
                 type="button"
                 onClick={() => onSelectPatient(p)}
-                className="flex flex-col items-start rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-clinic-600 hover:bg-clinic-50/40"
+                className="card-surface flex flex-col items-start p-4 text-left transition hover:border-clinic-500/35 hover:shadow-glow"
               >
                 <div className="flex w-full items-center justify-between gap-2">
-                  <span className="text-base font-extrabold text-slate-900">{p.full_name}</span>
-                  <span className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-700">
+                  <span className="text-base font-bold text-white">{p.full_name}</span>
+                  <span className="rounded-md bg-obsidian-800 px-2 py-0.5 text-xs font-bold text-gold-400 ring-1 ring-gold-500/20">
                     {p.patient_code}
                   </span>
                 </div>
-                <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-medium text-slate-600">
+                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400">
                   <span>
                     {p.age ? `${p.age} yrs` : 'Age —'} / {p.sex || '—'}
                   </span>
-                  <span className="inline-flex items-center gap-1 font-semibold text-slate-800">
-                    <Phone className="h-3.5 w-3.5 text-clinic-600" />
+                  <span className="inline-flex items-center gap-1 font-semibold text-slate-300">
+                    <Phone className="h-3.5 w-3.5 text-clinic-400" />
                     {p.phone}
                   </span>
                   {p.village_address && (
                     <span className="inline-flex items-center gap-1">
-                      <MapPin className="h-3.5 w-3.5 text-slate-400" />
+                      <MapPin className="h-3.5 w-3.5 text-slate-500" />
                       {p.village_address}
                     </span>
                   )}
                 </div>
                 {p.next_follow_up && (
-                  <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-bold text-amber-800 ring-1 ring-amber-200">
+                  <div className="mt-2 inline-flex items-center gap-1 rounded-full border border-gold-500/25 bg-gold-500/10 px-2.5 py-0.5 text-[11px] font-bold text-gold-300">
                     <Calendar className="h-3 w-3" />
-                    Next Follow-Up: {formatDisplayDate(p.next_follow_up)}
+                    Follow-up {formatDisplayDate(p.next_follow_up)}
                   </div>
                 )}
               </button>

@@ -772,3 +772,19 @@ DROP POLICY IF EXISTS "Admin delete patient-docs" ON storage.objects;
 CREATE POLICY "Admin delete patient-docs" ON storage.objects
   FOR DELETE TO authenticated
   USING (bucket_id = 'patient-docs' AND public.current_clinic_role() = 'admin');
+
+-- ============================================================================
+-- 12. TABLE PRIVILEGES (required for Supabase authenticated role + RLS)
+-- ============================================================================
+GRANT USAGE ON SCHEMA public TO anon, authenticated;
+
+GRANT SELECT ON public.clinic_settings TO anon, authenticated;
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.patients TO authenticated;
+GRANT SELECT, INSERT, UPDATE ON public.invoices TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.discharge_summaries TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.patient_documents TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.service_catalog TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.surgical_protocols TO authenticated;
+
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO authenticated;

@@ -24,6 +24,7 @@ Production-ready static React + TypeScript + Tailwind application designed for *
 ### Step 1: Supabase Database Setup
 1. Create a new project at [supabase.com](https://supabase.com) (choose **Mumbai `ap-south-1`** region for lowest latency in Karnataka).
 2. Open **SQL Editor** → paste the entire contents of `supabase/migrations/001_initial_schema.sql` → click **Run**.
+   - If patient/invoice saves fail with **permission denied for table …**, run `supabase/migrations/002_table_grants.sql` in the same SQL Editor.
    - This creates all tables, sequences (`SN-26-xxxx`, `INV-26-xxxx`, `DS-26-xxxx`), RLS policies, RPCs, private `patient-docs` storage bucket, and realistic pre-seeded services & surgical protocols.
    - **Initial Default PINs**: Staff = `2026`, Admin = `9090`. Change both immediately inside `/#/admin` → **Clinic Details & PINs** after deploy!
 

@@ -12,6 +12,16 @@ interface PatientModalProps {
   onSaved: (patient: Patient) => void;
 }
 
+function friendlyDbError(message: string): string {
+  if (message.includes('permission denied for table patients')) {
+    return 'Database access not configured. In Supabase SQL Editor, run supabase/migrations/002_table_grants.sql, then try again.';
+  }
+  if (message.includes('row-level security')) {
+    return 'Session expired or missing staff role. Lock the desk and sign in with your PIN again.';
+  }
+  return message;
+}
+
 export function PatientModal({ initialPhone = '', editingPatient, onClose, onSaved }: PatientModalProps) {
   const [fullName, setFullName] = useState(editingPatient?.full_name || '');
   const [phone, setPhone] = useState(editingPatient?.phone || initialPhone);
@@ -64,7 +74,7 @@ export function PatientModal({ initialPhone = '', editingPatient, onClose, onSav
 
     setSaving(false);
     if (res.error || !res.data) {
-      setError(res.error?.message || 'Could not save patient');
+      setError(friendlyDbError(res.error?.message || 'Could not save patient'));
       return;
     }
 
@@ -72,21 +82,19 @@ export function PatientModal({ initialPhone = '', editingPatient, onClose, onSav
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-3 backdrop-blur-sm">
-      <div className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl sm:p-6">
-        <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-3 backdrop-blur-md">
+      <div className="card-surface max-h-[92vh] w-full max-w-lg overflow-y-auto p-5 sm:p-6">
+        <div className="mb-4 flex items-center justify-between border-b border-white/[0.06] pb-3">
           <div>
-            <h2 className="text-lg font-extrabold text-slate-900">
-              {editingPatient ? `Edit Patient (${editingPatient.patient_code})` : 'Register New Patient'}
+            <h2 className="font-display text-xl font-semibold text-white">
+              {editingPatient ? `Edit · ${editingPatient.patient_code}` : 'Register new patient'}
             </h2>
-            <p className="text-xs text-slate-500">
-              Unique Patient ID is generated automatically upon saving.
-            </p>
+            <p className="mt-1 text-xs text-slate-500">Patient ID is assigned automatically on save.</p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+            className="rounded-lg p-1.5 text-slate-500 hover:bg-white/5 hover:text-slate-200"
           >
             <X className="h-5 w-5" />
           </button>
@@ -95,45 +103,44 @@ export function PatientModal({ initialPhone = '', editingPatient, onClose, onSav
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-bold text-slate-700">Mobile Number (10 digits) *</label>
+              <label className="label-field">Mobile *</label>
               <input
                 type="tel"
                 inputMode="numeric"
                 required
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                placeholder="e.g. 9845012345"
-                className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm font-semibold focus:border-clinic-600 focus:outline-none"
+                placeholder="9845012345"
+                className="input-field"
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-bold text-slate-700">Patient Full Name *</label>
+              <label className="label-field">Full name *</label>
               <input
                 type="text"
                 required
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                placeholder="e.g. Ramesh Gowda"
-                className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm font-semibold focus:border-clinic-600 focus:outline-none"
+                placeholder="Ramesh Gowda"
+                className="input-field"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-xs font-bold text-slate-700">Age (Years)</label>
+              <label className="label-field">Age</label>
               <input
                 type="number"
                 min={0}
                 max={120}
                 value={age}
                 onChange={(e) => setAge(e.target.value)}
-                placeholder="e.g. 64"
-                className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm font-semibold focus:border-clinic-600 focus:outline-none"
+                className="input-field"
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-bold text-slate-700">Sex</label>
+              <label className="label-field">Sex</label>
               <div className="grid grid-cols-3 gap-1.5">
                 {(['M', 'F', 'O'] as const).map((opt) => (
                   <button
@@ -142,8 +149,8 @@ export function PatientModal({ initialPhone = '', editingPatient, onClose, onSav
                     onClick={() => setSex(opt)}
                     className={`rounded-xl border py-2.5 text-sm font-bold ${
                       sex === opt
-                        ? 'border-clinic-600 bg-clinic-600 text-white'
-                        : 'border-slate-200 bg-slate-50 text-slate-700'
+                        ? 'border-clinic-500/50 bg-clinic-600/30 text-clinic-100'
+                        : 'border-white/10 bg-obsidian-950/60 text-slate-400'
                     }`}
                   >
                     {opt === 'M' ? 'Male' : opt === 'F' ? 'Female' : 'Other'}
@@ -154,18 +161,12 @@ export function PatientModal({ initialPhone = '', editingPatient, onClose, onSav
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-bold text-slate-700">Village / Town / Address</label>
-            <input
-              type="text"
-              value={village}
-              onChange={(e) => setVillage(e.target.value)}
-              placeholder="e.g. Solur, Magadi Taluk"
-              className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-clinic-600 focus:outline-none"
-            />
+            <label className="label-field">Village / address</label>
+            <input type="text" value={village} onChange={(e) => setVillage(e.target.value)} className="input-field" />
           </div>
 
           <div>
-            <label className="mb-1.5 block text-xs font-bold text-slate-700">Medical Conditions (Tap all that apply)</label>
+            <label className="label-field">Medical conditions</label>
             <div className="flex flex-wrap gap-1.5">
               {COMORBIDITY_OPTIONS.map((item) => {
                 const selected = comorbidities.includes(item);
@@ -176,8 +177,8 @@ export function PatientModal({ initialPhone = '', editingPatient, onClose, onSav
                     onClick={() => toggleComorbidity(item)}
                     className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${
                       selected
-                        ? 'bg-amber-600 text-white'
-                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                        ? 'bg-gold-600/80 text-obsidian-950'
+                        : 'border border-white/10 bg-obsidian-800/80 text-slate-400'
                     }`}
                   >
                     {selected ? '✓ ' : '+ '}
@@ -190,56 +191,33 @@ export function PatientModal({ initialPhone = '', editingPatient, onClose, onSav
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-bold text-slate-700">Known Drug Allergies</label>
-              <input
-                type="text"
-                value={allergies}
-                onChange={(e) => setAllergies(e.target.value)}
-                placeholder="NKDA (No Known Drug Allergy)"
-                className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-clinic-600 focus:outline-none"
-              />
+              <label className="label-field">Drug allergies</label>
+              <input type="text" value={allergies} onChange={(e) => setAllergies(e.target.value)} className="input-field" />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-bold text-slate-700">Next Follow-Up Date</label>
-              <input
-                type="date"
-                value={nextFollowUp}
-                onChange={(e) => setNextFollowUp(e.target.value)}
-                className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-clinic-600 focus:outline-none"
-              />
+              <label className="label-field">Next follow-up</label>
+              <input type="date" value={nextFollowUp} onChange={(e) => setNextFollowUp(e.target.value)} className="input-field" />
             </div>
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-bold text-slate-700">Quick Notes (Optional)</label>
-            <input
-              type="text"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="e.g. Right eye operated in 2024, lives with son Suresh"
-              className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-clinic-600 focus:outline-none"
-            />
+            <label className="label-field">Notes</label>
+            <input type="text" value={notes} onChange={(e) => setNotes(e.target.value)} className="input-field" />
           </div>
 
           {error && (
-            <div className="rounded-lg bg-red-50 px-3 py-2 text-xs font-bold text-red-700">{error}</div>
+            <div className="rounded-xl border border-red-500/30 bg-red-950/40 px-3 py-2 text-xs font-semibold text-red-300">
+              {error}
+            </div>
           )}
 
           <div className="flex justify-end gap-2 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50"
-            >
+            <button type="button" onClick={onClose} className="btn-ghost">
               Cancel
             </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="inline-flex items-center gap-2 rounded-xl bg-clinic-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-clinic-700 disabled:opacity-50"
-            >
+            <button type="submit" disabled={saving} className="btn-primary">
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              {editingPatient ? 'Save Changes' : 'Create Patient ID'}
+              {editingPatient ? 'Save' : 'Create patient'}
             </button>
           </div>
         </form>
