@@ -82,14 +82,14 @@ export function PatientModal({ initialPhone = '', editingPatient, onClose, onSav
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-3 backdrop-blur-md">
-      <div className="card-surface max-h-[92vh] w-full max-w-lg overflow-y-auto p-5 sm:p-6">
+    <div className="sheet-modal">
+      <div className="sheet-panel">
         <div className="mb-4 flex items-center justify-between border-b border-white/[0.06] pb-3">
           <div>
-            <h2 className="font-display text-xl font-semibold text-white">
-              {editingPatient ? `Edit · ${editingPatient.patient_code}` : 'Register new patient'}
+            <p className="eyebrow">{editingPatient ? 'Edit patient' : 'Step 2 · Register'}</p>
+            <h2 className="mt-2 font-display text-2xl text-ivory-50">
+              {editingPatient ? editingPatient.patient_code : 'New patient'}
             </h2>
-            <p className="mt-1 text-xs text-slate-500">Patient ID is assigned automatically on save.</p>
           </div>
           <button
             type="button"

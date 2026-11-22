@@ -155,30 +155,43 @@ export function StaffWorkspace() {
 
   const today = todayIsoDate();
 
+  const patientTabs = [
+    { id: 'invoice' as PatientTab, label: 'Bill', long: 'New invoice', icon: <Receipt className="h-4 w-4" /> },
+    { id: 'discharge' as PatientTab, label: 'Discharge', long: 'Discharge', icon: <FileText className="h-4 w-4" /> },
+    { id: 'upload' as PatientTab, label: 'Upload', long: 'Upload', icon: <FileImage className="h-4 w-4" /> },
+    {
+      id: 'history' as PatientTab,
+      label: `Files (${invoices.length + summaries.length + documents.length})`,
+      long: `History (${invoices.length + summaries.length + documents.length})`,
+      icon: <History className="h-4 w-4" />,
+    },
+  ];
+
   return (
-    <div className="mx-auto max-w-6xl px-3 py-5 sm:px-6">
-      {/* Top Staff Switcher */}
-      <div className="no-print mb-5 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex gap-2">
+    <div className="page-shell">
+      <div className="no-print mb-6 space-y-4">
+        <div className="flex w-full gap-2">
           <button
             type="button"
             onClick={() => setSection('desk')}
-            className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition ${
+            className={`inline-flex min-h-[48px] items-center justify-center gap-2 px-3 text-xs font-medium uppercase tracking-[0.14em] ${
               section === 'desk' ? 'section-tab-active' : 'section-tab-idle'
             }`}
           >
-            <Users className="h-4 w-4" />
-            Patient Desk
+            <Users className="h-4 w-4 shrink-0" />
+            <span className="hidden sm:inline">Patient desk</span>
+            <span className="sm:hidden">Desk</span>
           </button>
           <button
             type="button"
             onClick={() => setSection('followups')}
-            className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition ${
+            className={`inline-flex min-h-[48px] items-center justify-center gap-2 px-3 text-xs font-medium uppercase tracking-[0.14em] ${
               section === 'followups' ? 'section-tab-active' : 'section-tab-idle'
             }`}
           >
-            <Calendar className="h-4 w-4" />
-            Follow-Ups Due
+            <Calendar className="h-4 w-4 shrink-0" />
+            <span className="hidden sm:inline">Follow-ups</span>
+            <span className="sm:hidden">Recalls</span>
           </button>
         </div>
 
@@ -186,10 +199,10 @@ export function StaffWorkspace() {
           <button
             type="button"
             onClick={() => setSelectedPatient(null)}
-            className="btn-ghost py-2 text-xs"
+            className="btn-ghost !w-full sm:!w-auto"
           >
             <ArrowLeft className="h-4 w-4" />
-            Switch Patient
+            Back to search
           </button>
         )}
       </div>
@@ -197,14 +210,12 @@ export function StaffWorkspace() {
       {/* SECTION A: FOLLOW-UPS DUE */}
       {section === 'followups' && (
         <div className="space-y-3">
-          <div className="card-surface p-4">
-            <h2 className="text-base font-bold text-white">
-              Follow-ups due (±7 days)
-            </h2>
-            <p className="text-xs text-slate-500">
-              Send 1-click Kannada + English WhatsApp reminders or tap any patient to open their file.
+          <header className="space-y-2">
+            <span className="step-badge">Follow-ups · ±7 days</span>
+            <p className="text-sm font-light text-ivory-500">
+              Tap a patient to open their chart or send a WhatsApp reminder.
             </p>
-          </div>
+          </header>
 
           {followUpsLoading ? (
             <div className="flex justify-center py-10">
@@ -251,13 +262,13 @@ export function StaffWorkspace() {
                         {p.village_address ? ` • ${p.village_address}` : ''}
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
                       <button
                         type="button"
                         onClick={() => sendFollowUpReminderWhatsApp(p, clinic)}
-                        className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-emerald-700"
+                        className="btn-primary !min-h-[44px] text-[10px] sm:!w-auto"
                       >
-                        <MessageCircle className="h-3.5 w-3.5" /> WhatsApp Reminder
+                        <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
                       </button>
                       <button
                         type="button"
@@ -266,9 +277,9 @@ export function StaffWorkspace() {
                           setSection('desk');
                           setActiveTab('history');
                         }}
-                        className="btn-ghost px-3.5 py-2 text-xs"
+                        className="btn-ghost !min-h-[44px] text-[10px] sm:!w-auto"
                       >
-                        Open File
+                        Open chart
                       </button>
                     </div>
                   </div>
@@ -295,22 +306,20 @@ export function StaffWorkspace() {
       )}
 
       {section === 'desk' && selectedPatient && (
-        <div className="space-y-5">
-          {/* Patient Header Banner */}
-          <div className="card-surface no-print p-4 sm:p-5">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-xl font-bold text-white">{selectedPatient.full_name}</h2>
-                  <span className="rounded-lg bg-clinic-600/90 px-2.5 py-0.5 text-xs font-bold text-white">
-                    {selectedPatient.patient_code}
-                  </span>
-                  {selectedPatient.allergies && selectedPatient.allergies.toUpperCase() !== 'NKDA' && (
-                    <span className="inline-flex items-center gap-1 rounded-lg bg-red-100 px-2.5 py-0.5 text-xs font-extrabold text-red-800">
-                      <AlertCircle className="h-3.5 w-3.5" /> Allergy: {selectedPatient.allergies}
-                    </span>
-                  )}
+        <div className="space-y-6">
+          <div className="card-surface no-print space-y-5 p-4 sm:p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0 space-y-3">
+                <span className="step-badge">Step 2 · Patient chart</span>
+                <div>
+                  <h2 className="font-display text-2xl text-ivory-50 sm:text-3xl">{selectedPatient.full_name}</h2>
+                  <p className="mt-1 text-xs uppercase tracking-[0.2em] text-gold-400">{selectedPatient.patient_code}</p>
                 </div>
+                {selectedPatient.allergies && selectedPatient.allergies.toUpperCase() !== 'NKDA' && (
+                  <p className="inline-flex items-center gap-1 border border-red-400/30 px-2 py-1 text-xs text-red-300">
+                    <AlertCircle className="h-3.5 w-3.5" /> {selectedPatient.allergies}
+                  </p>
+                )}
                 <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-medium text-ivory-300">
                   <span>
                     {selectedPatient.age ? `${selectedPatient.age} yrs` : 'Age —'} / {selectedPatient.sex || '—'}
@@ -326,19 +335,16 @@ export function StaffWorkspace() {
                     </span>
                   )}
                   {selectedPatient.next_follow_up && (
-                    <span className="inline-flex items-center gap-1 font-bold text-amber-800">
+                    <span className="inline-flex items-center gap-1 text-gold-300">
                       <Calendar className="h-3.5 w-3.5" />
-                      Follow-Up: {formatDisplayDate(selectedPatient.next_follow_up)}
+                      {formatDisplayDate(selectedPatient.next_follow_up)}
                     </span>
                   )}
                 </div>
                 {selectedPatient.comorbidities?.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-1">
+                  <div className="flex flex-wrap gap-2">
                     {selectedPatient.comorbidities.map((c) => (
-                      <span
-                        key={c}
-                        className="rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-bold text-amber-900 ring-1 ring-amber-200"
-                      >
+                      <span key={c} className="border border-gold-500/25 px-2 py-0.5 text-[11px] text-gold-300">
                         {c}
                       </span>
                     ))}
@@ -352,40 +358,28 @@ export function StaffWorkspace() {
                   setEditingPatient(selectedPatient);
                   setPatientModalOpen(true);
                 }}
-                className="btn-ghost py-2 text-xs"
+                className="btn-ghost shrink-0"
               >
-                <Pencil className="h-3.5 w-3.5" /> Edit Details
+                <Pencil className="h-3.5 w-3.5" /> Edit
               </button>
             </div>
 
-            {/* 4 Big Action Tabs */}
-            <div className="mt-4 grid grid-cols-2 gap-2 border-t border-white/[0.06] pt-4 sm:grid-cols-4">
-              {(
-                [
-                  { id: 'invoice', label: 'New Invoice', icon: <Receipt className="h-4 w-4" /> },
-                  { id: 'discharge', label: 'Discharge Summary', icon: <FileText className="h-4 w-4" /> },
-                  { id: 'upload', label: 'Upload Rx / Photo', icon: <FileImage className="h-4 w-4" /> },
-                  {
-                    id: 'history',
-                    label: `History (${invoices.length + summaries.length + documents.length})`,
-                    icon: <History className="h-4 w-4" />,
-                  },
-                ] as { id: PatientTab; label: string; icon: React.ReactNode }[]
-              ).map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center justify-center gap-2 rounded-xl border-2 py-3 text-xs font-extrabold transition sm:text-sm ${
-                    activeTab === tab.id
-                      ? 'border-clinic-500/50 bg-clinic-600/25 text-clinic-100 shadow-glow'
-                      : 'border-white/10 bg-obsidian-950/50 text-slate-400 hover:border-clinic-500/25'
-                  }`}
-                >
-                  {tab.icon}
-                  <span>{tab.label}</span>
-                </button>
-              ))}
+            <div>
+              <p className="label-field mb-3">Step 3 · Choose action</p>
+              <div className="scroll-tabs">
+                {patientTabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`tab-chip ${activeTab === tab.id ? 'tab-chip-active' : 'tab-chip-idle'}`}
+                  >
+                    {tab.icon}
+                    <span className="sm:hidden">{tab.label}</span>
+                    <span className="hidden sm:inline">{tab.long}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 

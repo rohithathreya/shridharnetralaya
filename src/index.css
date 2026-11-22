@@ -5,6 +5,8 @@
 @layer base {
   html {
     font-family: 'Outfit', 'Noto Sans Kannada', system-ui, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    text-size-adjust: 100%;
   }
 
   body {
@@ -18,32 +20,45 @@
 }
 
 @layer components {
+  .page-shell {
+    @apply mx-auto w-full max-w-6xl px-4 pb-28 pt-6 sm:px-8 sm:pb-12 sm:pt-8;
+    padding-bottom: max(7rem, calc(1.5rem + env(safe-area-inset-bottom)));
+  }
+
+  .safe-top {
+    padding-top: max(0px, env(safe-area-inset-top));
+  }
+
   .eyebrow {
-    @apply text-[11px] font-medium uppercase tracking-brand text-gold-400;
+    @apply text-[10px] font-medium uppercase tracking-[0.22em] text-gold-400 sm:text-[11px];
   }
 
   .card-surface {
-    @apply rounded-none border border-ivory-50/10 bg-ink-900;
+    @apply border border-ivory-50/10 bg-ink-900;
   }
 
   .input-field {
-    @apply w-full rounded-none border border-ivory-50/15 bg-transparent px-3 py-3 text-sm font-normal text-ivory-50 placeholder:text-ivory-500 focus:border-gold-400 focus:outline-none;
+    @apply w-full min-h-[48px] border border-ivory-50/15 bg-ink-950 px-4 py-3.5 text-base font-normal text-ivory-50 placeholder:text-ivory-500 focus:border-gold-400 focus:outline-none sm:text-sm;
   }
 
   .label-field {
-    @apply mb-2 block text-[11px] font-medium uppercase tracking-brand text-ivory-500;
+    @apply mb-2 block text-[10px] font-medium uppercase tracking-[0.2em] text-ivory-500;
   }
 
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-none bg-ivory-50 px-6 py-3 text-[11px] font-medium uppercase tracking-[0.18em] text-ink-950 transition hover:bg-gold-300 disabled:opacity-40;
+    @apply inline-flex min-h-[48px] w-full items-center justify-center gap-2 bg-ivory-50 px-5 py-3.5 text-xs font-medium uppercase tracking-[0.16em] text-ink-950 transition active:scale-[0.98] hover:bg-gold-300 disabled:opacity-40 sm:w-auto;
   }
 
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 rounded-none border border-ivory-50/20 bg-transparent px-5 py-3 text-[11px] font-medium uppercase tracking-[0.18em] text-ivory-100 transition hover:border-ivory-50/50;
+    @apply inline-flex min-h-[48px] w-full items-center justify-center gap-2 border border-ivory-50/20 bg-transparent px-5 py-3.5 text-xs font-medium uppercase tracking-[0.16em] text-ivory-100 transition active:scale-[0.98] hover:border-ivory-50/50 sm:w-auto;
+  }
+
+  .touch-key {
+    @apply flex min-h-[52px] items-center justify-center border border-ivory-50/15 bg-ink-800 text-lg font-medium text-ivory-50 active:bg-ink-700;
   }
 
   .nav-pill {
-    @apply inline-flex items-center gap-2 px-1 py-1 text-[11px] font-medium uppercase tracking-[0.18em] transition;
+    @apply inline-flex min-h-[44px] items-center gap-2 px-2 py-2 text-[10px] font-medium uppercase tracking-[0.18em] transition sm:text-[11px];
   }
 
   .nav-pill-active {
@@ -56,11 +71,53 @@
   }
 
   .section-tab-active {
-    @apply border border-ivory-50/40 bg-ivory-50 text-ink-950;
+    @apply flex-1 border border-ivory-50/40 bg-ivory-50 text-ink-950;
   }
 
   .section-tab-idle {
-    @apply border border-ivory-50/15 bg-transparent text-ivory-300 hover:border-ivory-50/40 hover:text-ivory-50;
+    @apply flex-1 border border-ivory-50/15 bg-transparent text-ivory-400;
+  }
+
+  .step-badge {
+    @apply eyebrow inline-flex items-center gap-2 border border-ivory-50/15 px-3 py-1.5 text-ivory-300;
+  }
+
+  .list-row {
+    @apply card-surface flex w-full flex-col gap-2 border-ivory-50/10 p-4 text-left transition active:bg-ink-800 sm:p-5;
+  }
+
+  .scroll-tabs {
+    @apply no-print -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-4 sm:gap-2 sm:overflow-visible sm:px-0;
+  }
+
+  .scroll-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tab-chip {
+    @apply flex min-h-[48px] shrink-0 items-center justify-center gap-2 border px-4 py-3 text-xs font-medium uppercase tracking-[0.12em] sm:min-h-[52px] sm:w-full sm:text-[11px];
+  }
+
+  .tab-chip-active {
+    @apply border-ivory-50/50 bg-ivory-50/10 text-ivory-50;
+  }
+
+  .tab-chip-idle {
+    @apply border-ivory-50/15 text-ivory-500;
+  }
+
+  .mobile-dock {
+    @apply fixed inset-x-0 bottom-0 z-30 border-t border-ivory-50/10 bg-ink-950/95 p-4 backdrop-blur-md md:hidden;
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+
+  .sheet-modal {
+    @apply fixed inset-0 z-50 flex flex-col justify-end bg-black/60 backdrop-blur-sm sm:items-center sm:justify-center sm:p-4;
+  }
+
+  .sheet-panel {
+    @apply card-surface max-h-[min(92dvh,720px)] w-full overflow-y-auto p-5 sm:max-w-lg sm:rounded-sm sm:p-6;
+    padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
   }
 }
 
@@ -84,7 +141,8 @@
     print-color-adjust: exact !important;
   }
 
-  .no-print {
+  .no-print,
+  .mobile-dock {
     display: none !important;
   }
 

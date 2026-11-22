@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Search, UserPlus, Phone, MapPin, Calendar, Loader2 } from 'lucide-react';
+import { UserPlus, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { formatDisplayDate } from '../lib/dates';
 import type { Patient } from '../types/database';
@@ -21,7 +21,7 @@ export function PatientSearch({ onSelectPatient, onRequestNewPatient }: PatientS
         .from('patients')
         .select('*')
         .order('updated_at', { ascending: false })
-        .limit(8);
+        .limit(12);
       if (data) setRecentPatients(data as Patient[]);
     }
     loadRecent();
@@ -57,104 +57,93 @@ export function PatientSearch({ onSelectPatient, onRequestNewPatient }: PatientS
 
   const phoneDigits = query.replace(/\D/g, '').slice(-10);
   const displayList = query.trim().length >= 2 ? results : recentPatients;
+  const hasQuery = query.trim().length >= 2;
 
   return (
-    <div className="space-y-4">
-      <div className="card-surface p-4 sm:p-5">
-        <label className="label-field">Step 1 · Search patient</label>
-        <p className="mb-3 text-sm text-slate-400">
-          Mobile number, name, or patient ID · multiple family members can share one phone
+    <div className="space-y-8">
+      <header className="space-y-2">
+        <span className="step-badge">Step 1 · Find patient</span>
+        <p className="text-sm font-light text-ivory-400">
+          Search by mobile, name, or ID. One phone number can belong to multiple family members.
         </p>
-        <div className="flex flex-col gap-2.5 sm:flex-row">
-          <div className="relative flex-1">
-            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500" />
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="9845012345 or patient name…"
-              className="input-field py-3.5 pl-11 pr-10 text-base"
-            />
-            {searching && (
-              <Loader2 className="absolute right-3.5 top-1/2 h-5 w-5 -translate-y-1/2 animate-spin text-clinic-400" />
-            )}
-          </div>
-          <button
-            type="button"
-            onClick={() => onRequestNewPatient(phoneDigits.length >= 6 ? phoneDigits : '')}
-            className="btn-primary py-3.5"
-          >
-            <UserPlus className="h-5 w-5" />
-            New Patient
-          </button>
+      </header>
+
+      <div className="space-y-3">
+        <div className="relative">
+          <input
+            type="search"
+            enterKeyHint="search"
+            autoComplete="off"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Mobile or name"
+            className="input-field pr-12"
+          />
+          {searching && (
+            <Loader2 className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 animate-spin text-gold-400" />
+          )}
         </div>
 
-        {query.trim().length >= 2 && !searching && (
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-clinic-500/20 bg-clinic-900/20 px-3.5 py-2.5 text-xs text-clinic-200">
-            <span>
-              {results.length === 0
-                ? `No match for “${query}”.`
-                : `${results.length} patient(s) found.`}
-            </span>
+        {hasQuery && !searching && results.length === 0 && (
+          <p className="text-sm text-ivory-500">
+            No match for “{query}”.{' '}
             <button
               type="button"
               onClick={() => onRequestNewPatient(phoneDigits)}
-              className="rounded-lg border border-white/10 bg-obsidian-800 px-3 py-1.5 font-bold text-clinic-300 hover:bg-obsidian-700"
+              className="text-gold-300 underline underline-offset-4"
             >
-              + Add member {phoneDigits ? `· ${phoneDigits}` : ''}
+              Register new patient
             </button>
-          </div>
+          </p>
         )}
       </div>
 
-      <div>
-        <h3 className="label-field mb-3">
-          {query.trim().length >= 2 ? 'Matching patients' : 'Recent patients'}
+      <div className="space-y-3">
+        <h3 className="label-field mb-0">
+          {hasQuery ? `Matches (${results.length})` : 'Recent'}
         </h3>
+
         {displayList.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-white/10 bg-obsidian-900/40 p-10 text-center text-sm text-slate-500">
-            No patients yet. Use <span className="text-clinic-400">New Patient</span> above to register the first one.
+          <div className="border border-dashed border-ivory-50/15 px-4 py-12 text-center text-sm font-light text-ivory-500">
+            No patients yet. Tap <span className="text-ivory-200">New patient</span> below.
           </div>
         ) : (
-          <div className="grid gap-2.5 sm:grid-cols-2">
+          <ul className="divide-y divide-ivory-50/10 border border-ivory-50/10">
             {displayList.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => onSelectPatient(p)}
-                className="card-surface flex flex-col items-start p-4 text-left transition hover:border-clinic-500/35 hover:shadow-glow"
-              >
-                <div className="flex w-full items-center justify-between gap-2">
-                  <span className="text-base font-bold text-white">{p.full_name}</span>
-                  <span className="rounded-md bg-obsidian-800 px-2 py-0.5 text-xs font-bold text-gold-400 ring-1 ring-gold-500/20">
-                    {p.patient_code}
-                  </span>
-                </div>
-                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400">
-                  <span>
-                    {p.age ? `${p.age} yrs` : 'Age —'} / {p.sex || '—'}
-                  </span>
-                  <span className="inline-flex items-center gap-1 font-semibold text-slate-300">
-                    <Phone className="h-3.5 w-3.5 text-clinic-400" />
-                    {p.phone}
-                  </span>
-                  {p.village_address && (
-                    <span className="inline-flex items-center gap-1">
-                      <MapPin className="h-3.5 w-3.5 text-slate-500" />
-                      {p.village_address}
-                    </span>
-                  )}
-                </div>
-                {p.next_follow_up && (
-                  <div className="mt-2 inline-flex items-center gap-1 rounded-full border border-gold-500/25 bg-gold-500/10 px-2.5 py-0.5 text-[11px] font-bold text-gold-300">
-                    <Calendar className="h-3 w-3" />
-                    Follow-up {formatDisplayDate(p.next_follow_up)}
+              <li key={p.id}>
+                <button type="button" onClick={() => onSelectPatient(p)} className="list-row !border-0">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 text-left">
+                      <p className="truncate font-medium text-ivory-50">{p.full_name}</p>
+                      <p className="mt-1 text-xs text-ivory-500">
+                        {p.phone}
+                        {p.age ? ` · ${p.age} yrs` : ''}
+                        {p.village_address ? ` · ${p.village_address}` : ''}
+                      </p>
+                    </div>
+                    <span className="shrink-0 text-xs uppercase tracking-widest text-gold-400">{p.patient_code}</span>
                   </div>
-                )}
-              </button>
+                  {p.next_follow_up && (
+                    <p className="text-xs text-gold-400/90">Follow-up {formatDisplayDate(p.next_follow_up)}</p>
+                  )}
+                </button>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
+      </div>
+
+      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-ivory-50/10 bg-ink-950/95 p-4 backdrop-blur-md sm:static sm:z-auto sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none">
+        <div style={{ paddingBottom: 'max(0px, env(safe-area-inset-bottom))' }}>
+          <button
+            type="button"
+            onClick={() => onRequestNewPatient(phoneDigits.length >= 6 ? phoneDigits : '')}
+            className="btn-primary !min-h-[52px] sm:max-w-xs"
+          >
+            <UserPlus className="h-4 w-4" />
+            New patient
+          </button>
+        </div>
       </div>
     </div>
   );
