@@ -12,6 +12,9 @@ import {
   AlertTriangle,
   Loader2,
   ShieldAlert,
+  Check,
+  CheckCheck,
+  ChevronDown,
 } from 'lucide-react';
 import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from '../lib/supabase';
 import { addDaysIso, nowLocalDateTimeInput } from '../lib/dates';
@@ -28,9 +31,29 @@ import type {
   SurgicalProtocol,
 } from '../types/database';
 
-const ANESTHESIA_OPTIONS = ['Topical', 'Peribulbar', 'Sub-Tenon', 'Local Infiltration', 'General'];
-const DRESSING_OPTIONS = ['Dark Glasses', 'Pad & Bandage', 'Clear Protective Shield', 'None'];
-const COMORBIDITY_OPTIONS = ['Diabetes', 'Hypertension', 'Cardiac / IHD', 'Asthma / COPD', 'Thyroid', 'Blood Thinners'];
+const ANESTHESIA_OPTIONS = [
+  'Topical',
+  'Peribulbar',
+  'Sub-Tenon',
+  'Local Infiltration',
+  'General',
+];
+
+const DRESSING_OPTIONS = [
+  'Dark Glasses',
+  'Pad & Bandage',
+  'Clear Protective Shield',
+  'None',
+];
+
+const COMORBIDITY_OPTIONS = [
+  'Diabetes',
+  'Hypertension',
+  'Cardiac / IHD',
+  'Asthma / COPD',
+  'Thyroid',
+  'Blood Thinners',
+];
 
 interface DischargeSummaryFormProps {
   patient: Patient;
@@ -88,11 +111,15 @@ export function DischargeSummaryForm({
   const [headBathDays, setHeadBathDays] = useState(clinic.default_head_bath_days || 14);
   const [preparedBy, setPreparedBy] = useState('OT Assistant');
 
+  // Tracking prefilled vs confirmed fields
+  // When a field is prefilled, it gets a subtle orange border + a subtle tick button to confirm
+  const [prefilledFields, setPrefilledFields] = useState<Record<string, boolean>>({});
+  const [confirmedFields, setConfirmedFields] = useState<Record<string, boolean>>({});
+
   // AI autofill states
   const [aiLoading, setAiLoading] = useState(false);
   const [aiMessage, setAiMessage] = useState('');
   const [aiWarnings, setAiWarnings] = useState<string[]>([]);
-  const [aiFilledFields, setAiFilledFields] = useState<Record<string, boolean>>({});
   const [aiAssisted, setAiAssisted] = useState(false);
   const [recording, setRecording] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -103,7 +130,26 @@ export function DischargeSummaryForm({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [savedSummary, setSavedSummary] = useState<DischargeSummary | null>(null);
-  const [flow, setFlow] = useState(0);
+
+  function confirmField(key: string) {
+    setConfirmedFields((prev) => ({ ...prev, [key]: true }));
+  }
+
+  function confirmAllFields() {
+    const all: Record<string, boolean> = {};
+    for (const k of Object.keys(prefilledFields)) {
+      all[k] = true;
+    }
+    setConfirmedFields(all);
+  }
+
+  const unconfirmedCount = Object.keys(prefilledFields).filter(
+    (k) => prefilledFields[k] && !confirmedFields[k]
+  ).length;
+
+  function isFieldPrefilledAndUnconfirmed(key: string) {
+    return Boolean(prefilledFields[key] && !confirmedFields[key]);
+  }
 
   function applyProtocol(proto: SurgicalProtocol) {
     setSelectedProtocolId(proto.id);
@@ -121,6 +167,22 @@ export function DischargeSummaryForm({
     setFollowUp3(addDaysIso(days[2] ?? 30));
     setHeadBathDays(proto.head_bath_days || 14);
     setError('');
+
+    // Mark prefilled fields so staff sees the subtle orange + tick to verify
+    const prefillMap: Record<string, boolean> = {
+      procedure_name: true,
+      diagnosis: Boolean(proto.default_diagnosis),
+      anesthesia: true,
+      dressing_status: true,
+      eye_drops: (proto.eye_drops || []).length > 0,
+      follow_up: true,
+      head_bath: true,
+    };
+    if (proto.default_intra_op_notes) prefillMap.intra_op_notes = true;
+    if (proto.default_in_clinic_meds) prefillMap.in_clinic_meds = true;
+
+    setPrefilledFields((prev) => ({ ...prev, ...prefillMap }));
+    setConfirmedFields({}); // reset confirmations so staff checks them
   }
 
   function applyAiExtraction(ext: Record<string, unknown>) {
@@ -149,68 +211,83 @@ export function DischargeSummaryForm({
 
     if (Array.isArray(ext.comorbidities) && ext.comorbidities.length > 0) {
       setComorbidities(ext.comorbidities.map(String));
+      marked.comorbidities = true;
     }
     if (Array.isArray(ext.eye_drops) && ext.eye_drops.length > 0) {
-      setEyeDrops(ext.eye_drops as EyeDropItem[]);
+      setEyeDrops(
+        ext.eye_drops.map((d: any) => ({
+          name: String(d.name || ''),
+          eye: String(d.eye || 'Operated Eye'),
+          schedule: String(d.schedule || '4 times/day'),
+          duration: String(d.duration || '14 Days'),
+        })),
+      );
       marked.eye_drops = true;
     }
     if (Array.isArray(ext.oral_meds) && ext.oral_meds.length > 0) {
-      setOralMeds(ext.oral_meds as OralMedItem[]);
-      marked.oral_meds = true;
+      setOralMeds(
+        ext.oral_meds.map((m: any) => ({
+          name: String(m.name || ''),
+          dosage: String(m.dosage || '1 - 0 - 1'),
+          timing: String(m.timing || 'After Food'),
+          duration: String(m.duration || '5 Days'),
+        })),
+      );
     }
-    if (Array.isArray(ext.warnings)) {
-      setAiWarnings(ext.warnings.map(String).filter(Boolean));
-    }
+    if (str('follow_up_1')) { setFollowUp1(str('follow_up_1')); marked.follow_up = true; }
+    if (str('follow_up_2')) { setFollowUp2(str('follow_up_2')); marked.follow_up = true; }
+    if (str('follow_up_3')) { setFollowUp3(str('follow_up_3')); marked.follow_up = true; }
+    if (typeof ext.head_bath_days === 'number') { setHeadBathDays(ext.head_bath_days); marked.head_bath = true; }
 
-    setAiFilledFields((prev) => ({ ...prev, ...marked }));
+    setPrefilledFields((prev) => ({ ...prev, ...marked }));
+    setConfirmedFields({});
     setAiAssisted(true);
-    setSafetyVerified(false);
-    setAiMessage('AI pre-filled highlighted amber fields. Please verify Operated Eye, IOL Power & Meds.');
   }
 
-  async function callAiExtract(mode: 'image' | 'audio', mimeType: string, base64: string) {
+  async function handlePhotoExtract(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
     setAiLoading(true);
-    setAiMessage('');
+    setAiMessage('Analyzing Rx / IOL photo with clinical OCR...');
+    setAiWarnings([]);
     setError('');
+
     try {
-      const { data: sess } = await supabase.auth.getSession();
-      const token = sess.session?.access_token;
-      if (!token) throw new Error('Session expired. Please sign in again.');
+      const comp = await compressClinicalImage(file, 1400, 0.72);
+      const b64 = await blobToBase64(comp.blob);
 
       const res = await fetch(`${SUPABASE_URL}/functions/v1/ai-extract`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           apikey: SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ mode, mimeType, base64 }),
+        body: JSON.stringify({
+          sourceType: 'photo',
+          mimeType: comp.mimeType,
+          base64Data: b64,
+          patientContext: {
+            patient_code: patient.patient_code,
+            full_name: patient.full_name,
+            age: patient.age,
+            sex: patient.sex,
+          },
+        }),
       });
 
-      const payload = await res.json();
-      if (!res.ok) {
-        throw new Error(payload.error || 'AI extraction unavailable');
-      }
-      if (payload.extracted) {
-        applyAiExtraction(payload.extracted);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'AI extraction failed');
+      if (data.extraction) {
+        applyAiExtraction(data.extraction);
+        setAiMessage(data.message || 'Photo details extracted into fields below.');
+        if (data.warnings?.length) setAiWarnings(data.warnings);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'AI autofill failed');
+      setError(err instanceof Error ? err.message : 'AI photo extraction failed');
+      setAiMessage('');
     } finally {
       setAiLoading(false);
-    }
-  }
-
-  async function handlePhotoExtract(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (!file) return;
-    try {
-      const compressed = await compressClinicalImage(file, 1400, 0.8);
-      const b64 = await blobToBase64(compressed.blob);
-      await callAiExtract('image', compressed.mimeType, b64);
-    } catch (err) {
-      setError('Could not read photo for AI extraction.');
+      e.target.value = '';
     }
   }
 
@@ -220,22 +297,55 @@ export function DischargeSummaryForm({
       setRecording(false);
       return;
     }
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4';
-      const mr = new MediaRecorder(stream, { mimeType });
+      const rec = new MediaRecorder(stream);
       audioChunksRef.current = [];
-      mr.ondataavailable = (ev) => {
+
+      rec.ondataavailable = (ev) => {
         if (ev.data.size > 0) audioChunksRef.current.push(ev.data);
       };
-      mr.onstop = async () => {
+
+      rec.onstop = async () => {
         stream.getTracks().forEach((t) => t.stop());
-        const blob = new Blob(audioChunksRef.current, { type: mimeType });
-        const b64 = await blobToBase64(blob);
-        await callAiExtract('audio', mimeType, b64);
+        const audioBlob = new Blob(audioChunksRef.current, { type: rec.mimeType || 'audio/webm' });
+        setAiLoading(true);
+        setAiMessage('Transcribing & extracting clinical orders from voice...');
+        try {
+          const b64 = await blobToBase64(audioBlob);
+          const res = await fetch(`${SUPABASE_URL}/functions/v1/ai-extract`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              apikey: SUPABASE_ANON_KEY,
+            },
+            body: JSON.stringify({
+              sourceType: 'voice',
+              mimeType: audioBlob.type,
+              base64Data: b64,
+              patientContext: {
+                patient_code: patient.patient_code,
+                full_name: patient.full_name,
+              },
+            }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Voice extraction failed');
+          if (data.extraction) {
+            applyAiExtraction(data.extraction);
+            setAiMessage('Voice commands applied. Verify the prefilled fields below.');
+          }
+        } catch (err) {
+          setError(err instanceof Error ? err.message : 'Voice transcription failed');
+          setAiMessage('');
+        } finally {
+          setAiLoading(false);
+        }
       };
-      mediaRecorderRef.current = mr;
-      mr.start();
+
+      mediaRecorderRef.current = rec;
+      rec.start();
       setRecording(true);
       setAiMessage('Listening... Speak Eye, Diagnosis, Surgery, IOL Power & Meds, then tap Stop.');
     } catch {
@@ -243,19 +353,13 @@ export function DischargeSummaryForm({
     }
   }
 
-  function highlightClass(key: string) {
-    return aiFilledFields[key]
-      ? 'border-amber-400 bg-amber-50/70 ring-1 ring-amber-300'
-      : 'border-slate-300 bg-white';
-  }
-
   async function handleSave() {
     if (!diagnosis.trim() || !procedureName.trim()) {
-      setError('Please select a surgical protocol or enter Diagnosis and Procedure Performed.');
+      setError('Please select a surgical protocol or enter Diagnosis and Procedure.');
       return;
     }
     if (!safetyVerified) {
-      setError('Please tick the clinical safety verification box before generating the summary.');
+      setError('Please check the clinical safety verification box before generating the summary.');
       return;
     }
 
@@ -315,14 +419,49 @@ export function DischargeSummaryForm({
     onCreated(ds);
   }
 
+  // Render a subtle tick confirmation button for any prefilled row
+  function renderConfirmTick(key: string) {
+    const isUnconfirmed = isFieldPrefilledAndUnconfirmed(key);
+    if (!prefilledFields[key]) return null;
+
+    if (isUnconfirmed) {
+      return (
+        <button
+          type="button"
+          onClick={() => confirmField(key)}
+          className="inline-flex items-center gap-1 rounded-md border border-amber-400 bg-amber-100/90 px-2 py-1 text-[11px] font-semibold text-amber-900 transition hover:bg-amber-200"
+          title="Tap to confirm prefilled value"
+        >
+          <Check className="h-3.5 w-3.5 text-amber-800" />
+          <span>Confirm</span>
+        </button>
+      );
+    }
+
+    return (
+      <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 border border-emerald-200">
+        <Check className="h-3 w-3" />
+        Verified
+      </span>
+    );
+  }
+
+  // Input styling based on whether field is prefilled
+  function fieldClass(key: string) {
+    if (isFieldPrefilledAndUnconfirmed(key)) {
+      return 'border-amber-400 bg-amber-50/50 text-amber-950 focus:border-amber-500 ring-1 ring-amber-300/40';
+    }
+    return '';
+  }
+
   if (savedSummary) {
     return (
       <div className="space-y-4">
-        <div className="no-print flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+        <div className="no-print flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-300 bg-emerald-50/80 p-4">
           <div className="flex items-center gap-2.5">
-            <CheckCircle2 className="h-6 w-6 text-emerald-600" />
+            <CheckCircle2 className="h-6 w-6 text-emerald-700" />
             <div>
-              <div className="text-sm font-extrabold text-emerald-950">
+              <div className="text-sm font-bold text-emerald-950">
                 Discharge Summary {savedSummary.summary_no} Saved ({savedSummary.operated_eye})
               </div>
               <div className="text-xs text-emerald-800">
@@ -334,7 +473,7 @@ export function DischargeSummaryForm({
             <button
               type="button"
               onClick={() => window.print()}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-slate-800"
+              className="btn-primary !min-h-[42px] text-xs"
             >
               <Printer className="h-4 w-4" />
               Print 1-Page A4
@@ -342,7 +481,7 @@ export function DischargeSummaryForm({
             <button
               type="button"
               onClick={() => shareDischargeSummaryOnWhatsApp(patient, savedSummary, clinic)}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-700"
+              className="inline-flex items-center gap-1.5 rounded-full bg-emerald-700 px-4 py-2 text-xs font-semibold text-white shadow-soft hover:bg-emerald-800 transition"
             >
               <MessageCircle className="h-4 w-4" />
               Send on WhatsApp
@@ -350,55 +489,38 @@ export function DischargeSummaryForm({
             <button
               type="button"
               onClick={() => setSavedSummary(null)}
-              className="rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-bold text-slate-700"
+              className="btn-ghost !min-h-[42px] text-xs"
             >
               Create Another
             </button>
           </div>
         </div>
 
-        <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+        <div className="overflow-x-auto rounded-2xl border border-ivory-50/10 bg-white p-3 shadow-soft">
           <PrintableDischargeSummary clinic={clinic} patient={patient} summary={savedSummary} />
         </div>
       </div>
     );
   }
 
-  const flowLabels = ['Surgery', 'The eye', 'Medicines', 'Going home'];
-
-  function continueFlow() {
-    if (flow === 1 && (!diagnosis.trim() || !procedureName.trim())) {
-      setError('Add the diagnosis and the procedure before continuing.');
-      return;
-    }
-    setError('');
-    setFlow((current) => Math.min(3, current + 1));
-  }
-
   return (
     <div className="space-y-6">
-      <div>
-        <p className="eyebrow">Discharge · {flowLabels[flow]}</p>
-        <div className="wizard-progress mt-3 max-w-[10rem]">
-          {flowLabels.map((label, index) => (
-            <div key={label} className={`wizard-dot ${index <= flow ? 'wizard-dot-active' : ''}`} />
-          ))}
-        </div>
-      </div>
-
-      {flow === 0 && (
-      <div className="flow-panel">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+      {/* 1. Header & Protocol Selection Dropdown */}
+      <div className="card-surface p-5 sm:p-6 space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h3 className="font-display text-3xl text-ivory-50">Which surgery?</h3>
-            <p className="mt-1 text-sm text-ivory-400">
-              Tap a preset. Drops, notes, and follow-up dates fill in. You can still change every line.
+            <p className="eyebrow">Clinical protocol</p>
+            <h3 className="mt-1 font-display text-2xl text-ivory-50">Surgical Discharge Summary</h3>
+            <p className="mt-0.5 text-xs text-ivory-400">
+              Select a surgical protocol below. Defaults will pre-fill automatically for your review.
             </p>
           </div>
+
+          {/* AI Assistance buttons */}
           <div className="flex flex-wrap gap-2">
-            <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-extrabold text-indigo-800 hover:bg-indigo-100">
-              {aiLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
-              <span>AI Scan Rx / IOL Photo</span>
+            <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-ivory-50/15 bg-ink-950 px-3.5 py-2 text-xs font-semibold text-ivory-50 shadow-soft hover:border-gold-400/40">
+              {aiLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4 text-gold-400" />}
+              <span>Scan Rx / IOL Photo</span>
               <input
                 type="file"
                 accept="image/*"
@@ -412,45 +534,87 @@ export function DischargeSummaryForm({
               type="button"
               disabled={aiLoading}
               onClick={toggleVoiceRecord}
-              className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-extrabold ${
+              className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-semibold shadow-soft ${
                 recording
                   ? 'animate-pulse border-red-500 bg-red-600 text-white'
-                  : 'border-indigo-200 bg-indigo-50 text-indigo-800 hover:bg-indigo-100'
+                  : 'border-ivory-50/15 bg-ink-950 text-ivory-50 hover:border-gold-400/40'
               }`}
             >
-              {recording ? <Square className="h-3.5 w-3.5" /> : <Mic className="h-4 w-4" />}
-              <span>{recording ? 'Stop Voice' : 'AI Voice Fill'}</span>
+              {recording ? <Square className="h-3.5 w-3.5" /> : <Mic className="h-4 w-4 text-gold-400" />}
+              <span>{recording ? 'Stop' : 'Voice fill'}</span>
             </button>
           </div>
         </div>
 
-        <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-5">
-          {protocols
-            .filter((p) => p.is_active)
-            .map((proto) => (
-              <button
-                key={proto.id}
-                type="button"
-                onClick={() => applyProtocol(proto)}
-                className={`rounded-xl border-2 px-3 py-3 text-left transition ${
-                  selectedProtocolId === proto.id
-                    ? 'border-clinic-600 bg-clinic-50 text-clinic-950 shadow-sm'
-                    : 'border-slate-200 bg-slate-50 text-slate-800 hover:border-clinic-300'
-                }`}
+        {/* Surgical Protocol Dropdown (Replaces chip set) */}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className="label-field">1. Choose Surgical Protocol Preset</label>
+            <div className="relative">
+              <select
+                value={selectedProtocolId}
+                onChange={(e) => {
+                  const id = e.target.value;
+                  const proto = protocols.find((p) => p.id === id);
+                  if (proto) applyProtocol(proto);
+                  else setSelectedProtocolId('');
+                }}
+                className="input-field font-semibold text-sm pr-10"
               >
-                <div className="text-xs font-extrabold">{proto.short_label}</div>
-                <div className="mt-0.5 text-[11px] text-slate-500">{proto.default_anesthesia}</div>
-              </button>
-            ))}
+                <option value="">-- Choose Protocol (or Enter Custom Surgery) --</option>
+                {protocols
+                  .filter((p) => p.is_active)
+                  .map((proto) => (
+                    <option key={proto.id} value={proto.id}>
+                      {proto.short_label} — {proto.name}
+                    </option>
+                  ))}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="label-field">2. Operated Eye</label>
+            <select
+              value={operatedEye}
+              onChange={(e) => setOperatedEye(e.target.value as OperatedEye)}
+              className="input-field font-semibold text-sm"
+            >
+              <option value="RE (OD)">Right Eye — RE (OD)</option>
+              <option value="LE (OS)">Left Eye — LE (OS)</option>
+              <option value="BE (OU)">Both Eyes — BE (OU)</option>
+            </select>
+          </div>
         </div>
 
+        {/* Unconfirmed Prefilled Notice Banner */}
+        {unconfirmedCount > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-amber-300 bg-amber-50/70 p-3 text-xs text-amber-950">
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+              <span>
+                <strong>{unconfirmedCount} prefilled field(s)</strong> highlighted in orange. Check each row and tap{' '}
+                <strong className="underline">Confirm</strong> to verify.
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={confirmAllFields}
+              className="inline-flex items-center gap-1 rounded-lg bg-amber-200/80 px-2.5 py-1 text-xs font-bold text-amber-900 hover:bg-amber-300"
+            >
+              <CheckCheck className="h-3.5 w-3.5" />
+              Confirm All
+            </button>
+          </div>
+        )}
+
         {aiMessage && (
-          <div className="mt-3 flex items-start gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs font-semibold text-amber-950">
-            <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+          <div className="flex items-start gap-2 rounded-2xl border border-gold-400/30 bg-gold-400/10 p-3 text-xs text-ivory-50">
+            <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-gold-400" />
             <div>
-              <div>{aiMessage}</div>
+              <div className="font-semibold">{aiMessage}</div>
               {aiWarnings.length > 0 && (
-                <ul className="mt-1 list-disc pl-4 font-normal text-amber-900">
+                <ul className="mt-1 list-disc pl-4 text-ivory-400">
                   {aiWarnings.map((w, i) => (
                     <li key={i}>{w}</li>
                   ))}
@@ -460,155 +624,212 @@ export function DischargeSummaryForm({
           </div>
         )}
       </div>
-      )}
 
-      {flow === 1 && (
-      <div className="flow-panel">
-        <div>
-          <label className="mb-2 block font-display text-3xl text-ivory-50">
-            Which eye?
-          </label>
-          <div className="grid grid-cols-3 gap-2.5">
-            {(['RE (OD)', 'LE (OS)', 'BE (OU)'] as OperatedEye[]).map((eye) => (
-              <button
-                key={eye}
-                type="button"
-                onClick={() => setOperatedEye(eye)}
-                className={`rounded-xl border-2 py-3.5 text-sm font-black transition ${
-                  operatedEye === eye
-                    ? 'border-slate-900 bg-slate-900 text-white shadow-md'
-                    : 'border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-400'
-                }`}
-              >
-                {eye === 'RE (OD)' ? 'RIGHT EYE (OD)' : eye === 'LE (OS)' ? 'LEFT EYE (OS)' : 'BOTH EYES (OU)'}
-              </button>
-            ))}
-          </div>
-        </div>
+      {/* 2. Surgical & Diagnostic Details */}
+      <div className="card-surface p-5 sm:p-6 space-y-5">
+        <h4 className="font-display text-xl text-ivory-50">Surgical & Clinical Details</h4>
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2">
+          {/* Diagnosis with subtle prefill tick */}
           <div>
-            <label className="mb-1 block text-xs font-bold text-slate-700">Final Diagnosis *</label>
+            <div className="mb-1 flex items-center justify-between">
+              <label className="label-field mb-0">Final Diagnosis *</label>
+              {renderConfirmTick('diagnosis')}
+            </div>
             <input
               type="text"
               value={diagnosis}
-              onChange={(e) => setDiagnosis(e.target.value)}
+              onChange={(e) => {
+                setDiagnosis(e.target.value);
+                confirmField('diagnosis');
+              }}
               placeholder="e.g. Right Eye Senile Immature Cataract"
-              className={`w-full rounded-xl border px-3 py-2.5 text-sm font-semibold focus:outline-none ${highlightClass('diagnosis')}`}
+              className={`input-field font-semibold ${fieldClass('diagnosis')}`}
             />
           </div>
+
+          {/* Procedure Name with subtle prefill tick */}
           <div>
-            <label className="mb-1 block text-xs font-bold text-slate-700">Procedure Performed *</label>
+            <div className="mb-1 flex items-center justify-between">
+              <label className="label-field mb-0">Procedure Performed *</label>
+              {renderConfirmTick('procedure_name')}
+            </div>
             <input
               type="text"
               value={procedureName}
-              onChange={(e) => setProcedureName(e.target.value)}
+              onChange={(e) => {
+                setProcedureName(e.target.value);
+                confirmField('procedure_name');
+              }}
               placeholder="e.g. Phacoemulsification with Foldable PCIOL"
-              className={`w-full rounded-xl border px-3 py-2.5 text-sm font-semibold focus:outline-none ${highlightClass('procedure_name')}`}
+              className={`input-field font-semibold ${fieldClass('procedure_name')}`}
             />
           </div>
         </div>
 
-        {/* IOL Details */}
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-          <div className="mb-2 text-xs font-extrabold uppercase tracking-wide text-slate-700">
-            IOL / Implant Backup Details (Physical sticker goes in printed box)
+        {/* Dropdowns for Anesthesia and Dressing (Replaces long chip sets) */}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <div className="mb-1 flex items-center justify-between">
+              <label className="label-field mb-0">Anesthesia</label>
+              {renderConfirmTick('anesthesia')}
+            </div>
+            <select
+              value={anesthesia}
+              onChange={(e) => {
+                setAnesthesia(e.target.value);
+                confirmField('anesthesia');
+              }}
+              className={`input-field font-semibold ${fieldClass('anesthesia')}`}
+            >
+              {ANESTHESIA_OPTIONS.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt === 'Topical' ? 'Topical (Eye Drops - No Injection)' :
+                   opt === 'Peribulbar' ? 'Peribulbar Block' :
+                   opt === 'Sub-Tenon' ? 'Sub-Tenon Anesthesia' :
+                   opt === 'Local Infiltration' ? 'Local Infiltration' :
+                   'General Anesthesia'}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <div className="mb-1 flex items-center justify-between">
+              <label className="label-field mb-0">Eye Dressing at Discharge</label>
+              {renderConfirmTick('dressing_status')}
+            </div>
+            <select
+              value={dressingStatus}
+              onChange={(e) => {
+                setDressingStatus(e.target.value);
+                confirmField('dressing_status');
+              }}
+              className={`input-field font-semibold ${fieldClass('dressing_status')}`}
+            >
+              {DRESSING_OPTIONS.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt === 'Dark Glasses' ? 'Dark Glasses (Sunglasses)' :
+                   opt === 'Pad & Bandage' ? 'Pad & Bandage' :
+                   opt === 'Clear Protective Shield' ? 'Clear Protective Shield' :
+                   'None'}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* IOL Details (Box Sticker Backup) */}
+        <div className="rounded-2xl border border-ivory-50/10 bg-ink-950 p-4 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="label-field mb-0">IOL / Lens Implant Details</span>
+            {renderConfirmTick('iol')}
           </div>
           <div className="grid gap-2.5 sm:grid-cols-3">
             <input
               type="text"
               value={iolModel}
-              onChange={(e) => setIolModel(e.target.value)}
+              onChange={(e) => {
+                setIolModel(e.target.value);
+                confirmField('iol');
+              }}
               placeholder="Lens Brand / Model (e.g. Alcon AcrySof)"
-              className={`rounded-xl border px-3 py-2 text-xs font-semibold ${highlightClass('iol')}`}
+              className={`input-field text-xs font-semibold ${fieldClass('iol')}`}
             />
             <input
               type="text"
               value={iolPower}
-              onChange={(e) => setIolPower(e.target.value)}
+              onChange={(e) => {
+                setIolPower(e.target.value);
+                confirmField('iol');
+              }}
               placeholder="IOL Power (e.g. +21.5 D)"
-              className={`rounded-xl border px-3 py-2 text-xs font-bold ${highlightClass('iol')}`}
+              className={`input-field text-xs font-bold ${fieldClass('iol')}`}
             />
             <input
               type="text"
               value={iolBatch}
-              onChange={(e) => setIolBatch(e.target.value)}
+              onChange={(e) => {
+                setIolBatch(e.target.value);
+                confirmField('iol');
+              }}
               placeholder="Serial / Batch No."
-              className={`rounded-xl border px-3 py-2 text-xs font-semibold ${highlightClass('iol')}`}
+              className={`input-field text-xs font-semibold ${fieldClass('iol')}`}
             />
           </div>
         </div>
 
-        {/* Anesthesia & Dressing Chips */}
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div>
-            <label className="mb-1.5 block text-xs font-bold text-slate-700">Anesthesia</label>
-            <div className="flex flex-wrap gap-1.5">
-              {ANESTHESIA_OPTIONS.map((opt) => (
-                <button
-                  key={opt}
-                  type="button"
-                  onClick={() => setAnesthesia(opt)}
-                  className={`rounded-lg px-2.5 py-1.5 text-xs font-bold ${
-                    anesthesia === opt ? 'bg-clinic-600 text-white' : 'bg-slate-100 text-slate-700'
-                  }`}
-                >
-                  {opt}
-                </button>
-              ))}
+        {/* Pre-op Vitals Snapshot (compact) */}
+        <div>
+          <label className="label-field">Pre-Operative Vitals & Vision Snapshot</label>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-6">
+            <div>
+              <span className="text-[10px] text-ivory-500 font-semibold block mb-1">VA (RE)</span>
+              <input
+                type="text"
+                value={vaRe}
+                onChange={(e) => setVaRe(e.target.value)}
+                placeholder="6/36"
+                className="input-field !min-h-[42px] text-xs"
+              />
             </div>
-          </div>
-          <div>
-            <label className="mb-1.5 block text-xs font-bold text-slate-700">Eye Dressing at Discharge</label>
-            <div className="flex flex-wrap gap-1.5">
-              {DRESSING_OPTIONS.map((opt) => (
-                <button
-                  key={opt}
-                  type="button"
-                  onClick={() => setDressingStatus(opt)}
-                  className={`rounded-lg px-2.5 py-1.5 text-xs font-bold ${
-                    dressingStatus === opt ? 'bg-clinic-600 text-white' : 'bg-slate-100 text-slate-700'
-                  }`}
-                >
-                  {opt}
-                </button>
-              ))}
+            <div>
+              <span className="text-[10px] text-ivory-500 font-semibold block mb-1">VA (LE)</span>
+              <input
+                type="text"
+                value={vaLe}
+                onChange={(e) => setVaLe(e.target.value)}
+                placeholder="6/18"
+                className="input-field !min-h-[42px] text-xs"
+              />
             </div>
-          </div>
-        </div>
-
-        {/* Pre-op Snapshot */}
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-6">
-          <div>
-            <label className="mb-0.5 block text-[11px] font-bold text-slate-600">VA (RE)</label>
-            <input type="text" value={vaRe} onChange={(e) => setVaRe(e.target.value)} placeholder="6/36" className={`w-full rounded-lg border px-2.5 py-1.5 text-xs ${highlightClass('va')}`} />
-          </div>
-          <div>
-            <label className="mb-0.5 block text-[11px] font-bold text-slate-600">VA (LE)</label>
-            <input type="text" value={vaLe} onChange={(e) => setVaLe(e.target.value)} placeholder="6/18" className={`w-full rounded-lg border px-2.5 py-1.5 text-xs ${highlightClass('va')}`} />
-          </div>
-          <div>
-            <label className="mb-0.5 block text-[11px] font-bold text-slate-600">IOP (RE)</label>
-            <input type="text" value={iopRe} onChange={(e) => setIopRe(e.target.value)} placeholder="14 mmHg" className={`w-full rounded-lg border px-2.5 py-1.5 text-xs ${highlightClass('iop')}`} />
-          </div>
-          <div>
-            <label className="mb-0.5 block text-[11px] font-bold text-slate-600">IOP (LE)</label>
-            <input type="text" value={iopLe} onChange={(e) => setIopLe(e.target.value)} placeholder="15 mmHg" className={`w-full rounded-lg border px-2.5 py-1.5 text-xs ${highlightClass('iop')}`} />
-          </div>
-          <div>
-            <label className="mb-0.5 block text-[11px] font-bold text-slate-600">Pre-Op BP</label>
-            <input type="text" value={bp} onChange={(e) => setBp(e.target.value)} placeholder="130/80" className={`w-full rounded-lg border px-2.5 py-1.5 text-xs ${highlightClass('vitals')}`} />
-          </div>
-          <div>
-            <label className="mb-0.5 block text-[11px] font-bold text-slate-600">RBS / Sugar</label>
-            <input type="text" value={rbs} onChange={(e) => setRbs(e.target.value)} placeholder="124 mg/dL" className={`w-full rounded-lg border px-2.5 py-1.5 text-xs ${highlightClass('vitals')}`} />
+            <div>
+              <span className="text-[10px] text-ivory-500 font-semibold block mb-1">IOP (RE)</span>
+              <input
+                type="text"
+                value={iopRe}
+                onChange={(e) => setIopRe(e.target.value)}
+                placeholder="14 mmHg"
+                className="input-field !min-h-[42px] text-xs"
+              />
+            </div>
+            <div>
+              <span className="text-[10px] text-ivory-500 font-semibold block mb-1">IOP (LE)</span>
+              <input
+                type="text"
+                value={iopLe}
+                onChange={(e) => setIopLe(e.target.value)}
+                placeholder="15 mmHg"
+                className="input-field !min-h-[42px] text-xs"
+              />
+            </div>
+            <div>
+              <span className="text-[10px] text-ivory-500 font-semibold block mb-1">Pre-Op BP</span>
+              <input
+                type="text"
+                value={bp}
+                onChange={(e) => setBp(e.target.value)}
+                placeholder="130/80"
+                className="input-field !min-h-[42px] text-xs"
+              />
+            </div>
+            <div>
+              <span className="text-[10px] text-ivory-500 font-semibold block mb-1">RBS Sugar</span>
+              <input
+                type="text"
+                value={rbs}
+                onChange={(e) => setRbs(e.target.value)}
+                placeholder="124 mg/dL"
+                className="input-field !min-h-[42px] text-xs"
+              />
+            </div>
           </div>
         </div>
 
         {/* Comorbidities & Allergies */}
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1 block text-xs font-bold text-slate-700">Comorbidities</label>
+            <label className="label-field">Comorbidities (Systemic Conditions)</label>
             <div className="flex flex-wrap gap-1.5">
               {COMORBIDITY_OPTIONS.map((item) => {
                 const active = comorbidities.includes(item);
@@ -618,11 +839,13 @@ export function DischargeSummaryForm({
                     type="button"
                     onClick={() =>
                       setComorbidities((prev) =>
-                        prev.includes(item) ? prev.filter((x) => x !== item) : [...prev, item],
+                        prev.includes(item) ? prev.filter((x) => x !== item) : [...prev, item]
                       )
                     }
-                    className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${
-                      active ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-700'
+                    className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                      active
+                        ? 'bg-gold-500 text-ink-900 shadow-soft'
+                        : 'border border-ivory-50/15 bg-ink-950 text-ivory-400'
                     }`}
                   >
                     {active ? '✓ ' : '+ '}
@@ -632,72 +855,77 @@ export function DischargeSummaryForm({
               })}
             </div>
           </div>
+
           <div>
-            <label className="mb-1 block text-xs font-bold text-slate-700">Drug Allergies *</label>
+            <div className="mb-1 flex items-center justify-between">
+              <label className="label-field mb-0">Drug Allergies *</label>
+              {renderConfirmTick('allergies')}
+            </div>
             <input
               type="text"
               value={allergies}
-              onChange={(e) => setAllergies(e.target.value)}
-              className={`w-full rounded-xl border px-3 py-2 text-xs font-bold ${highlightClass('allergies')}`}
+              onChange={(e) => {
+                setAllergies(e.target.value);
+                confirmField('allergies');
+              }}
+              placeholder="e.g. NKDA, or Ciprofloxacin"
+              className={`input-field font-bold text-xs ${allergies.toUpperCase() !== 'NKDA' ? 'text-red-700 bg-red-50/50 border-red-300' : ''}`}
             />
           </div>
         </div>
 
-        {/* Intra-op notes & Timestamps */}
-        <div className="grid gap-3 sm:grid-cols-2">
+        {/* Timestamps */}
+        <div className="grid gap-3 sm:grid-cols-3">
           <div>
-            <label className="mb-1 block text-xs font-bold text-slate-700">Intra-Op & Course Notes</label>
-            <textarea
-              rows={2}
-              value={intraOpNotes}
-              onChange={(e) => setIntraOpNotes(e.target.value)}
-              className={`w-full rounded-xl border px-3 py-2 text-xs ${highlightClass('intra_op_notes')}`}
+            <label className="label-field">Admission Time</label>
+            <input
+              type="datetime-local"
+              value={admissionAt}
+              onChange={(e) => setAdmissionAt(e.target.value)}
+              className="input-field !min-h-[44px] text-xs font-medium"
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-bold text-slate-700">In-Clinic / Intra-Op Meds Given</label>
-            <textarea
-              rows={2}
-              value={inClinicMeds}
-              onChange={(e) => setInClinicMeds(e.target.value)}
-              className="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs"
+            <label className="label-field">Surgery Time</label>
+            <input
+              type="datetime-local"
+              value={surgeryAt}
+              onChange={(e) => setSurgeryAt(e.target.value)}
+              className="input-field !min-h-[44px] text-xs font-medium"
             />
           </div>
-        </div>
-
-        <div className="grid gap-2.5 sm:grid-cols-3">
           <div>
-            <label className="mb-0.5 block text-[11px] font-bold text-slate-600">Admission Date & Time</label>
-            <input type="datetime-local" value={admissionAt} onChange={(e) => setAdmissionAt(e.target.value)} className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs" />
-          </div>
-          <div>
-            <label className="mb-0.5 block text-[11px] font-bold text-slate-600">Surgery Date & Time</label>
-            <input type="datetime-local" value={surgeryAt} onChange={(e) => setSurgeryAt(e.target.value)} className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs" />
-          </div>
-          <div>
-            <label className="mb-0.5 block text-[11px] font-bold text-slate-600">Discharge Date & Time</label>
-            <input type="datetime-local" value={dischargeAt} onChange={(e) => setDischargeAt(e.target.value)} className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs" />
+            <label className="label-field">Discharge Time</label>
+            <input
+              type="datetime-local"
+              value={dischargeAt}
+              onChange={(e) => setDischargeAt(e.target.value)}
+              className="input-field !min-h-[44px] text-xs font-medium"
+            />
           </div>
         </div>
       </div>
-      )}
 
-      {flow === 2 && (
-      <div className="flow-panel">
-        <div className="flex items-center justify-between gap-3">
-          <h3 className="font-display text-3xl text-ivory-50">Drops and tablets</h3>
+      {/* 3. Post-Operative Eye Drops & Medications */}
+      <div className="card-surface p-5 sm:p-6 space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-ivory-50/10 pb-3">
+          <div className="flex items-center gap-2">
+            <h4 className="font-display text-xl text-ivory-50">Post-Op Eye Drops & Tablets</h4>
+            {renderConfirmTick('eye_drops')}
+          </div>
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={() =>
+              onClick={() => {
                 setEyeDrops((prev) => [
                   ...prev,
                   { name: '', eye: 'Operated Eye', schedule: '4 times/day', duration: '14 Days' },
-                ])
-              }
-              className="inline-flex items-center gap-1 rounded-lg bg-clinic-50 px-2.5 py-1.5 text-xs font-bold text-clinic-800 hover:bg-clinic-100"
+                ]);
+                confirmField('eye_drops');
+              }}
+              className="btn-ghost !min-h-[38px] text-xs"
             >
-              <Plus className="h-3.5 w-3.5" /> Add Drop
+              <Plus className="h-3.5 w-3.5 text-gold-400" /> Add Drop
             </button>
             <button
               type="button"
@@ -707,26 +935,33 @@ export function DischargeSummaryForm({
                   { name: '', dosage: '1 - 0 - 1', timing: 'After Food', duration: '5 Days' },
                 ])
               }
-              className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-200"
+              className="btn-ghost !min-h-[38px] text-xs"
             >
-              <Plus className="h-3.5 w-3.5" /> Add Tablet
+              <Plus className="h-3.5 w-3.5 text-gold-400" /> Add Tablet
             </button>
           </div>
         </div>
 
-        {/* Eye drops editor */}
+        {/* Drops Editor */}
         <div className="space-y-2">
-          <div className="text-xs font-bold uppercase tracking-wider text-slate-500">Eye Drops</div>
           {eyeDrops.map((d, idx) => (
-            <div key={idx} className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2 sm:grid-cols-12">
+            <div
+              key={idx}
+              className={`grid gap-2 rounded-2xl border p-2.5 sm:grid-cols-12 ${
+                isFieldPrefilledAndUnconfirmed('eye_drops')
+                  ? 'border-amber-400/80 bg-amber-50/40'
+                  : 'border-ivory-50/10 bg-ink-950'
+              }`}
+            >
               <input
                 type="text"
                 value={d.name}
-                onChange={(e) =>
-                  setEyeDrops((prev) => prev.map((x, i) => (i === idx ? { ...x, name: e.target.value } : x)))
-                }
-                placeholder="Eye drop name"
-                className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold sm:col-span-4"
+                onChange={(e) => {
+                  setEyeDrops((prev) => prev.map((x, i) => (i === idx ? { ...x, name: e.target.value } : x)));
+                  confirmField('eye_drops');
+                }}
+                placeholder="Eye Drop Name (e.g. Moxifloxacin 0.5%)"
+                className="input-field !min-h-[42px] text-xs font-semibold sm:col-span-4"
               />
               <input
                 type="text"
@@ -735,7 +970,7 @@ export function DischargeSummaryForm({
                   setEyeDrops((prev) => prev.map((x, i) => (i === idx ? { ...x, eye: e.target.value } : x)))
                 }
                 placeholder="Operated Eye"
-                className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs sm:col-span-2"
+                className="input-field !min-h-[42px] text-xs sm:col-span-2"
               />
               <input
                 type="text"
@@ -743,45 +978,54 @@ export function DischargeSummaryForm({
                 onChange={(e) =>
                   setEyeDrops((prev) => prev.map((x, i) => (i === idx ? { ...x, schedule: e.target.value } : x)))
                 }
-                placeholder="Schedule / Tapering"
-                className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs sm:col-span-3"
+                placeholder="e.g. 4 times/day"
+                className="input-field !min-h-[42px] text-xs sm:col-span-3"
               />
-              <div className="flex items-center gap-1.5 sm:col-span-3">
+              <div className="flex items-center gap-2 sm:col-span-3">
                 <input
                   type="text"
                   value={d.duration}
                   onChange={(e) =>
                     setEyeDrops((prev) => prev.map((x, i) => (i === idx ? { ...x, duration: e.target.value } : x)))
                   }
-                  placeholder="Duration"
-                  className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs"
+                  placeholder="Duration (14 Days)"
+                  className="input-field !min-h-[42px] text-xs flex-1"
                 />
                 <button
                   type="button"
                   onClick={() => setEyeDrops((prev) => prev.filter((_, i) => i !== idx))}
-                  className="p-1 text-red-500 hover:text-red-700"
+                  className="p-2 text-red-600 hover:text-red-700"
+                  title="Remove drop"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>
             </div>
           ))}
+          {eyeDrops.length === 0 && (
+            <div className="rounded-2xl border border-dashed border-ivory-50/15 p-4 text-center text-xs text-ivory-400">
+              No eye drops added. Select a protocol above or click &ldquo;+ Add Drop&rdquo;.
+            </div>
+          )}
         </div>
 
-        {/* Oral meds editor */}
+        {/* Oral Tablets Editor */}
         {oralMeds.length > 0 && (
-          <div className="space-y-2">
-            <div className="text-xs font-bold uppercase tracking-wider text-slate-500">Oral Tablets</div>
+          <div className="space-y-2 pt-2 border-t border-ivory-50/10">
+            <span className="label-field">Oral Medications</span>
             {oralMeds.map((m, idx) => (
-              <div key={idx} className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2 sm:grid-cols-12">
+              <div
+                key={idx}
+                className="grid gap-2 rounded-2xl border border-ivory-50/10 bg-ink-950 p-2.5 sm:grid-cols-12"
+              >
                 <input
                   type="text"
                   value={m.name}
                   onChange={(e) =>
                     setOralMeds((prev) => prev.map((x, i) => (i === idx ? { ...x, name: e.target.value } : x)))
                   }
-                  placeholder="Tablet name"
-                  className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold sm:col-span-4"
+                  placeholder="Tablet name (e.g. Cifran 500mg)"
+                  className="input-field !min-h-[42px] text-xs font-semibold sm:col-span-4"
                 />
                 <input
                   type="text"
@@ -790,7 +1034,7 @@ export function DischargeSummaryForm({
                     setOralMeds((prev) => prev.map((x, i) => (i === idx ? { ...x, dosage: e.target.value } : x)))
                   }
                   placeholder="1 - 0 - 1"
-                  className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs sm:col-span-2"
+                  className="input-field !min-h-[42px] text-xs sm:col-span-2"
                 />
                 <input
                   type="text"
@@ -799,9 +1043,9 @@ export function DischargeSummaryForm({
                     setOralMeds((prev) => prev.map((x, i) => (i === idx ? { ...x, timing: e.target.value } : x)))
                   }
                   placeholder="After Food"
-                  className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs sm:col-span-3"
+                  className="input-field !min-h-[42px] text-xs sm:col-span-3"
                 />
-                <div className="flex items-center gap-1.5 sm:col-span-3">
+                <div className="flex items-center gap-2 sm:col-span-3">
                   <input
                     type="text"
                     value={m.duration}
@@ -809,12 +1053,13 @@ export function DischargeSummaryForm({
                       setOralMeds((prev) => prev.map((x, i) => (i === idx ? { ...x, duration: e.target.value } : x)))
                     }
                     placeholder="5 Days"
-                    className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs"
+                    className="input-field !min-h-[42px] text-xs flex-1"
                   />
                   <button
                     type="button"
                     onClick={() => setOralMeds((prev) => prev.filter((_, i) => i !== idx))}
-                    className="p-1 text-red-500 hover:text-red-700"
+                    className="p-2 text-red-600 hover:text-red-700"
+                    title="Remove tablet"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -824,135 +1069,141 @@ export function DischargeSummaryForm({
           </div>
         )}
       </div>
-      )}
 
-      {flow === 3 && (
-      <div className="flow-panel">
-        <p className="font-display text-3xl text-ivory-50">Before they leave</p>
-        <div className="grid gap-2.5 sm:grid-cols-4">
+      {/* 4. Discharge Orders, Follow-Ups & Safety Verification */}
+      <div className="card-surface p-5 sm:p-6 space-y-5">
+        <h4 className="font-display text-xl text-ivory-50">Follow-Up & Discharge Orders</h4>
+
+        {/* Follow-up dates with subtle prefill tick */}
+        <div className="grid gap-3 sm:grid-cols-4">
           <div>
-            <label className="mb-0.5 block text-[11px] font-bold text-slate-600">1st Follow-Up (Next Day)</label>
-            <input type="date" value={followUp1} onChange={(e) => setFollowUp1(e.target.value)} className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-semibold" />
+            <div className="mb-1 flex items-center justify-between">
+              <label className="label-field mb-0">1st Follow-Up (Day 1)</label>
+              {renderConfirmTick('follow_up')}
+            </div>
+            <input
+              type="date"
+              value={followUp1}
+              onChange={(e) => {
+                setFollowUp1(e.target.value);
+                confirmField('follow_up');
+              }}
+              className={`input-field font-semibold text-xs ${fieldClass('follow_up')}`}
+            />
           </div>
           <div>
-            <label className="mb-0.5 block text-[11px] font-bold text-slate-600">2nd Follow-Up (1 Week)</label>
-            <input type="date" value={followUp2} onChange={(e) => setFollowUp2(e.target.value)} className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-semibold" />
+            <label className="label-field">2nd Follow-Up (1 Week)</label>
+            <input
+              type="date"
+              value={followUp2}
+              onChange={(e) => setFollowUp2(e.target.value)}
+              className="input-field font-semibold text-xs"
+            />
           </div>
           <div>
-            <label className="mb-0.5 block text-[11px] font-bold text-slate-600">3rd Visit (Glasses)</label>
-            <input type="date" value={followUp3} onChange={(e) => setFollowUp3(e.target.value)} className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-semibold" />
+            <label className="label-field">3rd Visit (Refraction)</label>
+            <input
+              type="date"
+              value={followUp3}
+              onChange={(e) => setFollowUp3(e.target.value)}
+              className="input-field font-semibold text-xs"
+            />
           </div>
           <div>
-            <label className="mb-0.5 block text-[11px] font-bold text-slate-600">Avoid Water / Head Bath (Days)</label>
+            <div className="mb-1 flex items-center justify-between">
+              <label className="label-field mb-0">Avoid Water (Days)</label>
+              {renderConfirmTick('head_bath')}
+            </div>
             <input
               type="number"
               min={1}
               max={60}
               value={headBathDays}
-              onChange={(e) => setHeadBathDays(parseInt(e.target.value, 10) || 14)}
-              className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-bold"
+              onChange={(e) => {
+                setHeadBathDays(parseInt(e.target.value, 10) || 14);
+                confirmField('head_bath');
+              }}
+              className={`input-field font-bold text-xs ${fieldClass('head_bath')}`}
             />
           </div>
         </div>
 
-        <div className="grid gap-2.5 sm:grid-cols-4">
+        {/* Case Type, Scheme & Condition Dropdowns */}
+        <div className="grid gap-3 sm:grid-cols-3">
           <div>
-            <label className="mb-0.5 block text-[11px] font-bold text-slate-600">Case Type</label>
-            <select value={caseType} onChange={(e) => setCaseType(e.target.value as 'Day Care' | 'In-Patient')} className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-semibold">
-              <option value="Day Care">Day Care</option>
+            <label className="label-field">Case Type</label>
+            <select
+              value={caseType}
+              onChange={(e) => setCaseType(e.target.value as 'Day Care' | 'In-Patient')}
+              className="input-field font-medium text-xs"
+            >
+              <option value="Day Care">Day Care (Same Day)</option>
               <option value="In-Patient">In-Patient</option>
             </select>
           </div>
           <div>
-            <label className="mb-0.5 block text-[11px] font-bold text-slate-600">Category / Scheme</label>
-            <select value={billingCategory} onChange={(e) => setBillingCategory(e.target.value)} className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-semibold">
+            <label className="label-field">Billing Scheme</label>
+            <select
+              value={billingCategory}
+              onChange={(e) => setBillingCategory(e.target.value)}
+              className="input-field font-medium text-xs"
+            >
               <option value="Cash">Cash / Private</option>
-              <option value="TPA / Insurance">TPA / Insurance</option>
+              <option value="TPA / Insurance">TPA / Private Insurance</option>
               <option value="Ayushman Bharat (AB-ArK)">Ayushman Bharat (AB-ArK)</option>
               <option value="Yashaswini">Yashaswini</option>
             </select>
           </div>
           <div>
-            <label className="mb-0.5 block text-[11px] font-bold text-slate-600">Policy / Card No. (Optional)</label>
-            <input type="text" value={policyNo} onChange={(e) => setPolicyNo(e.target.value)} placeholder="If TPA / Scheme" className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs" />
-          </div>
-          <div>
-            <label className="mb-0.5 block text-[11px] font-bold text-slate-600">Prepared By</label>
-            <input type="text" value={preparedBy} onChange={(e) => setPreparedBy(e.target.value)} className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-semibold" />
-          </div>
-        </div>
-
-        <div className="grid gap-2.5 sm:grid-cols-2">
-          <div>
-            <label className="mb-0.5 block text-[11px] font-bold text-slate-600">Discharge Status</label>
-            <select
-              value={dischargeStatus}
-              onChange={(e) => setDischargeStatus(e.target.value as 'Routine' | 'DAMA' | 'Referred')}
-              className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-semibold"
-            >
-              <option value="Routine">Routine / Planned</option>
-              <option value="DAMA">Against Medical Advice (DAMA)</option>
-              <option value="Referred">Referred</option>
-            </select>
-          </div>
-          <div>
-            <label className="mb-0.5 block text-[11px] font-bold text-slate-600">Condition at Discharge</label>
+            <label className="label-field">Prepared By (Staff)</label>
             <input
               type="text"
-              value={dischargeCondition}
-              onChange={(e) => setDischargeCondition(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-semibold"
+              value={preparedBy}
+              onChange={(e) => setPreparedBy(e.target.value)}
+              placeholder="OT Assistant"
+              className="input-field text-xs"
             />
           </div>
         </div>
 
-        {/* Clinical Safety Sign-off */}
-        <label className="flex cursor-pointer items-start gap-3 rounded-xl border-2 border-amber-300 bg-amber-50 p-3.5">
+        {/* Clinical Safety Sign-Off */}
+        <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-gold-400/30 bg-gold-400/10 p-4 transition hover:bg-gold-400/15">
           <input
             type="checkbox"
             checked={safetyVerified}
             onChange={(e) => setSafetyVerified(e.target.checked)}
-            className="mt-0.5 h-5 w-5 rounded border-amber-500 text-clinic-600"
+            className="mt-0.5 h-5 w-5 rounded-lg border-gold-400 text-gold-500"
           />
           <div className="text-xs">
-            <div className="flex items-center gap-1 font-extrabold text-amber-950">
-              <ShieldAlert className="h-4 w-4 text-amber-700" />
-              Mandatory Pre-Print Safety Check
+            <div className="flex items-center gap-1.5 font-bold text-ivory-50">
+              <ShieldAlert className="h-4 w-4 text-gold-400" />
+              Pre-Print Clinical Safety Verification
             </div>
-            <div className="mt-0.5 text-amber-900">
-              I have confirmed <strong>Operated Eye ({operatedEye})</strong>, <strong>IOL Power ({iolPower || 'N/A'})</strong>, and <strong>Allergies ({allergies || 'NKDA'})</strong> match Dr. Malathesh&apos;s notes.
-            </div>
+            <p className="mt-0.5 text-ivory-400">
+              I have checked that <strong>Operated Eye ({operatedEye})</strong>, <strong>IOL Power ({iolPower || 'N/A'})</strong>, and <strong>Allergies ({allergies || 'NKDA'})</strong> match Dr. Malathesh&apos;s surgical notes.
+            </p>
           </div>
         </label>
 
         {error && (
-          <div className="flex items-center gap-2 rounded-xl bg-red-50 px-3.5 py-2.5 text-xs font-bold text-red-700">
+          <div className="flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 p-3 text-xs font-semibold text-red-700">
             <AlertTriangle className="h-4 w-4 shrink-0" />
             {error}
           </div>
         )}
-
       </div>
-      )}
 
-      <div className="sticky bottom-0 z-10 border-t border-ivory-50/10 bg-ink-950/90 py-3 backdrop-blur">
-        <div className="flex gap-2">
-          {flow > 0 ? (
-            <button type="button" onClick={() => { setError(''); setFlow((current) => current - 1); }} className="btn-ghost flex-1">
-              Back
-            </button>
-          ) : null}
-          {flow < 3 ? (
-            <button type="button" onClick={continueFlow} className="btn-primary flex-[2]">
-              Continue
-            </button>
-          ) : (
-            <button type="button" disabled={saving} onClick={handleSave} className="btn-primary flex-[2]">
-              {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" />}
-              Save summary
-            </button>
-          )}
-        </div>
+      {/* Sticky Save Action */}
+      <div className="sticky bottom-0 z-10 border-t border-ivory-50/10 bg-ink-950/95 py-3 backdrop-blur">
+        <button
+          type="button"
+          disabled={saving}
+          onClick={handleSave}
+          className="btn-primary w-full"
+        >
+          {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" />}
+          Generate & Save Discharge Summary
+        </button>
       </div>
     </div>
   );

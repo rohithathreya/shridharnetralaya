@@ -148,19 +148,16 @@ export function PatientModal({ initialPhone = '', editingPatient, onClose, onSav
         />
       </div>
       <div>
-        <span className="label-field">Sex</span>
-        <div className="mt-2 grid grid-cols-3 gap-2">
-          {(['M', 'F', 'O'] as const).map((opt) => (
-            <button
-              key={opt}
-              type="button"
-              onClick={() => setSex(opt)}
-              className={`choice-chip ${sex === opt ? 'choice-chip-on' : 'choice-chip-off'}`}
-            >
-              {opt === 'M' ? 'Male' : opt === 'F' ? 'Female' : 'Other'}
-            </button>
-          ))}
-        </div>
+        <label className="label-field">Sex</label>
+        <select
+          value={sex}
+          onChange={(e) => setSex(e.target.value as 'M' | 'F' | 'O')}
+          className="input-field font-medium"
+        >
+          <option value="M">Male</option>
+          <option value="F">Female</option>
+          <option value="O">Other</option>
+        </select>
       </div>
       <div>
         <label className="label-field">Village / town</label>
