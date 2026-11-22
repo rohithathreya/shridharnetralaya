@@ -168,6 +168,41 @@
     @apply relative h-[24rem] w-[86%] shrink-0 snap-start overflow-hidden rounded-[28px] sm:h-[32rem] sm:w-[46%] lg:w-[38%];
   }
 
+  .home-snap {
+    height: calc(100dvh - 4rem);
+    overflow-y: auto;
+    scroll-snap-type: y mandatory;
+  }
+
+  .home-panel {
+    position: relative;
+    height: 100%;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+  }
+
+  .bleed-rail {
+    display: flex;
+    height: 100%;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    touch-action: pan-x pan-y;
+    overscroll-behavior-x: contain;
+  }
+
+  .bleed-rail::-webkit-scrollbar {
+    display: none;
+  }
+
+  .bleed-slide {
+    position: relative;
+    min-width: 100%;
+    height: 100%;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+  }
+
   .flow-panel {
     @apply space-y-5;
   }

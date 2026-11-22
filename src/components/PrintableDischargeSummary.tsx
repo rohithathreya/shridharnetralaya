@@ -1,6 +1,16 @@
 import { formatDisplayDate, formatDisplayDateTime } from '../lib/dates';
 import type { ClinicSettings, DischargeSummary, Patient } from '../types/database';
 
+function scheduleSteps(schedule: string): string[] {
+  const parts = schedule
+    .replace(/\r/g, '')
+    .split(/\s*(?:->|→)\s*/)
+    .flatMap((part) => part.split('\n'))
+    .map((part) => part.trim())
+    .filter(Boolean);
+  return parts.length > 0 ? parts : [schedule];
+}
+
 interface PrintableDischargeSummaryProps {
   clinic: ClinicSettings;
   patient: Pick<Patient, 'patient_code' | 'full_name' | 'age' | 'sex' | 'village_address'> & { phone?: string };
@@ -171,69 +181,73 @@ export function PrintableDischargeSummary({ clinic, patient, summary }: Printabl
       </div>
 
       {/* ── 4. POST-OPERATIVE MEDICATIONS (BILINGUAL TABLE) ── */}
-      <div className="mt-3 rounded-xl border border-stone-300 overflow-hidden">
-        <div className="bg-stone-800 px-3 py-1.5 text-[11px] font-bold text-white flex items-center justify-between">
-          <span className="uppercase tracking-wider">Post-Operative Medications</span>
-          <span className="font-kannada text-xs font-normal text-stone-300">ಶಸ್ತ್ರಚಿಕಿತ್ಸೆಯ ನಂತರದ ಔಷಧಿಗಳು</span>
+      <div className="mt-4">
+        <div className="flex items-end justify-between gap-3 border-b-2 border-stone-800 pb-1">
+          <p className="text-[12px] font-bold uppercase tracking-wide text-stone-950">After the operation</p>
+          <p className="font-kannada text-[11px] text-stone-600">ಶಸ್ತ್ರಚಿಕಿತ್ಸೆಯ ನಂತರದ ಔಷಧಿಗಳು</p>
         </div>
 
-        <div className="p-3 space-y-2.5 bg-white">
-          {summary.eye_drops && summary.eye_drops.length > 0 && (
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-[10.5px]">
-                <thead>
-                  <tr className="border-b border-stone-300 bg-stone-100 text-left text-stone-800">
-                    <th className="px-2 py-1 font-bold">Eye Drops / Ointment</th>
-                    <th className="w-28 px-2 py-1 font-bold">Which Eye</th>
-                    <th className="px-2 py-1 font-bold">Dosage & Schedule</th>
-                    <th className="w-28 px-2 py-1 font-bold">Duration</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-stone-150">
-                  {summary.eye_drops.map((d, idx) => (
-                    <tr key={idx} className="hover:bg-stone-50/50">
-                      <td className="px-2 py-1.5 font-bold text-stone-950">{d.name}</td>
-                      <td className="px-2 py-1.5 font-semibold text-stone-800">
-                        {d.eye === 'Operated Eye' ? summary.operated_eye : d.eye}
-                      </td>
-                      <td className="px-2 py-1.5 text-stone-800">{d.schedule}</td>
-                      <td className="px-2 py-1.5 font-semibold text-stone-800">{d.duration}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {summary.oral_meds && summary.oral_meds.length > 0 && (
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-[10.5px]">
-                <thead>
-                  <tr className="border-b border-stone-300 bg-stone-100 text-left text-stone-800">
-                    <th className="px-2 py-1 font-bold">Oral Tablets</th>
-                    <th className="w-28 px-2 py-1 font-bold">Dose (M-A-N)</th>
-                    <th className="w-32 px-2 py-1 font-bold">Food Timing</th>
-                    <th className="w-24 px-2 py-1 font-bold">Duration</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-stone-150">
-                  {summary.oral_meds.map((m, idx) => (
-                    <tr key={idx} className="hover:bg-stone-50/50">
-                      <td className="px-2 py-1.5 font-bold text-stone-950">{m.name}</td>
-                      <td className="px-2 py-1.5 font-semibold text-stone-800">{m.dosage}</td>
-                      <td className="px-2 py-1.5 text-stone-800">{m.timing}</td>
-                      <td className="px-2 py-1.5 font-semibold text-stone-800">{m.duration}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          <div className="rounded-lg bg-stone-50 border border-stone-200 px-3 py-1.5 text-[10px] text-stone-700">
-            • Wash hands before instilling drops • Shake suspension drops well • Keep 5 minutes gap between two drops • Continue regular BP, Sugar & Cardiac medications as directed.
+        {summary.eye_drops && summary.eye_drops.length > 0 && (
+          <div className="mt-3 space-y-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-500">Eye drops and ointment</p>
+            {summary.eye_drops.map((d, idx) => {
+              const steps = scheduleSteps(d.schedule);
+              const eye = d.eye === 'Operated Eye' ? summary.operated_eye : d.eye;
+              return (
+                <article key={idx} className="break-inside-avoid rounded-lg border border-stone-200 p-3">
+                  <p className="text-[13px] font-semibold leading-snug text-stone-950">{d.name}</p>
+                  <dl className="mt-2 grid grid-cols-[4.5rem_1fr] gap-x-3 gap-y-1.5 text-[12px] leading-relaxed">
+                    <dt className="text-stone-500">Eye</dt>
+                    <dd className="text-stone-900">{eye}</dd>
+                    <dt className="text-stone-500">How often</dt>
+                    <dd>
+                      {steps.length === 1 ? (
+                        <span className="text-stone-900">{steps[0]}</span>
+                      ) : (
+                        <ol className="space-y-1 border-l-2 border-stone-300 pl-3">
+                          {steps.map((step, stepIndex) => (
+                            <li key={stepIndex} className="text-stone-900">
+                              {stepIndex > 0 ? <span className="mr-1 text-stone-400">↓</span> : null}
+                              {step}
+                            </li>
+                          ))}
+                        </ol>
+                      )}
+                    </dd>
+                    <dt className="text-stone-500">For</dt>
+                    <dd className="font-medium text-stone-950">{d.duration}</dd>
+                  </dl>
+                </article>
+              );
+            })}
           </div>
-        </div>
+        )}
+
+        {summary.oral_meds && summary.oral_meds.length > 0 && (
+          <div className="mt-4 space-y-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-500">Tablets</p>
+            {summary.oral_meds.map((m, idx) => (
+              <article key={idx} className="break-inside-avoid rounded-lg border border-stone-200 p-3">
+                <p className="text-[13px] font-semibold leading-snug text-stone-950">{m.name}</p>
+                <dl className="mt-2 grid grid-cols-[4.5rem_1fr] gap-x-3 gap-y-1.5 text-[12px] leading-relaxed">
+                  <dt className="text-stone-500">Dose</dt>
+                  <dd className="text-stone-900">{m.dosage}</dd>
+                  <dt className="text-stone-500">When</dt>
+                  <dd className="text-stone-900">{m.timing}</dd>
+                  <dt className="text-stone-500">For</dt>
+                  <dd className="font-medium text-stone-950">{m.duration}</dd>
+                </dl>
+              </article>
+            ))}
+          </div>
+        )}
+
+        <ul className="mt-4 space-y-1.5 pl-4 text-[12px] leading-relaxed text-stone-800" style={{ listStyle: 'disc' }}>
+          <li>Wash your hands before putting in a drop.</li>
+          <li>Shake the bottle if it says “shake”.</li>
+          <li>Wait five minutes between two different drops.</li>
+          <li>Keep taking your blood pressure, sugar, and heart tablets as usual.</li>
+        </ul>
       </div>
 
       {/* ── 5. FOLLOW-UP DATES & PRECAUTIONS ── */}
@@ -245,27 +259,31 @@ export function PrintableDischargeSummary({ clinic, patient, summary }: Printabl
             <span className="font-kannada text-xs font-normal text-stone-600">ಮರು ತಪಾಸಣೆ</span>
           </div>
 
-          <div className="grid grid-cols-3 gap-1.5 text-center text-[10px]">
-            <div className="rounded-lg border border-stone-200 bg-stone-50 p-1.5">
-              <div className="text-[9px] font-semibold text-stone-500">1st Visit (Next Day)</div>
-              <div className="font-bold text-stone-900 mt-0.5">{formatDisplayDate(summary.follow_up_1)}</div>
+          <dl className="space-y-2 text-[12px]">
+            <div className="flex items-baseline justify-between gap-3 border-b border-stone-100 pb-1.5">
+              <dt className="text-stone-500">Next day</dt>
+              <dd className="font-semibold text-stone-950">{formatDisplayDate(summary.follow_up_1)}</dd>
             </div>
-            <div className="rounded-lg border border-stone-200 bg-stone-50 p-1.5">
-              <div className="text-[9px] font-semibold text-stone-500">2nd Visit (1 Wk)</div>
-              <div className="font-bold text-stone-900 mt-0.5">{formatDisplayDate(summary.follow_up_2)}</div>
+            <div className="flex items-baseline justify-between gap-3 border-b border-stone-100 pb-1.5">
+              <dt className="text-stone-500">One week</dt>
+              <dd className="font-semibold text-stone-950">{formatDisplayDate(summary.follow_up_2)}</dd>
             </div>
-            <div className="rounded-lg border border-stone-200 bg-stone-50 p-1.5">
-              <div className="text-[9px] font-semibold text-stone-500">Glasses Check</div>
-              <div className="font-bold text-stone-900 mt-0.5">{formatDisplayDate(summary.follow_up_3)}</div>
+            <div className="flex items-baseline justify-between gap-3">
+              <dt className="text-stone-500">Glasses check</dt>
+              <dd className="font-semibold text-stone-950">{formatDisplayDate(summary.follow_up_3)}</dd>
             </div>
-          </div>
+          </dl>
 
-          <div className="border-t border-stone-100 pt-1.5 text-[9.5px] space-y-1 text-stone-800">
-            <div>• Do NOT rub or splash water in operated eye for <strong>{summary.head_bath_days} days</strong> (head bath restricted).</div>
-            <div className="font-kannada text-stone-700">• ಕಣ್ಣನ್ನು ಉಜ್ಜಬೇಡಿ. {summary.head_bath_days} ದಿನಗಳವರೆಗೆ ಕಣ್ಣಿಗೆ ನೀರು ತಾಗಿಸಬೇಡಿ (ತಲೆ ಸ್ನಾನ ಬೇಡ).</div>
-            <div>• Wear dark glasses outdoors & eye shield while sleeping. Avoid dust and heavy lifting.</div>
-            <div className="font-kannada text-stone-700">• ಹೊರಗೆ ಹೋಗುವಾಗ ಕಪ್ಪು ಕನ್ನಡಕ ಧರಿಸಿ. ಮಲಗುವಾಗ ಶೀಲ್ಡ್ ಹಾಕಿ. ಧೂಳು ಮತ್ತು ಭಾರ ಎತ್ತುವುದನ್ನು ತಪ್ಪಿಸಿ.</div>
-          </div>
+          <ul className="space-y-2 border-t border-stone-200 pt-3 pl-4 text-[12px] leading-relaxed text-stone-800" style={{ listStyle: 'disc' }}>
+            <li>
+              Do not rub the operated eye, and do not let water into it for <strong>{summary.head_bath_days} days</strong>. No head bath in that time.
+              <p className="font-kannada mt-1 text-stone-600">ಕಣ್ಣನ್ನು ಉಜ್ಜಬೇಡಿ. {summary.head_bath_days} ದಿನಗಳವರೆಗೆ ಕಣ್ಣಿಗೆ ನೀರು ತಾಗಿಸಬೇಡಿ. ತಲೆ ಸ್ನಾನ ಬೇಡ.</p>
+            </li>
+            <li>
+              Dark glasses outdoors. Eye shield while sleeping. Avoid dust and heavy lifting.
+              <p className="font-kannada mt-1 text-stone-600">ಹೊರಗೆ ಕಪ್ಪು ಕನ್ನಡಕ. ಮಲಗುವಾಗ ಶೀಲ್ಡ್. ಧೂಳು ಮತ್ತು ಭಾರ ಎತ್ತುವುದನ್ನು ತಪ್ಪಿಸಿ.</p>
+            </li>
+          </ul>
         </div>
 
         {/* Emergency Warning Signs */}
@@ -276,7 +294,7 @@ export function PrintableDischargeSummary({ clinic, patient, summary }: Printabl
             </div>
             <div className="mt-2 space-y-1 text-[10px] text-stone-800">
               <div className="font-bold text-amber-950">Call helpline immediately if you notice:</div>
-              <ul className="list-disc pl-3.5 space-y-0.5">
+              <ul className="mt-1 space-y-1.5 pl-4 leading-relaxed" style={{ listStyle: 'disc' }}>
                 <li>Severe sudden eye pain / ತೀವ್ರ ಕಣ್ಣಿನ ನೋವು</li>
                 <li>Sudden drop in vision / ದೃಷ್ಟಿ ಮಂಜಾಗುವುದು</li>
                 <li>Excessive redness or swelling / ಕಣ್ಣು ಕೆಂಪಾಗುವುದು</li>
