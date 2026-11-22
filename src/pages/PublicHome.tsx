@@ -167,9 +167,16 @@ export function PublicHome() {
             <span className="font-semibold text-slate-300">{clinic.clinic_name}</span> · {clinic.address}
             {clinic.kpme_reg_no ? ` · KPME ${clinic.kpme_reg_no}` : ''}
           </div>
-          <div className="inline-flex items-center gap-1">
-            <Sparkles className="h-3.5 w-3.5 text-gold-500" />
-            Digital records & bilingual discharge
+          <div className="flex flex-col items-center gap-1 sm:items-end">
+            <div className="inline-flex items-center gap-1">
+              <Sparkles className="h-3.5 w-3.5 text-gold-500" />
+              Digital records & bilingual discharge
+            </div>
+            {import.meta.env.VITE_BUILD_SHA ? (
+              <span className="font-mono text-[10px] text-slate-600" title="Confirm you have the latest deploy">
+                build {import.meta.env.VITE_BUILD_SHA.slice(0, 7)}
+              </span>
+            ) : null}
           </div>
         </div>
       </footer>
