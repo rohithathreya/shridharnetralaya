@@ -4,63 +4,66 @@
 
 @layer base {
   html {
-    font-family: 'Inter', 'Noto Sans Kannada', system-ui, sans-serif;
+    font-family: 'Outfit', 'Noto Sans Kannada', system-ui, sans-serif;
   }
 
   body {
-    @apply bg-obsidian-950 text-slate-200 antialiased;
-    background-image: theme('backgroundImage.mesh-dark');
-    background-attachment: fixed;
+    @apply bg-ink-950 text-ivory-100 antialiased;
   }
 
   ::selection {
-    @apply bg-clinic-600/40 text-white;
+    background: #b8956a;
+    color: #090909;
   }
 }
 
 @layer components {
+  .eyebrow {
+    @apply text-[11px] font-medium uppercase tracking-brand text-gold-400;
+  }
+
   .card-surface {
-    @apply rounded-2xl border border-white/[0.08] bg-obsidian-900/70 shadow-card backdrop-blur-md;
+    @apply rounded-none border border-ivory-50/10 bg-ink-900;
   }
 
   .input-field {
-    @apply w-full rounded-xl border border-white/10 bg-obsidian-950/80 px-3 py-2.5 text-sm font-medium text-slate-100 placeholder:font-normal placeholder:text-slate-500 focus:border-clinic-400/70 focus:outline-none focus:ring-2 focus:ring-clinic-500/20;
+    @apply w-full rounded-none border border-ivory-50/15 bg-transparent px-3 py-3 text-sm font-normal text-ivory-50 placeholder:text-ivory-500 focus:border-gold-400 focus:outline-none;
   }
 
   .label-field {
-    @apply mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-400;
+    @apply mb-2 block text-[11px] font-medium uppercase tracking-brand text-ivory-500;
   }
 
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-clinic-500 to-clinic-700 px-5 py-2.5 text-sm font-bold text-white shadow-glow transition hover:from-clinic-400 hover:to-clinic-600 disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-none bg-ivory-50 px-6 py-3 text-[11px] font-medium uppercase tracking-[0.18em] text-ink-950 transition hover:bg-gold-300 disabled:opacity-40;
   }
 
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-obsidian-800/60 px-4 py-2.5 text-sm font-semibold text-slate-300 transition hover:border-white/20 hover:bg-obsidian-700/80 hover:text-white;
+    @apply inline-flex items-center justify-center gap-2 rounded-none border border-ivory-50/20 bg-transparent px-5 py-3 text-[11px] font-medium uppercase tracking-[0.18em] text-ivory-100 transition hover:border-ivory-50/50;
   }
 
   .nav-pill {
-    @apply inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition;
+    @apply inline-flex items-center gap-2 px-1 py-1 text-[11px] font-medium uppercase tracking-[0.18em] transition;
   }
 
   .nav-pill-active {
-    @apply bg-clinic-600/90 text-white shadow-glow;
+    @apply text-ivory-50;
+    box-shadow: inset 0 -1px 0 #b8956a;
   }
 
   .nav-pill-idle {
-    @apply text-slate-400 hover:bg-white/5 hover:text-slate-200;
+    @apply text-ivory-500 hover:text-ivory-50;
   }
 
   .section-tab-active {
-    @apply border border-clinic-500/40 bg-clinic-900/30 text-clinic-200 shadow-glow;
+    @apply border border-ivory-50/40 bg-ivory-50 text-ink-950;
   }
 
   .section-tab-idle {
-    @apply border border-white/10 bg-obsidian-900/50 text-slate-400 hover:border-white/15 hover:text-slate-200;
+    @apply border border-ivory-50/15 bg-transparent text-ivory-300 hover:border-ivory-50/40 hover:text-ivory-50;
   }
 }
 
-/* Screen vs Print helpers */
 .print-only {
   display: none;
 }
@@ -89,19 +92,10 @@
     display: block !important;
   }
 
-  .print-sheet-a4 {
-    width: 100% !important;
-    max-width: 196mm !important;
-    margin: 0 auto !important;
-    padding: 0 !important;
-    box-shadow: none !important;
-    border: none !important;
-    page-break-inside: avoid;
-  }
-
+  .print-sheet-a4,
   .print-sheet-a5 {
     width: 100% !important;
-    max-width: 190mm !important;
+    max-width: 196mm !important;
     margin: 0 auto !important;
     padding: 0 !important;
     box-shadow: none !important;

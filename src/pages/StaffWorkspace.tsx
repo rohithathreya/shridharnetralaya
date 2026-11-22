@@ -246,7 +246,7 @@ export function StaffWorkspace() {
                               : formatDisplayDate(p.next_follow_up)}
                         </span>
                       </div>
-                      <div className="mt-1 text-xs text-slate-600">
+                      <div className="mt-1 text-xs text-ivory-500">
                         Phone: <strong>{p.phone}</strong>
                         {p.village_address ? ` • ${p.village_address}` : ''}
                       </div>
@@ -266,7 +266,7 @@ export function StaffWorkspace() {
                           setSection('desk');
                           setActiveTab('history');
                         }}
-                        className="rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-800 hover:bg-slate-50"
+                        className="btn-ghost px-3.5 py-2 text-xs"
                       >
                         Open File
                       </button>
@@ -311,11 +311,11 @@ export function StaffWorkspace() {
                     </span>
                   )}
                 </div>
-                <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-medium text-slate-600">
+                <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-medium text-ivory-300">
                   <span>
                     {selectedPatient.age ? `${selectedPatient.age} yrs` : 'Age —'} / {selectedPatient.sex || '—'}
                   </span>
-                  <span className="inline-flex items-center gap-1 font-bold text-slate-900">
+                  <span className="inline-flex items-center gap-1 font-medium text-ivory-50">
                     <Phone className="h-3.5 w-3.5 text-clinic-600" />
                     {selectedPatient.phone}
                   </span>
