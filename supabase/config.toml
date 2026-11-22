@@ -1,0 +1,7 @@
+project_id = "shridhar-netralaya"
+
+[functions.pin-login]
+verify_jwt = false
+
+[functions.ai-extract]
+verify_jwt = true
