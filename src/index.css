@@ -116,8 +116,37 @@
   }
 
   .sheet-panel {
-    @apply card-surface max-h-[min(92dvh,720px)] w-full overflow-y-auto p-5 sm:max-w-lg sm:rounded-sm sm:p-6;
-    padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+    @apply card-surface flex max-h-[min(92dvh,720px)] w-full flex-col overflow-hidden sm:max-w-lg sm:rounded-sm;
+    padding-bottom: max(0px, env(safe-area-inset-bottom));
+  }
+
+  .wizard-progress {
+    @apply flex gap-1.5;
+  }
+
+  .wizard-dot {
+    @apply h-0.5 flex-1 bg-ivory-50/15 transition-colors duration-300;
+  }
+
+  .wizard-dot-active {
+    @apply bg-gold-400;
+  }
+
+  .choice-chip {
+    @apply min-h-[44px] border px-3 py-2 text-xs font-medium uppercase tracking-[0.12em] transition active:scale-[0.98];
+  }
+
+  .choice-chip-on {
+    @apply border-gold-400/60 bg-gold-400/15 text-gold-300;
+  }
+
+  .choice-chip-off {
+    @apply border-ivory-50/15 text-ivory-400;
+  }
+
+  .wizard-footer {
+    @apply sticky bottom-0 mt-auto flex gap-2 border-t border-ivory-50/10 bg-ink-900 p-4;
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
   }
 }
 
