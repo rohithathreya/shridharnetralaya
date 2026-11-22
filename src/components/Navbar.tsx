@@ -29,9 +29,6 @@ export function Navbar() {
           <Link to="/staff" className={linkClass('/staff')}>
             Staff
           </Link>
-          <Link to="/admin" className={linkClass('/admin')}>
-            Admin
-          </Link>
           {role && (
             <button type="button" onClick={logout} className="nav-pill nav-pill-idle">
               Lock
@@ -53,10 +50,7 @@ export function Navbar() {
         <div className="border-t border-white/10 bg-ink-950/90 px-5 py-4 backdrop-blur-xl sm:hidden">
           <div className="flex flex-col gap-2">
             <Link to="/staff" className={linkClass('/staff')} onClick={() => setOpen(false)}>
-              Staff desk
-            </Link>
-            <Link to="/admin" className={linkClass('/admin')} onClick={() => setOpen(false)}>
-              Admin
+              Staff
             </Link>
             {role && (
               <button

@@ -45,7 +45,7 @@ export function PinGate({ requiredTier }: PinGateProps) {
         <form onSubmit={handleSubmit} className="card-surface mt-8 space-y-4 p-5 sm:p-6">
           {/* PIN dots */}
           <div className="flex justify-center gap-3 py-3">
-            {[0, 1, 2, 3].map((i) => (
+            {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
               <div
                 key={i}
                 className={`h-3 w-3 rounded-full transition-all duration-150 ${
