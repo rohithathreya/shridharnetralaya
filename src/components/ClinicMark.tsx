@@ -1,16 +1,37 @@
 export function ClinicMark({ className = 'h-10 w-10' }: { className?: string }) {
   return (
-    <svg viewBox="0 0 64 64" className={className} aria-hidden>
-      <circle cx="32" cy="32" r="30" fill="#fffcf8" stroke="#1c1712" strokeWidth="1.25" />
+    <svg viewBox="0 0 64 64" className={className} aria-hidden fill="none">
+      <defs>
+        <linearGradient id="clinicMarkTeal" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#0d9488" />
+          <stop offset="100%" stopColor="#042f2e" />
+        </linearGradient>
+        <linearGradient id="clinicMarkGold" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#38bdf8" />
+          <stop offset="100%" stopColor="#0ea5e9" />
+        </linearGradient>
+      </defs>
+      {/* Outer subtle shield container */}
+      <rect width="64" height="64" rx="16" fill="#f0fdfa" stroke="#ccfbf1" strokeWidth="1.5" />
+      {/* Precision Lens Ring */}
+      <circle cx="32" cy="32" r="23" stroke="#0f766e" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.4" />
+      {/* Eye Contour */}
       <path
-        d="M8 32c6.2-10.5 14.2-16 24-16s17.8 5.5 24 16c-6.2 10.5-14.2 16-24 16S14.2 42.5 8 32z"
-        fill="none"
-        stroke="#1c1712"
-        strokeWidth="1.35"
+        d="M10 32c5.8-9.5 13.5-14.5 22-14.5s16.2 5 22 14.5c-5.8 9.5-13.5 14.5-22 14.5S15.8 41.5 10 32z"
+        stroke="#0f766e"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
-      <circle cx="32" cy="32" r="9.2" fill="#0f5c56" />
-      <circle cx="32" cy="32" r="3.6" fill="#1c1712" />
-      <circle cx="29.4" cy="29.2" r="1.35" fill="#fffcf8" />
+      {/* Iris */}
+      <circle cx="32" cy="32" r="9.5" fill="url(#clinicMarkTeal)" />
+      {/* Optical Focal Ring */}
+      <circle cx="32" cy="32" r="6" stroke="#5eead4" strokeWidth="1.2" opacity="0.6" />
+      {/* Pupil */}
+      <circle cx="32" cy="32" r="3.8" fill="#042f2e" />
+      {/* Light Glint / Crystal Clarity Highlight */}
+      <circle cx="29.2" cy="29.2" r="1.6" fill="#ffffff" />
+      <circle cx="34.5" cy="34.5" r="0.8" fill="#ffffff" opacity="0.8" />
     </svg>
   );
 }

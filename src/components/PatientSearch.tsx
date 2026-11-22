@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { UserPlus, Loader2 } from 'lucide-react';
+import { UserPlus, Loader2, Search, User, Phone, MapPin, Calendar, Clock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { formatDisplayDate } from '../lib/dates';
 import type { Patient } from '../types/database';
@@ -60,90 +60,118 @@ export function PatientSearch({ onSelectPatient, onRequestNewPatient }: PatientS
   const hasQuery = query.trim().length >= 2;
 
   return (
-    <div className="space-y-8">
-      <header className="space-y-2">
-        <span className="step-badge">Step 1 · Find patient</span>
-        <p className="text-sm font-light text-ivory-400">
-          Search by mobile, name, or ID. One phone number can belong to multiple family members.
-        </p>
-      </header>
+    <div className="space-y-6">
+      <header className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <span className="step-badge">Patient Directory</span>
+            <h2 className="mt-1 text-xl font-black text-slate-900">Find or Register Patient</h2>
+            <p className="mt-1 text-xs text-slate-500">
+              Search by 10-digit mobile number, patient name, or ID. Multiple family members can share one mobile.
+            </p>
+          </div>
 
-      <div className="space-y-3">
-        <div className="relative">
+          <button
+            type="button"
+            onClick={() => onRequestNewPatient(phoneDigits.length >= 6 ? phoneDigits : '')}
+            className="btn-primary !min-h-[44px] text-xs"
+          >
+            <UserPlus className="h-4 w-4" />
+            + New Patient Registration
+          </button>
+        </div>
+
+        {/* Search bar */}
+        <div className="relative mt-4">
+          <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
           <input
             type="search"
             enterKeyHint="search"
             autoComplete="off"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Mobile or name"
-            className="input-field pr-12"
+            placeholder="Type 10-digit mobile number, patient name, or ID (e.g. 9845... or SN-26-0001)"
+            className="input-field pl-12 pr-12 text-base font-medium"
           />
           {searching && (
-            <Loader2 className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 animate-spin text-gold-400" />
+            <Loader2 className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 animate-spin text-clinic-600" />
           )}
         </div>
 
         {hasQuery && !searching && results.length === 0 && (
-          <p className="text-sm text-ivory-500">
-            No match for “{query}”.{' '}
+          <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+            No patient found matching “{query}”.{' '}
             <button
               type="button"
               onClick={() => onRequestNewPatient(phoneDigits)}
-              className="text-gold-300 underline underline-offset-4"
+              className="font-bold underline text-amber-900"
             >
-              Register new patient
+              Register this patient now →
             </button>
-          </p>
+          </div>
         )}
-      </div>
+      </header>
 
+      {/* Patient List */}
       <div className="space-y-3">
-        <h3 className="label-field mb-0">
-          {hasQuery ? `Matches (${results.length})` : 'Recent'}
-        </h3>
+        <div className="flex items-center justify-between text-xs font-bold text-slate-500 uppercase tracking-wider px-1">
+          <span>{hasQuery ? `Search Results (${results.length})` : `Recently Visited (${recentPatients.length})`}</span>
+          <span>Tap row to open file</span>
+        </div>
 
         {displayList.length === 0 ? (
-          <div className="border border-dashed border-ivory-50/15 px-4 py-12 text-center text-sm font-light text-ivory-500">
-            No patients yet. Tap <span className="text-ivory-200">New patient</span> below.
+          <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-white p-12 text-center text-sm text-slate-400">
+            No patients found. Click <strong className="text-slate-700">+ New Patient</strong> above to register the first patient.
           </div>
         ) : (
-          <ul className="divide-y divide-ivory-50/10 border border-ivory-50/10">
+          <div className="grid gap-2.5 sm:grid-cols-2">
             {displayList.map((p) => (
-              <li key={p.id}>
-                <button type="button" onClick={() => onSelectPatient(p)} className="list-row !border-0">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 text-left">
-                      <p className="truncate font-medium text-ivory-50">{p.full_name}</p>
-                      <p className="mt-1 text-xs text-ivory-500">
-                        {p.phone}
-                        {p.age ? ` · ${p.age} yrs` : ''}
-                        {p.village_address ? ` · ${p.village_address}` : ''}
-                      </p>
-                    </div>
-                    <span className="shrink-0 text-xs uppercase tracking-widest text-gold-400">{p.patient_code}</span>
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => onSelectPatient(p)}
+                className="group relative flex flex-col justify-between rounded-2xl border border-slate-200/90 bg-white p-4 text-left shadow-sm transition hover:border-clinic-500 hover:shadow-md active:scale-[0.99]"
+              >
+                <div>
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="rounded-lg bg-clinic-50 px-2 py-0.5 text-xs font-extrabold text-clinic-800 border border-clinic-200">
+                      {p.patient_code}
+                    </span>
+                    {p.next_follow_up && (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                        <Calendar className="h-3 w-3" />
+                        Due {formatDisplayDate(p.next_follow_up)}
+                      </span>
+                    )}
                   </div>
-                  {p.next_follow_up && (
-                    <p className="text-xs text-gold-400/90">Follow-up {formatDisplayDate(p.next_follow_up)}</p>
-                  )}
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-ivory-50/10 bg-ink-950/85 p-4 backdrop-blur-xl sm:static sm:z-auto sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none">
-        <div style={{ paddingBottom: 'max(0px, env(safe-area-inset-bottom))' }}>
-          <button
-            type="button"
-            onClick={() => onRequestNewPatient(phoneDigits.length >= 6 ? phoneDigits : '')}
-            className="btn-primary !min-h-[52px] sm:max-w-xs"
-          >
-            <UserPlus className="h-4 w-4" />
-            New patient
-          </button>
-        </div>
+                  <h3 className="mt-2 text-base font-bold text-slate-900 group-hover:text-clinic-800 transition truncate">
+                    {p.full_name}
+                  </h3>
+
+                  <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-500">
+                    <span className="inline-flex items-center gap-1 font-medium">
+                      <Phone className="h-3 w-3 text-slate-400" /> {p.phone}
+                    </span>
+                    {p.age && <span>{p.age} Yrs</span>}
+                    {p.sex && <span>({p.sex})</span>}
+                    {p.village_address && (
+                      <span className="inline-flex items-center gap-1 truncate max-w-[150px]">
+                        <MapPin className="h-3 w-3 text-slate-400" /> {p.village_address}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {p.allergies && p.allergies.toUpperCase() !== 'NKDA' && (
+                  <div className="mt-2 rounded bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-700">
+                    ⚠ Allergy: {p.allergies}
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

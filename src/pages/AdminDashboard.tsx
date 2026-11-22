@@ -260,9 +260,9 @@ export function AdminDashboard() {
   return (
     <div className="page-shell space-y-6">
       <header>
-        <p className="eyebrow">Admin</p>
-        <h1 className="mt-2 font-display text-4xl text-ivory-50">The books</h1>
-        <p className="mt-2 max-w-md text-sm text-ivory-400">Collections, prices, and the details printed on every bill.</p>
+        <span className="step-badge">Tier 3 · Medical Director & Admin</span>
+        <h1 className="mt-2 font-display text-3xl font-extrabold text-slate-900 sm:text-4xl">Administration & Audit Portal</h1>
+        <p className="mt-1 max-w-xl text-xs text-slate-500">Revenue collections, audit-safe invoice voiding, live service catalog pricing, and KPME clinic settings.</p>
       </header>
       <div className="flex flex-wrap gap-2">
         {(
