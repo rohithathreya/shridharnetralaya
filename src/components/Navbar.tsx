@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { ClinicMark } from './ClinicMark';
 
 export function Navbar() {
   const { role, clinic, logout } = useAuth();
@@ -12,13 +13,19 @@ export function Navbar() {
     `nav-pill w-full justify-center sm:w-auto ${pathname === to ? 'nav-pill-active' : 'nav-pill-idle'}`;
 
   return (
-    <header className="no-print sticky top-0 z-40 border-b border-ivory-50/10 bg-ink-950/95 backdrop-blur-md safe-top">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 sm:h-16 sm:px-8">
-        <Link to="/" className="min-w-0 truncate font-display text-xl text-ivory-50 sm:text-[1.65rem]">
-          {clinic.clinic_name}
+    <header className="no-print sticky top-0 z-40 border-b border-ivory-50/10 bg-ink-950/75 backdrop-blur-xl safe-top">
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-5 sm:px-8">
+        <Link to="/" className="flex min-w-0 items-center gap-3">
+          <ClinicMark className="h-11 w-11 shrink-0" />
+          <span className="min-w-0">
+            <span className="block truncate font-display text-xl leading-none tracking-[-0.02em] text-ivory-50">
+              {clinic.clinic_name}
+            </span>
+            <span className="mt-1 hidden text-[11px] tracking-wide text-ivory-500 sm:block">Magadi</span>
+          </span>
         </Link>
 
-        <nav className="hidden items-center gap-5 sm:flex sm:gap-7">
+        <nav className="hidden items-center gap-1 sm:flex">
           <a href={`tel:${clinic.phone}`} className="nav-pill nav-pill-idle">
             {clinic.phone}
           </a>
@@ -38,7 +45,7 @@ export function Navbar() {
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="flex h-11 w-11 items-center justify-center border border-ivory-50/15 text-ivory-100 sm:hidden"
+          className="grid h-11 w-11 place-items-center rounded-full border border-ivory-50/10 bg-ink-900 text-ivory-50 shadow-soft sm:hidden"
           aria-label={open ? 'Close menu' : 'Open menu'}
         >
           {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -46,8 +53,8 @@ export function Navbar() {
       </div>
 
       {open && (
-        <div className="border-t border-ivory-50/10 bg-ink-950 px-4 py-4 sm:hidden">
-          <div className="flex flex-col gap-1">
+        <div className="border-t border-ivory-50/10 bg-ink-900 px-5 py-4 sm:hidden">
+          <div className="flex flex-col gap-2">
             <a href={`tel:${clinic.phone}`} className="btn-primary" onClick={() => setOpen(false)}>
               Call {clinic.phone}
             </a>

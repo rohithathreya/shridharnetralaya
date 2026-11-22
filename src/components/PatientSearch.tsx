@@ -133,7 +133,7 @@ export function PatientSearch({ onSelectPatient, onRequestNewPatient }: PatientS
         )}
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-ivory-50/10 bg-ink-950/95 p-4 backdrop-blur-md sm:static sm:z-auto sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none">
+      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-ivory-50/10 bg-ink-950/85 p-4 backdrop-blur-xl sm:static sm:z-auto sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none">
         <div style={{ paddingBottom: 'max(0px, env(safe-area-inset-bottom))' }}>
           <button
             type="button"

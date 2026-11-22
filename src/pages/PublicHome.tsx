@@ -1,112 +1,169 @@
+import { useRef, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { openWhatsApp } from '../lib/whatsapp';
-import { OFFERING_GROUPS } from '../data/clinicOfferings';
+import { SERVICES } from '../data/clinicOfferings';
+
+const base = import.meta.env.BASE_URL;
 
 export function PublicHome() {
   const { clinic } = useAuth();
+  const rail = useRef<HTMLDivElement>(null);
+  const [active, setActive] = useState(0);
 
-  function handleWhatsAppEnquiry() {
-    openWhatsApp(
-      clinic.phone,
-      `Namaste ${clinic.clinic_name}, I would like to enquire about an eye check-up with ${clinic.doctor_name}.`,
-    );
+  const [weekRaw, sundayRaw] = clinic.timings.split('|').map((part) => part.trim());
+  const weekBits = (weekRaw || clinic.timings).split(':');
+  const dayLabel = /^mon/i.test(weekBits[0] || '') ? 'Monday to Saturday' : weekBits[0]?.trim() || 'Monday to Saturday';
+  const sundayLabel = (sundayRaw || 'Emergency, and the visit after surgery.').replace(/^sun:\s*/i, '');
+  const timeSlots = (weekBits.slice(1).join(':') || weekRaw || '')
+    .split('&')
+    .map((slot) => slot.trim())
+    .filter(Boolean);
+
+  function syncActive() {
+    const el = rail.current;
+    if (!el || el.children.length === 0) return;
+    const slide = el.children[0] as HTMLElement;
+    const width = slide.getBoundingClientRect().width + 16;
+    setActive(Math.min(SERVICES.length - 1, Math.max(0, Math.round(el.scrollLeft / width))));
+  }
+
+  function goTo(index: number) {
+    const slide = rail.current?.children[index] as HTMLElement | undefined;
+    slide?.scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
+    setActive(index);
   }
 
   return (
-    <div className="pb-4 md:pb-0">
-      <section className="page-shell max-w-lg sm:max-w-2xl lg:max-w-6xl">
-        <p className="eyebrow">Magadi · Eye hospital</p>
-        <h1 className="mt-5 font-display text-[2.5rem] leading-[1] text-ivory-50 sm:text-6xl">
-          {clinic.clinic_name}
-        </h1>
-        <p className="font-kannada mt-6 text-base leading-relaxed text-ivory-400">
-          ಶ್ರೀಧರ್ ನೇತ್ರಾಲಯ
-        </p>
-
-        <div className="mt-10 space-y-1 border-t border-ivory-50/10 pt-8">
-          <p className="font-display text-2xl text-ivory-50">{clinic.doctor_name}</p>
-          <p className="text-sm font-light text-ivory-500">{clinic.doctor_qualification}</p>
-        </div>
-
-        <dl className="mt-10 space-y-6 text-sm font-light text-ivory-300">
-          <div>
-            <dt className="eyebrow">When</dt>
-            <dd className="mt-2 leading-relaxed">{clinic.timings}</dd>
-          </div>
-          <div>
-            <dt className="eyebrow">Where</dt>
-            <dd className="mt-2 leading-relaxed">{clinic.address}</dd>
-          </div>
-          <div>
-            <dt className="eyebrow">Phone</dt>
-            <dd className="mt-2">
-              <a href={`tel:${clinic.phone}`} className="font-display text-3xl text-gold-300">
-                {clinic.phone}
-              </a>
-            </dd>
-          </div>
-        </dl>
-
-        <div className="mt-10 hidden gap-3 md:flex">
-          <a href={`tel:${clinic.phone}`} className="btn-primary w-auto">
-            Call
-          </a>
-          <button type="button" onClick={handleWhatsAppEnquiry} className="btn-ghost w-auto">
-            WhatsApp
-          </button>
-          <a
-            href={clinic.google_maps_url}
-            target="_blank"
-            rel="noreferrer"
-            className="btn-ghost w-auto"
-          >
-            Maps
+    <div>
+      <section className="flex min-h-[calc(100svh-4rem)] flex-col justify-end px-5 pb-28 pt-8 sm:justify-center sm:px-10 sm:pb-20">
+        <div className="mx-auto w-full max-w-5xl">
+          <p className="font-kannada text-lg text-gold-500 sm:text-xl">ಎಲ್ಲರ ದೃಷ್ಟಿಗಾಗಿ</p>
+          <h1 className="mt-4 max-w-[8ch] font-display text-[4.25rem] font-medium leading-[0.88] tracking-[-0.04em] text-ivory-50 sm:text-8xl">
+            Vision for all.
+          </h1>
+          <p className="mt-6 max-w-md font-display text-[1.7rem] leading-snug text-ivory-300 sm:text-4xl">
+            The best of eye care, in Magadi.
+          </p>
+          <p className="mt-6 text-sm text-ivory-400">
+            ಶ್ರೀಧರ್ ನೇತ್ರಾಲಯ · {clinic.clinic_name}
+          </p>
+          <a href={`tel:${clinic.phone}`} className="btn-primary mt-8 hidden md:inline-flex">
+            Call {clinic.phone}
           </a>
         </div>
       </section>
 
-      <div className="mobile-dock grid grid-cols-2 gap-2 md:hidden">
-        <a href={`tel:${clinic.phone}`} className="btn-primary !min-h-[52px]">
-          Call
-        </a>
-        <button type="button" onClick={handleWhatsAppEnquiry} className="btn-ghost !min-h-[52px]">
-          WhatsApp
-        </button>
-      </div>
-
-      <section className="border-t border-ivory-50/10">
-        <div className="page-shell max-w-lg space-y-12 sm:max-w-2xl lg:max-w-3xl">
-          <div>
-            <h2 className="font-display text-3xl text-ivory-50">What we offer</h2>
-            <p className="mt-2 text-sm font-light text-ivory-500">
-              Cataract, laser, and everyday eye care — one consulting surgeon, bilingual guidance.
-            </p>
-          </div>
-
-          {OFFERING_GROUPS.map((group) => (
-            <div key={group.id}>
-              <h3 className="eyebrow text-gold-400">{group.label}</h3>
-              <ul className="mt-4 space-y-3">
-                {group.items.map((item) => (
-                  <li
-                    key={item}
-                    className="border-b border-ivory-50/10 pb-3 text-base font-light text-ivory-100 last:border-0"
-                  >
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
+      <section className="pb-6">
+        <div className="px-5 pb-4 sm:px-8">
+          <h2 className="font-display text-4xl font-medium tracking-[-0.03em] text-ivory-50">The care</h2>
+          <p className="mt-2 max-w-sm text-sm text-ivory-400">Swipe. This is the work of the hospital.</p>
+        </div>
+        <div ref={rail} onScroll={syncActive} className="care-rail">
+          {SERVICES.map((service) => (
+            <article key={service.id} className="care-slide bg-ink-900">
+              {service.image ? (
+                <img
+                  src={`${base}care/${service.image}`}
+                  alt=""
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+              ) : (
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(15,92,86,0.18),transparent_55%)]" />
+              )}
+              {service.image ? (
+                <div className="absolute inset-0 bg-gradient-to-t from-[#1c1712]/88 via-[#1c1712]/25 to-transparent" />
+              ) : null}
+              <div className={`relative flex h-full flex-col justify-end p-6 pb-8 ${service.image ? 'text-[#fffcf8]' : 'text-ivory-50'}`}>
+                <p className={`font-kannada text-sm ${service.image ? 'text-[#d7efe9]' : 'text-gold-500'}`}>{service.kannada}</p>
+                <h3 className="mt-2 font-display text-4xl leading-none">{service.title}</h3>
+                <p className={`mt-3 max-w-xs text-sm leading-relaxed ${service.image ? 'text-[#f4efe7]/90' : 'text-ivory-300'}`}>
+                  {service.body}
+                </p>
+              </div>
+            </article>
           ))}
         </div>
+        <div className="mt-4 flex items-center justify-between px-5 sm:px-8">
+          <div className="flex gap-2">
+            {SERVICES.map((service, index) => (
+              <button
+                key={service.id}
+                type="button"
+                aria-label={service.title}
+                onClick={() => goTo(index)}
+                className={`h-1.5 rounded-full transition-all ${index === active ? 'w-8 bg-gold-400' : 'w-2 bg-ivory-50/20'}`}
+              />
+            ))}
+          </div>
+          <p className="text-[11px] text-ivory-500">
+            {String(active + 1).padStart(2, '0')} / {String(SERVICES.length).padStart(2, '0')}
+          </p>
+        </div>
       </section>
 
-      <footer className="border-t border-ivory-50/10 pb-28 md:pb-12">
-        <div className="page-shell max-w-lg py-8 text-xs text-ivory-500 sm:max-w-2xl">
-          <p>{clinic.clinic_name}</p>
-          {clinic.kpme_reg_no ? <p className="mt-1">KPME {clinic.kpme_reg_no}</p> : null}
+      <section className="border-t border-ivory-50/15">
+        <div className="page-shell max-w-4xl">
+          <p className="eyebrow">Consulting eye surgeon</p>
+          <h2 className="mt-5 max-w-[12ch] font-display text-5xl font-medium leading-[0.95] tracking-[-0.03em] text-ivory-50 sm:text-7xl">
+            {clinic.doctor_name}
+          </h2>
+          <p className="font-kannada mt-4 text-xl text-ivory-400">ಡಾ. ಎಲ್. ಎಸ್. ಮಲತೇಶ</p>
+          <p className="mt-6 text-base leading-relaxed text-ivory-400">
+            MBBS, Kasturba Medical College.
+            <br />
+            DOMS and FGO, Manipal, KMC.
+          </p>
+          <div className="mt-10 max-w-2xl space-y-6 text-lg leading-relaxed text-ivory-300">
+            <p>
+              He stayed in Magadi so that a clear eye would not depend on a bus to Bengaluru. That is the practice: vision for the town, and for the villages that come in to Ramanagara district’s own hospital.
+            </p>
+            <p>
+              Three decades at this address. Thousands of operations — cataract above all, and the squint, lid, and pterygium work a town asks for every week. Phacoemulsification, laser, and computerised refraction are part of that same intention. The training was Kasturba and Manipal. The work is here.
+            </p>
+          </div>
         </div>
-      </footer>
+      </section>
+
+      <section className="border-t border-ivory-50/15">
+        <div className="page-shell grid max-w-5xl gap-12 md:grid-cols-12">
+          <div className="md:col-span-5">
+            <p className="eyebrow">When to come</p>
+            <h2 className="mt-4 font-display text-5xl font-medium leading-[0.95] tracking-[-0.03em] text-ivory-50">
+              Six mornings. Six evenings.
+            </h2>
+            <p className="mt-4 max-w-xs text-sm leading-relaxed text-ivory-400">{dayLabel}. Sunday is not a regular clinic.</p>
+          </div>
+          <div className="space-y-8 md:col-span-7">
+            <div>
+              <p className="text-sm text-ivory-400">Morning clinic</p>
+              <p className="mt-1 font-display text-4xl text-ivory-50">{timeSlots[0] || '9:30 AM – 2:00 PM'}</p>
+            </div>
+            <div>
+              <p className="text-sm text-ivory-400">Evening clinic</p>
+              <p className="mt-1 font-display text-4xl text-ivory-50">{timeSlots[1] || '4:30 PM – 7:30 PM'}</p>
+            </div>
+            <div className="border-t border-ivory-50/15 pt-6">
+              <p className="text-sm text-ivory-400">Sunday</p>
+              <p className="mt-1 text-lg text-ivory-100">{sundayLabel}</p>
+            </div>
+            <div className="border-t border-ivory-50/15 pt-6">
+              <p className="text-sm text-ivory-400">Where</p>
+              <p className="mt-1 text-lg leading-relaxed text-ivory-100">{clinic.address}</p>
+              <a href={clinic.google_maps_url} target="_blank" rel="noreferrer" className="mt-3 inline-flex text-sm font-semibold text-gold-400">
+                Open the map
+              </a>
+            </div>
+            <a href={`tel:${clinic.phone}`} className="block font-display text-4xl text-ivory-50">
+              {clinic.phone}
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <div className="mobile-dock">
+        <a href={`tel:${clinic.phone}`} className="btn-primary">
+          Call {clinic.phone}
+        </a>
+      </div>
     </div>
   );
 }

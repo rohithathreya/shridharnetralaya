@@ -258,8 +258,12 @@ export function AdminDashboard() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-3 py-5 sm:px-6 space-y-5">
-      {/* Admin Tabs */}
+    <div className="page-shell space-y-6">
+      <header>
+        <p className="eyebrow">Admin</p>
+        <h1 className="mt-2 font-display text-4xl text-ivory-50">The books</h1>
+        <p className="mt-2 max-w-md text-sm text-ivory-400">Collections, prices, and the details printed on every bill.</p>
+      </header>
       <div className="flex flex-wrap gap-2">
         {(
           [
@@ -272,10 +276,8 @@ export function AdminDashboard() {
             key={t.id}
             type="button"
             onClick={() => setTab(t.id)}
-            className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-extrabold transition ${
-              tab === t.id
-                ? 'bg-slate-900 text-white shadow-sm'
-                : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
+            className={`inline-flex min-h-[48px] items-center gap-2 rounded-full px-4 text-sm font-semibold ${
+              tab === t.id ? 'section-tab-active' : 'section-tab-idle'
             }`}
           >
             {t.icon}
@@ -301,10 +303,8 @@ export function AdminDashboard() {
                   key={r.id}
                   type="button"
                   onClick={() => setRange(r.id)}
-                  className={`rounded-xl px-3.5 py-2 text-xs font-extrabold ${
-                    range === r.id
-                      ? 'bg-clinic-600 text-white'
-                      : 'border border-slate-200 bg-white text-slate-700'
+                  className={`rounded-full px-4 py-2 text-sm font-semibold ${
+                    range === r.id ? 'bg-ivory-50 text-ink-900' : 'border border-ivory-50/15 text-ivory-400'
                   }`}
                 >
                   {r.label}
@@ -322,17 +322,17 @@ export function AdminDashboard() {
 
           {/* KPI Cards */}
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-            <div className="rounded-2xl bg-slate-900 p-4 text-white shadow-sm">
-              <div className="text-xs font-semibold text-slate-300">Total Collected</div>
-              <div className="mt-1 text-2xl font-black">{formatINR(stats.total)}</div>
-              <div className="mt-1 text-[11px] text-slate-400">
-                {stats.activeCount} bills • {stats.voidedCount} voided
+            <div className="card-surface p-5">
+              <div className="eyebrow">Collected</div>
+              <div className="mt-2 font-display text-4xl text-ivory-50">{formatINR(stats.total)}</div>
+              <div className="mt-2 text-sm text-ivory-400">
+                {stats.activeCount} bills · {stats.voidedCount} voided
               </div>
             </div>
             {(['Cash', 'UPI', 'Card', 'TPA / Scheme'] as const).map((m) => (
-              <div key={m} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                <div className="text-xs font-bold text-slate-500">{m}</div>
-                <div className="mt-1 text-xl font-extrabold text-slate-900">
+              <div key={m} className="card-surface p-5">
+                <div className="text-sm text-ivory-400">{m}</div>
+                <div className="mt-2 font-display text-3xl text-ivory-50">
                   {formatINR(stats.byMode[m])}
                 </div>
               </div>

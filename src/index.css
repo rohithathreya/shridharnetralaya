@@ -4,25 +4,29 @@
 
 @layer base {
   html {
-    font-family: 'Outfit', 'Noto Sans Kannada', system-ui, sans-serif;
+    font-family: 'Figtree', 'Noto Sans Kannada', system-ui, sans-serif;
     -webkit-tap-highlight-color: transparent;
     text-size-adjust: 100%;
   }
 
   body {
-    @apply bg-ink-950 text-ivory-100 antialiased;
+    @apply text-ivory-50 antialiased;
+    background:
+      radial-gradient(900px 520px at 110% -8%, rgba(15, 110, 100, 0.16), transparent 58%),
+      radial-gradient(720px 480px at -12% 8%, rgba(184, 132, 90, 0.18), transparent 52%),
+      #f4efe7;
   }
 
   ::selection {
-    background: #b8956a;
-    color: #090909;
+    background: #0f5c56;
+    color: #fffcf8;
   }
 }
 
 @layer components {
   .page-shell {
-    @apply mx-auto w-full max-w-6xl px-4 pb-28 pt-6 sm:px-8 sm:pb-12 sm:pt-8;
-    padding-bottom: max(7rem, calc(1.5rem + env(safe-area-inset-bottom)));
+    @apply mx-auto w-full max-w-6xl px-5 pb-32 pt-8 sm:px-8 sm:pb-16 sm:pt-12;
+    padding-bottom: max(8rem, calc(2rem + env(safe-area-inset-bottom)));
   }
 
   .safe-top {
@@ -30,64 +34,63 @@
   }
 
   .eyebrow {
-    @apply text-[10px] font-medium uppercase tracking-[0.22em] text-gold-400 sm:text-[11px];
+    @apply text-[11px] font-semibold uppercase tracking-[0.18em] text-gold-400;
   }
 
   .card-surface {
-    @apply border border-ivory-50/10 bg-ink-900;
+    @apply rounded-3xl border border-ivory-50/10 bg-ink-900 shadow-soft;
   }
 
   .input-field {
-    @apply w-full min-h-[48px] border border-ivory-50/15 bg-ink-950 px-4 py-3.5 text-base font-normal text-ivory-50 placeholder:text-ivory-500 focus:border-gold-400 focus:outline-none sm:text-sm;
+    @apply w-full min-h-[52px] rounded-2xl border border-ivory-50/10 bg-ink-900 px-4 py-3.5 text-base text-ivory-50 shadow-soft placeholder:text-ivory-500 focus:border-gold-400 focus:outline-none focus:ring-4 focus:ring-gold-400/10 sm:text-sm;
   }
 
   .label-field {
-    @apply mb-2 block text-[10px] font-medium uppercase tracking-[0.2em] text-ivory-500;
+    @apply mb-2 block text-[11px] font-semibold uppercase tracking-[0.16em] text-ivory-400;
   }
 
   .btn-primary {
-    @apply inline-flex min-h-[48px] w-full items-center justify-center gap-2 bg-ivory-50 px-5 py-3.5 text-xs font-medium uppercase tracking-[0.16em] text-ink-950 transition active:scale-[0.98] hover:bg-gold-300 disabled:opacity-40 sm:w-auto;
+    @apply inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-ivory-50 px-6 py-3.5 text-sm font-semibold text-ink-900 shadow-lift transition active:scale-[0.98] hover:bg-gold-500 disabled:opacity-40 sm:w-auto;
   }
 
   .btn-ghost {
-    @apply inline-flex min-h-[48px] w-full items-center justify-center gap-2 border border-ivory-50/20 bg-transparent px-5 py-3.5 text-xs font-medium uppercase tracking-[0.16em] text-ivory-100 transition active:scale-[0.98] hover:border-ivory-50/50 sm:w-auto;
+    @apply inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full border border-ivory-50/15 bg-ink-900/70 px-6 py-3.5 text-sm font-semibold text-ivory-50 shadow-soft transition active:scale-[0.98] hover:border-gold-400/40 sm:w-auto;
   }
 
   .touch-key {
-    @apply flex min-h-[52px] items-center justify-center border border-ivory-50/15 bg-ink-800 text-lg font-medium text-ivory-50 active:bg-ink-700;
+    @apply flex min-h-[56px] items-center justify-center rounded-2xl border border-ivory-50/10 bg-ink-900 text-lg font-semibold text-ivory-50 shadow-soft active:bg-ink-800;
   }
 
   .nav-pill {
-    @apply inline-flex min-h-[44px] items-center gap-2 px-2 py-2 text-[10px] font-medium uppercase tracking-[0.18em] transition sm:text-[11px];
+    @apply inline-flex min-h-[40px] items-center gap-2 rounded-full px-3 py-2 text-sm font-medium transition;
   }
 
   .nav-pill-active {
-    @apply text-ivory-50;
-    box-shadow: inset 0 -1px 0 #b8956a;
+    @apply bg-ivory-50 text-ink-900;
   }
 
   .nav-pill-idle {
-    @apply text-ivory-500 hover:text-ivory-50;
+    @apply text-ivory-400 hover:bg-ink-900 hover:text-ivory-50;
   }
 
   .section-tab-active {
-    @apply flex-1 border border-ivory-50/40 bg-ivory-50 text-ink-950;
+    @apply flex-1 rounded-full bg-ivory-50 text-ink-900 shadow-lift;
   }
 
   .section-tab-idle {
-    @apply flex-1 border border-ivory-50/15 bg-transparent text-ivory-400;
+    @apply flex-1 rounded-full border border-ivory-50/10 bg-ink-900/60 text-ivory-400;
   }
 
   .step-badge {
-    @apply eyebrow inline-flex items-center gap-2 border border-ivory-50/15 px-3 py-1.5 text-ivory-300;
+    @apply eyebrow inline-flex items-center gap-2 rounded-full border border-gold-400/20 bg-clinic-50 px-3 py-1.5 text-gold-500;
   }
 
   .list-row {
-    @apply card-surface flex w-full flex-col gap-2 border-ivory-50/10 p-4 text-left transition active:bg-ink-800 sm:p-5;
+    @apply flex w-full flex-col gap-2 bg-transparent p-4 text-left transition active:bg-clinic-50 sm:p-5;
   }
 
   .scroll-tabs {
-    @apply no-print -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-4 sm:gap-2 sm:overflow-visible sm:px-0;
+    @apply no-print -mx-5 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-4 sm:gap-2 sm:overflow-visible sm:px-0;
   }
 
   .scroll-tabs::-webkit-scrollbar {
@@ -95,28 +98,28 @@
   }
 
   .tab-chip {
-    @apply flex min-h-[48px] shrink-0 items-center justify-center gap-2 border px-4 py-3 text-xs font-medium uppercase tracking-[0.12em] sm:min-h-[52px] sm:w-full sm:text-[11px];
+    @apply flex min-h-[48px] shrink-0 items-center justify-center gap-2 rounded-full border px-4 py-3 text-sm font-semibold sm:min-h-[48px] sm:w-full;
   }
 
   .tab-chip-active {
-    @apply border-ivory-50/50 bg-ivory-50/10 text-ivory-50;
+    @apply border-transparent bg-gold-500 text-ink-900 shadow-lift;
   }
 
   .tab-chip-idle {
-    @apply border-ivory-50/15 text-ivory-500;
+    @apply border-ivory-50/10 bg-ink-950 text-ivory-400;
   }
 
   .mobile-dock {
-    @apply fixed inset-x-0 bottom-0 z-30 border-t border-ivory-50/10 bg-ink-950/95 p-4 backdrop-blur-md md:hidden;
+    @apply fixed inset-x-0 bottom-0 z-30 border-t border-ivory-50/10 bg-ink-950/80 p-4 backdrop-blur-xl md:hidden;
     padding-bottom: max(1rem, env(safe-area-inset-bottom));
   }
 
   .sheet-modal {
-    @apply fixed inset-0 z-50 flex flex-col justify-end bg-black/60 backdrop-blur-sm sm:items-center sm:justify-center sm:p-4;
+    @apply fixed inset-0 z-50 flex flex-col justify-end bg-ivory-50/40 backdrop-blur-sm sm:items-center sm:justify-center sm:p-6;
   }
 
   .sheet-panel {
-    @apply card-surface flex max-h-[min(92dvh,720px)] w-full flex-col overflow-hidden sm:max-w-lg sm:rounded-sm;
+    @apply flex max-h-[min(92dvh,760px)] w-full flex-col overflow-hidden rounded-t-[28px] border border-ivory-50/10 bg-ink-900 shadow-lift sm:max-w-lg sm:rounded-[28px];
     padding-bottom: max(0px, env(safe-area-inset-bottom));
   }
 
@@ -125,7 +128,7 @@
   }
 
   .wizard-dot {
-    @apply h-0.5 flex-1 bg-ivory-50/15 transition-colors duration-300;
+    @apply h-1 flex-1 rounded-full bg-ink-800 transition-colors duration-300;
   }
 
   .wizard-dot-active {
@@ -133,20 +136,37 @@
   }
 
   .choice-chip {
-    @apply min-h-[44px] border px-3 py-2 text-xs font-medium uppercase tracking-[0.12em] transition active:scale-[0.98];
+    @apply min-h-[44px] rounded-full border px-4 py-2 text-sm font-medium transition active:scale-[0.98];
   }
 
   .choice-chip-on {
-    @apply border-gold-400/60 bg-gold-400/15 text-gold-300;
+    @apply border-transparent bg-gold-500 text-ink-900 shadow-soft;
   }
 
   .choice-chip-off {
-    @apply border-ivory-50/15 text-ivory-400;
+    @apply border-ivory-50/10 bg-ink-950 text-ivory-400;
   }
 
   .wizard-footer {
-    @apply sticky bottom-0 mt-auto flex gap-2 border-t border-ivory-50/10 bg-ink-900 p-4;
+    @apply sticky bottom-0 mt-auto flex gap-2 border-t border-ivory-50/10 bg-ink-900/95 p-4 backdrop-blur;
     padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+
+  .care-rail {
+    @apply flex snap-x snap-mandatory gap-4 overflow-x-auto px-5 pb-2 sm:px-8;
+    scrollbar-width: none;
+  }
+
+  .care-rail::-webkit-scrollbar {
+    display: none;
+  }
+
+  .care-slide {
+    @apply relative h-[24rem] w-[86%] shrink-0 snap-start overflow-hidden rounded-[28px] sm:h-[32rem] sm:w-[46%] lg:w-[38%];
+  }
+
+  .flow-panel {
+    @apply space-y-5;
   }
 }
 

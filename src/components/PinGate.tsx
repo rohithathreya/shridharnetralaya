@@ -55,7 +55,7 @@ export function PinGate({ requiredTier }: PinGateProps) {
           />
 
           {error && (
-            <p className="border border-red-400/30 bg-red-950/30 px-3 py-2 text-center text-sm text-red-300">{error}</p>
+            <p className="rounded-2xl border border-red-200 bg-red-50 px-3 py-2 text-center text-sm text-red-700">{error}</p>
           )}
 
           <div className="grid grid-cols-3 gap-2">

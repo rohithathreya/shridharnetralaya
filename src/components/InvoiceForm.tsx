@@ -45,6 +45,7 @@ export function InvoiceForm({ patient, clinic, catalog, onCreated }: InvoiceForm
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [savedInvoice, setSavedInvoice] = useState<Invoice | null>(null);
+  const [step, setStep] = useState(0);
 
   const activeCatalog = useMemo(
     () => catalog.filter((c) => c.is_active && c.category === activeCat),
@@ -199,13 +200,21 @@ export function InvoiceForm({ patient, clinic, catalog, onCreated }: InvoiceForm
   }
 
   return (
-    <div className="grid gap-5 lg:grid-cols-12">
-      {/* Left: Top-Down Service Selector */}
-      <div className="space-y-4 lg:col-span-7">
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="mb-3 text-sm font-extrabold text-slate-900">
-            1. Tap Services / Procedures to Add
-          </div>
+    <div className="space-y-6">
+      <div>
+        <p className="eyebrow">{step === 0 ? 'Bill · What was done' : 'Bill · Payment'}</p>
+        <div className="wizard-progress mt-3 max-w-[8rem]">
+          <div className="wizard-dot wizard-dot-active" />
+          <div className={`wizard-dot ${step >= 1 ? 'wizard-dot-active' : ''}`} />
+        </div>
+      </div>
+
+      {step === 0 && (
+      <div className="flow-panel">
+        <div>
+          <p className="font-display text-3xl text-ivory-50">Tap to add</p>
+          <p className="mt-1 text-sm text-ivory-400">One tap adds it to the bill. Tap again to increase the quantity.</p>
+        </div>
 
           <div className="mb-3 flex flex-wrap gap-1.5">
             {CATEGORIES.map((cat) => (
@@ -272,16 +281,16 @@ export function InvoiceForm({ patient, clinic, catalog, onCreated }: InvoiceForm
               </button>
             </div>
           </div>
-        </div>
       </div>
+      )}
 
-      {/* Right: Bill Summary & Payment */}
-      <div className="space-y-4 lg:col-span-5">
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      {step === 1 && (
+      <div className="flow-panel">
+        <div>
           <div className="mb-3 flex items-center justify-between">
-            <div className="flex items-center gap-1.5 text-sm font-extrabold text-slate-900">
-              <Receipt className="h-4 w-4 text-clinic-600" />
-              2. Bill Summary
+            <div className="flex items-center gap-1.5 font-display text-3xl text-ivory-50">
+              <Receipt className="h-5 w-5 text-gold-400" />
+              The bill
             </div>
             <span className="text-xs font-bold text-slate-500">{items.length} item(s)</span>
           </div>
@@ -418,16 +427,36 @@ export function InvoiceForm({ patient, clinic, catalog, onCreated }: InvoiceForm
             <div className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs font-bold text-red-700">{error}</div>
           )}
 
+        </div>
+      </div>
+      )}
+
+      <div className="sticky bottom-0 z-10 -mx-1 border-t border-ivory-50/10 bg-ink-950/90 px-1 py-3 backdrop-blur">
+        {step === 0 ? (
           <button
             type="button"
-            disabled={saving || items.length === 0}
-            onClick={handleSave}
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-clinic-600 py-3.5 text-sm font-extrabold text-white shadow-sm hover:bg-clinic-700 disabled:opacity-50"
+            disabled={items.length === 0}
+            onClick={() => setStep(1)}
+            className="btn-primary w-full"
           >
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-            Generate Receipt ({formatINR(total)})
+            Review {items.length === 0 ? 'the bill' : formatINR(total)}
           </button>
-        </div>
+        ) : (
+          <div className="flex gap-2">
+            <button type="button" onClick={() => setStep(0)} className="btn-ghost flex-1">
+              Back
+            </button>
+            <button
+              type="button"
+              disabled={saving || items.length === 0}
+              onClick={handleSave}
+              className="btn-primary flex-[2]"
+            >
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+              Save {formatINR(total)}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

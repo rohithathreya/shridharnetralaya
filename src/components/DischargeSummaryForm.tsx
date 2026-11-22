@@ -103,6 +103,7 @@ export function DischargeSummaryForm({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [savedSummary, setSavedSummary] = useState<DischargeSummary | null>(null);
+  const [flow, setFlow] = useState(0);
 
   function applyProtocol(proto: SurgicalProtocol) {
     setSelectedProtocolId(proto.id);
@@ -363,17 +364,35 @@ export function DischargeSummaryForm({
     );
   }
 
+  const flowLabels = ['Surgery', 'The eye', 'Medicines', 'Going home'];
+
+  function continueFlow() {
+    if (flow === 1 && (!diagnosis.trim() || !procedureName.trim())) {
+      setError('Add the diagnosis and the procedure before continuing.');
+      return;
+    }
+    setError('');
+    setFlow((current) => Math.min(3, current + 1));
+  }
+
   return (
-    <div className="space-y-5">
-      {/* STEP 1: 1-CLICK SURGERY PROTOCOLS + AI AUTOFILL */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+    <div className="space-y-6">
+      <div>
+        <p className="eyebrow">Discharge · {flowLabels[flow]}</p>
+        <div className="wizard-progress mt-3 max-w-[10rem]">
+          {flowLabels.map((label, index) => (
+            <div key={label} className={`wizard-dot ${index <= flow ? 'wizard-dot-active' : ''}`} />
+          ))}
+        </div>
+      </div>
+
+      {flow === 0 && (
+      <div className="flow-panel">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h3 className="text-sm font-extrabold text-slate-900">
-              Step 1: Tap a Surgery Preset (Fills 80% Instantly)
-            </h3>
-            <p className="text-xs text-slate-500">
-              Loads Dr. Malathesh&apos;s standard drops, tapering schedule, surgical note & follow-up dates.
+            <h3 className="font-display text-3xl text-ivory-50">Which surgery?</h3>
+            <p className="mt-1 text-sm text-ivory-400">
+              Tap a preset. Drops, notes, and follow-up dates fill in. You can still change every line.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -441,12 +460,13 @@ export function DischargeSummaryForm({
           </div>
         )}
       </div>
+      )}
 
-      {/* STEP 2: OPERATED EYE + CLINICAL + IOL */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5 space-y-4">
+      {flow === 1 && (
+      <div className="flow-panel">
         <div>
-          <label className="mb-2 block text-sm font-extrabold text-slate-900">
-            Step 2: Select Operated Eye *
+          <label className="mb-2 block font-display text-3xl text-ivory-50">
+            Which eye?
           </label>
           <div className="grid grid-cols-3 gap-2.5">
             {(['RE (OD)', 'LE (OS)', 'BE (OU)'] as OperatedEye[]).map((eye) => (
@@ -660,11 +680,12 @@ export function DischargeSummaryForm({
           </div>
         </div>
       </div>
+      )}
 
-      {/* STEP 3: MEDICATIONS & FOLLOW-UP */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5 space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-extrabold text-slate-900">Step 3: Post-Op Eye Drops & Tablets</h3>
+      {flow === 2 && (
+      <div className="flow-panel">
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="font-display text-3xl text-ivory-50">Drops and tablets</h3>
           <div className="flex gap-2">
             <button
               type="button"
@@ -802,9 +823,13 @@ export function DischargeSummaryForm({
             ))}
           </div>
         )}
+      </div>
+      )}
 
-        {/* Follow-up dates + Billing/Meta */}
-        <div className="grid gap-2.5 border-t border-slate-100 pt-3 sm:grid-cols-4">
+      {flow === 3 && (
+      <div className="flow-panel">
+        <p className="font-display text-3xl text-ivory-50">Before they leave</p>
+        <div className="grid gap-2.5 sm:grid-cols-4">
           <div>
             <label className="mb-0.5 block text-[11px] font-bold text-slate-600">1st Follow-Up (Next Day)</label>
             <input type="date" value={followUp1} onChange={(e) => setFollowUp1(e.target.value)} className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-semibold" />
@@ -907,15 +932,27 @@ export function DischargeSummaryForm({
           </div>
         )}
 
-        <button
-          type="button"
-          disabled={saving}
-          onClick={handleSave}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-clinic-600 py-4 text-sm font-extrabold text-white shadow-sm hover:bg-clinic-700 disabled:opacity-50"
-        >
-          {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" />}
-          Save & Generate 1-Page Discharge Summary
-        </button>
+      </div>
+      )}
+
+      <div className="sticky bottom-0 z-10 border-t border-ivory-50/10 bg-ink-950/90 py-3 backdrop-blur">
+        <div className="flex gap-2">
+          {flow > 0 ? (
+            <button type="button" onClick={() => { setError(''); setFlow((current) => current - 1); }} className="btn-ghost flex-1">
+              Back
+            </button>
+          ) : null}
+          {flow < 3 ? (
+            <button type="button" onClick={continueFlow} className="btn-primary flex-[2]">
+              Continue
+            </button>
+          ) : (
+            <button type="button" disabled={saving} onClick={handleSave} className="btn-primary flex-[2]">
+              {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" />}
+              Save summary
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -169,12 +169,16 @@ export function StaffWorkspace() {
 
   return (
     <div className="page-shell">
+      <header className="no-print mb-6">
+        <p className="eyebrow">Staff</p>
+        <h1 className="mt-2 font-display text-4xl text-ivory-50">Today’s desk</h1>
+      </header>
       <div className="no-print mb-6 space-y-4">
         <div className="flex w-full gap-2">
           <button
             type="button"
             onClick={() => setSection('desk')}
-            className={`inline-flex min-h-[48px] items-center justify-center gap-2 px-3 text-xs font-medium uppercase tracking-[0.14em] ${
+            className={`inline-flex min-h-[48px] items-center justify-center gap-2 px-4 text-sm font-semibold ${
               section === 'desk' ? 'section-tab-active' : 'section-tab-idle'
             }`}
           >
@@ -185,7 +189,7 @@ export function StaffWorkspace() {
           <button
             type="button"
             onClick={() => setSection('followups')}
-            className={`inline-flex min-h-[48px] items-center justify-center gap-2 px-3 text-xs font-medium uppercase tracking-[0.14em] ${
+            className={`inline-flex min-h-[48px] items-center justify-center gap-2 px-4 text-sm font-semibold ${
               section === 'followups' ? 'section-tab-active' : 'section-tab-idle'
             }`}
           >
@@ -222,7 +226,7 @@ export function StaffWorkspace() {
               <Loader2 className="h-6 w-6 animate-spin text-clinic-600" />
             </div>
           ) : followUps.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-white/10 bg-obsidian-900/40 p-8 text-center text-sm text-slate-500">
+            <div className="rounded-3xl border border-dashed border-ivory-50/15 bg-ink-900/70 p-8 text-center text-sm text-ivory-400">
               No scheduled follow-ups in this 14-day window yet.
             </div>
           ) : (
@@ -237,8 +241,8 @@ export function StaffWorkspace() {
                   >
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm font-bold text-white">{p.full_name}</span>
-                        <span className="rounded bg-obsidian-800 px-2 py-0.5 text-xs font-bold text-gold-400">
+                        <span className="text-sm font-semibold text-ivory-50">{p.full_name}</span>
+                        <span className="rounded-full bg-clinic-50 px-2.5 py-0.5 text-xs font-semibold text-gold-500">
                           {p.patient_code}
                         </span>
                         <span
@@ -316,7 +320,7 @@ export function StaffWorkspace() {
                   <p className="mt-1 text-xs uppercase tracking-[0.2em] text-gold-400">{selectedPatient.patient_code}</p>
                 </div>
                 {selectedPatient.allergies && selectedPatient.allergies.toUpperCase() !== 'NKDA' && (
-                  <p className="inline-flex items-center gap-1 border border-red-400/30 px-2 py-1 text-xs text-red-300">
+                  <p className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-xs text-red-700">
                     <AlertCircle className="h-3.5 w-3.5" /> {selectedPatient.allergies}
                   </p>
                 )}
