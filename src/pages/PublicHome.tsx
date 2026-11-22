@@ -28,41 +28,40 @@ export function PublicHome() {
   return (
     <div className="bg-ink-950 text-ivory-50 selection:bg-gold-500 selection:text-ink-900">
       {/* ── 1. HERO SECTION ── */}
-      <section className="relative overflow-hidden border-b border-ivory-50/10 px-5 pt-12 pb-20 sm:px-8 sm:pt-20 sm:pb-28">
+      <section className="relative overflow-hidden border-b border-ivory-50/10 px-5 pt-10 pb-16 sm:px-8 sm:pt-20 sm:pb-24">
         <div className="mx-auto max-w-5xl">
-          {/* Appointment Notice Pill */}
-          <div className="mb-6 inline-flex flex-wrap items-center gap-2 rounded-full border border-gold-400/30 bg-clinic-50/70 px-4 py-1.5 text-xs font-semibold text-gold-600 shadow-soft">
-            <span className="h-2 w-2 rounded-full bg-gold-400 animate-pulse" />
-            <span>Mon – Sat: 10:00 AM – 5:00 PM</span>
-            <span className="text-ivory-400">·</span>
-            <span className="font-bold">Strictly by Prior Appointment · No Walk-Ins</span>
+          {/* Eyebrow & Kannada Dedication */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="eyebrow">Dr. L. S. Malathesh · Magadi</span>
+            <span className="text-ivory-500">·</span>
+            <span className="font-kannada text-xs font-semibold text-gold-500">
+              ಶ್ರೀಧರ್ ನೇತ್ರಾಲಯ
+            </span>
           </div>
 
-          {/* Kannada Dedication */}
-          <p className="font-kannada text-lg font-semibold text-gold-500 sm:text-xl">
-            ಶ್ರೀಧರ್ ನೇತ್ರಾಲಯ · ಮಾಗಡಿ · ಡಾ. ಎಲ್. ಎಸ್. ಮಲತೇಶ
-          </p>
-
-          {/* Grand Headline */}
-          <h1 className="mt-4 font-display text-[3.25rem] font-medium leading-[0.92] tracking-[-0.03em] text-ivory-50 sm:text-7xl lg:text-8xl">
-            Thirty years of microsurgical mastery, in Magadi.
+          {/* Grand Headline with Clean Responsive Scaling */}
+          <h1 className="mt-4 font-display text-3xl sm:text-5xl lg:text-6xl font-medium tracking-tight leading-[1.16] text-ivory-50 max-w-3xl">
+            Thirty years of microsurgical mastery in Magadi.
           </h1>
 
           {/* Editorial Subhead */}
-          <p className="mt-6 max-w-2xl font-display text-xl leading-relaxed text-ivory-300 sm:text-2xl">
+          <p className="mt-4 max-w-2xl text-base sm:text-xl leading-relaxed text-ivory-300">
             Sutureless cataract phacoemulsification, precision biometry, and medical retina care for Ramanagara district. Unhurried, one-on-one clinical attention.
           </p>
 
-          {/* Policy Guidance */}
-          <p className="mt-4 max-w-xl text-sm leading-relaxed text-ivory-400">
-            To ensure every patient receives meticulous, unhurried time with Dr. Malathesh, all consultations are scheduled strictly in advance. Please call or message to confirm your appointment before travelling.
-          </p>
+          {/* Single Clear Policy & Timings Notice */}
+          <div className="mt-5 flex flex-wrap items-center gap-2 rounded-2xl border border-ivory-50/10 bg-ink-900/60 p-3.5 text-xs text-ivory-300 max-w-2xl">
+            <Clock className="h-4 w-4 text-gold-400 shrink-0" />
+            <span className="font-semibold text-ivory-50">Mon – Sat: 10:00 AM – 5:00 PM</span>
+            <span className="text-ivory-500 hidden sm:inline">·</span>
+            <span className="text-ivory-400">Consultations strictly by prior appointment (No Walk-Ins)</span>
+          </div>
 
           {/* Primary Action Buttons */}
-          <div className="mt-8 flex flex-wrap items-center gap-3">
+          <div className="mt-6 flex flex-wrap items-center gap-3">
             <a
               href={`tel:${clinic.phone}`}
-              className="btn-primary !min-h-[54px] text-base font-semibold"
+              className="btn-primary !min-h-[50px] text-sm font-semibold"
             >
               <Phone className="h-4 w-4" />
               Call {clinic.phone} to Book
@@ -70,7 +69,7 @@ export function PublicHome() {
             <button
               type="button"
               onClick={handleWhatsAppBooking}
-              className="btn-ghost !min-h-[54px] text-base font-semibold"
+              className="btn-ghost !min-h-[50px] text-sm font-semibold"
             >
               <MessageCircle className="h-4 w-4 text-gold-400" />
               Book on WhatsApp
@@ -78,7 +77,7 @@ export function PublicHome() {
           </div>
 
           {/* 4 Key Pillars */}
-          <div className="mt-14 grid grid-cols-2 gap-3 border-t border-ivory-50/10 pt-8 sm:grid-cols-4">
+          <div className="mt-12 grid grid-cols-2 gap-3 border-t border-ivory-50/10 pt-8 sm:grid-cols-4">
             <div className="rounded-2xl border border-ivory-50/10 bg-ink-900/60 p-4 shadow-soft">
               <div className="font-display text-2xl text-ivory-50 sm:text-3xl">30+ Yrs</div>
               <div className="mt-1 text-xs text-ivory-400">In Magadi town</div>

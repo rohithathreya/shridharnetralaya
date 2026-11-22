@@ -17,29 +17,25 @@ export function Navbar() {
   return (
     <header className="no-print sticky top-0 z-40 border-b border-ivory-50/10 bg-ink-950/80 backdrop-blur-xl safe-top">
       {/* Top Quiet Banner: Timings & Appointment Policy */}
-      <div className="border-b border-ivory-50/5 bg-ink-900/60 px-4 py-1.5 text-[11px] text-ivory-400 sm:px-8">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span className="inline-block h-1.5 w-1.5 rounded-full bg-gold-400" />
-            <span className="font-semibold text-ivory-200">
-              Mon – Sat: 10:00 AM – 5:00 PM
-            </span>
-            <span className="hidden sm:inline text-ivory-500">·</span>
-            <span className="font-medium text-gold-500 font-kannada">
-              ಕೇವಲ ಮುಂಗಡ ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್ ಮೂಲಕ ಮಾತ್ರ (No Walk-in)
+      <div className="border-b border-ivory-50/5 bg-ink-900/60 px-4 py-1 text-[11px] text-ivory-400 sm:px-8">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-2">
+          <div className="flex items-center gap-2 truncate">
+            <span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-gold-400" />
+            <span className="font-semibold text-ivory-200 truncate">
+              Mon – Sat: 10:00 AM – 5:00 PM · By Prior Appointment Only
             </span>
           </div>
 
-          <div className="flex items-center gap-4 text-xs font-semibold">
-            <span className="hidden items-center gap-1 text-ivory-400 sm:inline-flex">
-              <MapPin className="h-3 w-3 text-gold-400" /> Near Gramadevate Temple, Magadi
+          <div className="flex shrink-0 items-center gap-3 text-xs font-semibold">
+            <span className="hidden items-center gap-1 text-ivory-400 md:inline-flex">
+              <MapPin className="h-3 w-3 text-gold-400" /> Magadi
             </span>
             <a
               href={`tel:${clinic.phone}`}
-              className="inline-flex items-center gap-1 text-ivory-50 hover:text-gold-400 transition"
+              className="inline-flex items-center gap-1 text-gold-400 hover:text-gold-300 transition"
             >
-              <Phone className="h-3 w-3 text-gold-400" />
-              <span>Call to Book: {clinic.phone}</span>
+              <Phone className="h-3 w-3" />
+              <span>{clinic.phone}</span>
             </a>
           </div>
         </div>

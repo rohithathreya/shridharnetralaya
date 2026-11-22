@@ -9,52 +9,48 @@ export default {
         display: ['Fraunces', 'Georgia', 'serif'],
       },
       colors: {
+        // Warm, soothing canvas tones (Cashmere, Bone, Alabaster, Warm Sand)
         ink: {
-          950: '#f6f1e9',
-          900: '#fffcf8',
-          850: '#f3eee5',
-          800: '#ece5d8',
-          700: '#ddd5c6',
-          600: '#cfc5b3',
+          950: '#FAF6F0', // Soft bone/cashmere canvas
+          900: '#FFFDF9', // Warm alabaster card surface
+          850: '#F5EFEB', // Warm linen
+          800: '#EFE7DE', // Warm oat
+          700: '#E4D9CA', // Warm sand
+          600: '#D5C7B5', // Warm stone border
         },
+        // Rich warm espresso/umber typography (gentle on eyes, high contrast without harsh black)
         ivory: {
-          50: '#1a1510',
-          100: '#29231b',
-          200: '#3b332a',
-          300: '#50463b',
-          400: '#706556',
-          500: '#928778',
+          50: '#1F1A16',  // Deep warm espresso ink
+          100: '#2E2721', // Rich dark roast
+          200: '#433A32', // Deep umber
+          300: '#5C5046', // Warm deep taupe
+          400: '#7E6F62', // Muted warm slate
+          500: '#A39486', // Warm stone
         },
+        // Warm antique bronze / honey amber accents (organic, prestigious, comforting)
         gold: {
-          300: '#0e7e73',
-          400: '#0b6b62',
-          500: '#095a52',
-          600: '#074a43',
+          300: '#C48D52', // Soft warm amber
+          400: '#A46E38', // Warm antique bronze
+          500: '#8C5928', // Deep burnished bronze
+          600: '#73461D', // Deep umber bronze
         },
-        obsidian: {
-          950: '#f7f3ec',
-          900: '#fffdf9',
-          850: '#f3eee6',
-          800: '#efe7db',
-          700: '#e4dacb',
-          600: '#d8ccba',
-        },
+        // Soft warm clinical tones (subtle warm honey/cream tints, NO harsh greens)
         clinic: {
-          50: '#eef7f5',
-          100: '#d7efe9',
-          200: '#b3dfd6',
-          300: '#7ec4b6',
-          400: '#3d9a8c',
-          500: '#1f7a6e',
-          600: '#0e6b62',
-          700: '#0b5750',
-          800: '#084540',
-          900: '#063530',
+          50: '#F8F2EA',
+          100: '#EFE4D4',
+          200: '#DFCEB7',
+          300: '#C7AF91',
+          400: '#A68865',
+          500: '#8C5928',
+          600: '#73461D',
+          700: '#5A3514',
+          800: '#42250C',
+          900: '#2B1705',
         },
       },
       boxShadow: {
-        lift: '0 18px 50px -28px rgba(26, 21, 16, 0.4)',
-        soft: '0 1px 0 rgba(255,255,255,0.65) inset, 0 8px 24px -14px rgba(26, 21, 16, 0.22)',
+        lift: '0 18px 50px -28px rgba(31, 26, 22, 0.3)',
+        soft: '0 1px 0 rgba(255,255,255,0.85) inset, 0 8px 24px -14px rgba(31, 26, 22, 0.12)',
       },
       letterSpacing: {
         brand: '0.22em',

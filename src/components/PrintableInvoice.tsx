@@ -9,7 +9,7 @@ interface PrintableInvoiceProps {
 
 export function PrintableInvoice({ clinic, patient, invoice }: PrintableInvoiceProps) {
   return (
-    <div className="print-sheet-a5 relative mx-auto rounded-xl border border-slate-300 bg-white p-5 text-xs text-slate-950">
+    <div className="print-sheet-a5 relative mx-auto rounded-2xl border border-stone-200 bg-white p-5 text-xs text-stone-900 font-sans shadow-sm">
       {invoice.status === 'voided' && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
           <div className="-rotate-12 rounded-xl border-4 border-red-600/60 px-6 py-2 text-4xl font-black uppercase tracking-widest text-red-600/40">
@@ -19,24 +19,24 @@ export function PrintableInvoice({ clinic, patient, invoice }: PrintableInvoiceP
       )}
 
       {/* Header */}
-      <div className="flex items-start justify-between border-b-2 border-slate-900 pb-3">
+      <div className="flex items-start justify-between border-b-2 border-stone-800 pb-3">
         <div>
-          <h1 className="text-xl font-extrabold uppercase tracking-tight text-clinic-900">
+          <h1 className="text-xl font-bold uppercase tracking-tight text-stone-950 font-display">
             {clinic.clinic_name}
           </h1>
-          <div className="text-[11px] font-semibold text-slate-700">{clinic.tagline}</div>
-          <div className="mt-0.5 text-[10.5px] text-slate-600">{clinic.address}</div>
-          <div className="mt-0.5 text-[10.5px] font-semibold text-slate-800">
+          <div className="text-[11px] font-semibold text-stone-700">{clinic.tagline}</div>
+          <div className="mt-0.5 text-[10.5px] text-stone-600">{clinic.address}</div>
+          <div className="mt-0.5 text-[10.5px] font-semibold text-stone-800">
             Phone: {clinic.phone}
             {clinic.kpme_reg_no ? ` • KPME Reg: ${clinic.kpme_reg_no}` : ''}
           </div>
         </div>
         <div className="text-right">
-          <div className="inline-block rounded bg-slate-900 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-white">
+          <div className="inline-block rounded-md border border-stone-800 bg-stone-900 px-3 py-1 text-xs font-bold uppercase tracking-wider text-white">
             PAYMENT RECEIPT
           </div>
-          <div className="mt-1.5 text-sm font-extrabold text-slate-900">{invoice.invoice_no}</div>
-          <div className="text-[10.5px] text-slate-600">{formatDisplayDateTime(invoice.created_at)}</div>
+          <div className="mt-1.5 text-sm font-extrabold text-stone-900">{invoice.invoice_no}</div>
+          <div className="text-[10.5px] text-stone-600">{formatDisplayDateTime(invoice.created_at)}</div>
         </div>
       </div>
 

@@ -11,324 +11,312 @@ export function PrintableDischargeSummary({ clinic, patient, summary }: Printabl
   const emergencyNo = clinic.emergency_phone || clinic.phone;
 
   return (
-    <div className="print-sheet-a4 mx-auto bg-white text-[11px] leading-snug text-slate-950">
-      {/* 1. HEADER */}
-      <div className="flex items-start justify-between border-b-2 border-slate-900 pb-2">
+    <div className="print-sheet-a4 mx-auto bg-white p-4 sm:p-7 text-[11px] leading-snug text-stone-900 font-sans shadow-sm rounded-2xl border border-stone-200">
+      {/* ── 1. CLINIC & CERTIFICATE HEADER ── */}
+      <div className="flex flex-col sm:flex-row items-start justify-between border-b-2 border-stone-800 pb-3 gap-3">
         <div>
-          <h1 className="text-xl font-extrabold uppercase tracking-tight text-clinic-900">
-            {clinic.clinic_name}
-          </h1>
-          <div className="text-[10.5px] font-semibold text-slate-700">{clinic.tagline}</div>
-          <div className="mt-0.5 text-[10px] text-slate-700">{clinic.address}</div>
-          <div className="mt-0.5 flex flex-wrap gap-x-3 text-[10px] font-semibold text-slate-800">
-            <span>Ph: {clinic.phone}</span>
-            <span className="text-red-700">24/7 Emergency: {emergencyNo}</span>
-            {clinic.kpme_reg_no && <span>KPME Reg: {clinic.kpme_reg_no}</span>}
+          <div className="flex items-baseline gap-2">
+            <h1 className="text-xl sm:text-2xl font-bold uppercase tracking-tight text-stone-950 font-display">
+              {clinic.clinic_name}
+            </h1>
+            <span className="font-kannada text-xs font-semibold text-stone-700">
+              ಶ್ರೀಧರ್ ನೇತ್ರಾಲಯ
+            </span>
+          </div>
+          <div className="text-[11px] font-semibold text-stone-700">{clinic.tagline}</div>
+          <div className="mt-0.5 text-[10px] text-stone-600">{clinic.address}</div>
+          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[10.5px] font-medium text-stone-800">
+            <span>Ph: <strong>{clinic.phone}</strong></span>
+            <span className="text-amber-900 font-bold">24/7 Helpline: {emergencyNo}</span>
+            {clinic.kpme_reg_no && <span className="text-stone-600">KPME: {clinic.kpme_reg_no}</span>}
           </div>
         </div>
-        <div className="text-right">
-          <div className="inline-block rounded bg-slate-900 px-2.5 py-1 text-xs font-extrabold uppercase tracking-wider text-white">
-            DISCHARGE SUMMARY
+
+        <div className="sm:text-right shrink-0">
+          <div className="inline-block rounded-md border border-stone-800 bg-stone-900 px-3 py-1 text-xs font-bold uppercase tracking-wider text-white">
+            Surgical Discharge Summary
           </div>
-          <div className="mt-1 text-[10px] font-bold text-slate-700">
-            {summary.case_type} • {summary.summary_no}
+          <div className="mt-1.5 text-[11px] font-bold text-stone-800">
+            {summary.case_type} · {summary.summary_no}
           </div>
-          <div className="text-[10px] font-semibold text-slate-600">
+          <div className="text-[10.5px] font-semibold text-stone-700">
             {clinic.doctor_name}, {clinic.doctor_qualification}
           </div>
           {clinic.doctor_kmc_no && (
-            <div className="text-[9.5px] text-slate-600">KMC Reg: {clinic.doctor_kmc_no}</div>
+            <div className="text-[10px] text-stone-500">KMC Reg No: {clinic.doctor_kmc_no}</div>
           )}
         </div>
       </div>
 
-      {/* 2. PATIENT & TIMESTAMPS GRID */}
-      <div className="mt-2 grid grid-cols-3 gap-2 rounded border border-slate-400 bg-slate-50/70 p-2 text-[10.5px]">
-        <div className="space-y-0.5">
+      {/* ── 2. PATIENT & ADMINISTRATIVE GRID ── */}
+      <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 rounded-xl border border-stone-200 bg-stone-50/80 p-3 text-[10.5px]">
+        <div className="space-y-1">
           <div>
-            <span className="font-bold">Patient:</span>{' '}
-            <span className="font-extrabold uppercase">{patient.full_name}</span>
+            <span className="text-stone-500">Patient:</span>{' '}
+            <span className="font-bold uppercase text-stone-950">{patient.full_name}</span>
           </div>
           <div>
-            <span className="font-bold">Age / Sex:</span> {patient.age ?? '—'} Yrs / {patient.sex || '—'}
+            <span className="text-stone-500">Age / Sex:</span>{' '}
+            <span className="font-semibold">{patient.age ?? '—'} Yrs / {patient.sex || '—'}</span>
           </div>
           {patient.village_address && (
             <div>
-              <span className="font-bold">Place:</span> {patient.village_address}
+              <span className="text-stone-500">Place:</span>{' '}
+              <span className="font-medium">{patient.village_address}</span>
             </div>
           )}
           {patient.phone && (
             <div>
-              <span className="font-bold">Phone:</span> {patient.phone}
+              <span className="text-stone-500">Phone:</span>{' '}
+              <span className="font-medium">{patient.phone}</span>
             </div>
           )}
         </div>
 
-        <div className="space-y-0.5 border-l border-slate-300 pl-2">
+        <div className="space-y-1 border-t sm:border-t-0 sm:border-l border-stone-200 pt-2 sm:pt-0 sm:pl-3">
           <div>
-            <span className="font-bold">Patient ID:</span>{' '}
-            <span className="font-extrabold">{patient.patient_code}</span>
+            <span className="text-stone-500">Patient ID:</span>{' '}
+            <span className="font-bold text-stone-950">{patient.patient_code}</span>
           </div>
           <div>
-            <span className="font-bold">Admitted:</span> {formatDisplayDateTime(summary.admission_at)}
+            <span className="text-stone-500">Admitted:</span>{' '}
+            <span className="font-medium">{formatDisplayDateTime(summary.admission_at)}</span>
           </div>
           <div>
-            <span className="font-bold">Surgery:</span> {formatDisplayDateTime(summary.surgery_at)}
+            <span className="text-stone-500">Surgery:</span>{' '}
+            <span className="font-medium">{formatDisplayDateTime(summary.surgery_at)}</span>
           </div>
           <div>
-            <span className="font-bold">Discharged:</span> {formatDisplayDateTime(summary.discharge_at)}
+            <span className="text-stone-500">Discharged:</span>{' '}
+            <span className="font-medium">{formatDisplayDateTime(summary.discharge_at)}</span>
           </div>
         </div>
 
-        <div className="space-y-0.5 border-l border-slate-300 pl-2">
+        <div className="space-y-1 border-t sm:border-t-0 sm:border-l border-stone-200 pt-2 sm:pt-0 sm:pl-3">
           <div>
-            <span className="font-bold">Status:</span> {summary.discharge_status}
+            <span className="text-stone-500">Status:</span>{' '}
+            <span className="font-semibold text-stone-900">{summary.discharge_status}</span>
           </div>
           <div>
-            <span className="font-bold">Category:</span> {summary.billing_category}
-            {summary.policy_no ? ` (${summary.policy_no})` : ''}
+            <span className="text-stone-500">Category:</span>{' '}
+            <span className="font-medium">{summary.billing_category}{summary.policy_no ? ` (${summary.policy_no})` : ''}</span>
           </div>
           <div>
-            <span className="font-bold">Allergies:</span>{' '}
-            <span
-              className={
-                summary.allergies && summary.allergies.toUpperCase() !== 'NKDA'
-                  ? 'font-extrabold text-red-700'
-                  : 'font-semibold'
-              }
-            >
+            <span className="text-stone-500">Allergies:</span>{' '}
+            <span className={summary.allergies && summary.allergies.toUpperCase() !== 'NKDA' ? 'font-bold text-red-700' : 'font-semibold text-stone-800'}>
               {summary.allergies || 'NKDA'}
             </span>
           </div>
           <div>
-            <span className="font-bold">Conditions:</span>{' '}
-            {summary.comorbidities?.length ? summary.comorbidities.join(', ') : 'None'}
+            <span className="text-stone-500">Conditions:</span>{' '}
+            <span className="font-medium text-stone-800">{summary.comorbidities?.length ? summary.comorbidities.join(', ') : 'None reported'}</span>
           </div>
         </div>
       </div>
 
-      {/* 3. OPERATED EYE BANNER + CLINICAL / IOL STICKER SPLIT */}
-      <div className="mt-2 grid grid-cols-12 gap-2">
-        <div className="col-span-8 space-y-1.5">
-          <div className="flex items-center justify-between rounded border-2 border-slate-900 bg-slate-900 px-2.5 py-1 text-white">
-            <span className="text-[11px] font-bold uppercase tracking-wide">OPERATED EYE:</span>
-            <span className="text-sm font-extrabold tracking-wide">{summary.operated_eye}</span>
+      {/* ── 3. OPERATED EYE & CLINICAL PROCEDURE ── */}
+      <div className="mt-3 grid grid-cols-1 sm:grid-cols-12 gap-3">
+        <div className="sm:col-span-8 space-y-2">
+          {/* Operated Eye Banner */}
+          <div className="flex items-center justify-between rounded-lg border border-stone-800 bg-stone-900 px-3 py-1.5 text-white">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-stone-300">Operated Eye</span>
+            <span className="text-sm font-extrabold tracking-wide text-amber-300">{summary.operated_eye}</span>
           </div>
 
-          <div className="rounded border border-slate-300 p-2 space-y-1">
+          {/* Diagnosis & Procedure box */}
+          <div className="rounded-xl border border-stone-200 p-3 space-y-1.5 bg-white">
             <div>
-              <span className="font-bold">Final Diagnosis:</span> {summary.diagnosis}
+              <span className="text-stone-500">Final Diagnosis:</span>{' '}
+              <span className="font-bold text-stone-950">{summary.diagnosis}</span>
             </div>
             <div>
-              <span className="font-bold">Procedure Performed:</span>{' '}
-              <span className="font-bold">{summary.procedure_name}</span>{' '}
-              <span className="text-slate-600">({summary.anesthesia} Anesthesia)</span>
+              <span className="text-stone-500">Procedure Performed:</span>{' '}
+              <span className="font-bold text-stone-950">{summary.procedure_name}</span>{' '}
+              <span className="text-stone-600">({summary.anesthesia} Anesthesia)</span>
             </div>
-            <div className="flex flex-wrap gap-x-3 border-t border-slate-200 pt-1 text-[10px]">
-              <span>
-                <strong>VA:</strong> RE {summary.pre_op_va_re || '—'} | LE {summary.pre_op_va_le || '—'}
-              </span>
-              <span>
-                <strong>IOP:</strong> RE {summary.pre_op_iop_re || '—'} | LE {summary.pre_op_iop_le || '—'}
-              </span>
-              <span>
-                <strong>BP:</strong> {summary.pre_op_bp || '—'}
-              </span>
-              <span>
-                <strong>RBS:</strong> {summary.pre_op_rbs || '—'}
-              </span>
+            <div className="flex flex-wrap gap-x-4 border-t border-stone-100 pt-1.5 text-[10px] text-stone-700">
+              <span><strong>VA:</strong> RE {summary.pre_op_va_re || '—'} | LE {summary.pre_op_va_le || '—'}</span>
+              <span><strong>IOP:</strong> RE {summary.pre_op_iop_re || '—'} | LE {summary.pre_op_iop_le || '—'}</span>
+              <span><strong>BP:</strong> {summary.pre_op_bp || '—'}</span>
+              <span><strong>RBS:</strong> {summary.pre_op_rbs || '—'}</span>
             </div>
-            <div className="border-t border-slate-200 pt-1 text-[10px]">
-              <span className="font-bold">Intra-Op / Course Notes:</span> {summary.intra_op_notes}
-            </div>
-            {summary.in_clinic_meds && (
-              <div className="text-[9.5px] text-slate-700">
-                <span className="font-bold">In-Clinic Meds Given:</span> {summary.in_clinic_meds}
+            {summary.intra_op_notes && (
+              <div className="border-t border-stone-100 pt-1.5 text-[10px] text-stone-700">
+                <span className="font-bold text-stone-900">Intra-Op Course:</span> {summary.intra_op_notes}
               </div>
             )}
-            <div className="flex flex-wrap gap-x-4 text-[10px]">
-              <span>
-                <strong>Condition at Discharge:</strong> {summary.discharge_condition}
-              </span>
-              <span>
-                <strong>Eye Dressing:</strong> {summary.dressing_status}
-              </span>
+            <div className="flex flex-wrap gap-x-4 text-[10px] text-stone-700">
+              <span><strong>Discharge Condition:</strong> {summary.discharge_condition}</span>
+              <span><strong>Eye Dressing:</strong> {summary.dressing_status}</span>
             </div>
           </div>
         </div>
 
-        {/* Dedicated 60mm x 35mm IOL Sticker Zone */}
-        <div className="col-span-4 flex flex-col justify-between rounded border border-slate-400 p-2">
-          <div className="flex min-h-[34mm] flex-col items-center justify-center rounded border-2 border-dashed border-slate-400 bg-slate-50/50 p-1.5 text-center">
-            <span className="text-[9.5px] font-bold uppercase tracking-wider text-slate-500">
-              Affix IOL / Implant Sticker Here
+        {/* Dedicated IOL Sticker Box (Standard 60mm x 35mm implant sticker area) */}
+        <div className="sm:col-span-4 flex flex-col justify-between rounded-xl border border-stone-300 bg-stone-50/60 p-3">
+          <div className="flex min-h-[32mm] flex-col items-center justify-center rounded-lg border border-dashed border-stone-400 bg-white/80 p-2 text-center">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
+              Affix IOL / Implant Sticker
             </span>
+            <span className="mt-0.5 text-[8.5px] text-stone-400">Standard 60mm × 35mm sticker</span>
           </div>
-          <div className="mt-1.5 space-y-0.5 text-[9.5px]">
-            <div>
-              <strong>Lens Model:</strong> {summary.iol_model || '__________________'}
-            </div>
+          <div className="mt-2 space-y-0.5 text-[10px] text-stone-800">
+            <div><strong>Lens:</strong> {summary.iol_model || '—'}</div>
             <div className="flex justify-between gap-1">
-              <span>
-                <strong>Power:</strong> {summary.iol_power || '________'}
-              </span>
-              <span>
-                <strong>SN/Batch:</strong> {summary.iol_batch || '________'}
-              </span>
+              <span><strong>Power:</strong> {summary.iol_power || '—'}</span>
+              <span><strong>Batch:</strong> {summary.iol_batch || '—'}</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* 4. POST-OPERATIVE MEDICATIONS (HERO SECTION — CLEAR & READABLE) */}
-      <div className="mt-2 rounded border border-slate-800">
-        <div className="bg-slate-800 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wide text-white">
-          Post-Operative Medications / ಶಸ್ತ್ರಚಿಕಿತ್ಸೆಯ ನಂತರದ ಔಷಧಿಗಳು
+      {/* ── 4. POST-OPERATIVE MEDICATIONS (BILINGUAL TABLE) ── */}
+      <div className="mt-3 rounded-xl border border-stone-300 overflow-hidden">
+        <div className="bg-stone-800 px-3 py-1.5 text-[11px] font-bold text-white flex items-center justify-between">
+          <span className="uppercase tracking-wider">Post-Operative Medications</span>
+          <span className="font-kannada text-xs font-normal text-stone-300">ಶಸ್ತ್ರಚಿಕಿತ್ಸೆಯ ನಂತರದ ಔಷಧಿಗಳು</span>
         </div>
 
-        <div className="p-2 space-y-2">
+        <div className="p-3 space-y-2.5 bg-white">
           {summary.eye_drops && summary.eye_drops.length > 0 && (
-            <table className="w-full border-collapse text-[10.5px]">
-              <thead>
-                <tr className="border-b border-slate-400 bg-slate-100 text-left">
-                  <th className="px-1.5 py-1 font-bold">Eye Drops / Ointment</th>
-                  <th className="w-24 px-1.5 py-1 font-bold">Which Eye</th>
-                  <th className="px-1.5 py-1 font-bold">Dosage / Tapering Schedule</th>
-                  <th className="w-24 px-1.5 py-1 font-bold">Duration</th>
-                </tr>
-              </thead>
-              <tbody>
-                {summary.eye_drops.map((d, idx) => (
-                  <tr key={idx} className="border-b border-slate-200">
-                    <td className="px-1.5 py-1 font-bold">{d.name}</td>
-                    <td className="px-1.5 py-1 font-semibold">
-                      {d.eye === 'Operated Eye' ? summary.operated_eye : d.eye}
-                    </td>
-                    <td className="px-1.5 py-1">{d.schedule}</td>
-                    <td className="px-1.5 py-1 font-semibold">{d.duration}</td>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse text-[10.5px]">
+                <thead>
+                  <tr className="border-b border-stone-300 bg-stone-100 text-left text-stone-800">
+                    <th className="px-2 py-1 font-bold">Eye Drops / Ointment</th>
+                    <th className="w-28 px-2 py-1 font-bold">Which Eye</th>
+                    <th className="px-2 py-1 font-bold">Dosage & Schedule</th>
+                    <th className="w-28 px-2 py-1 font-bold">Duration</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-stone-150">
+                  {summary.eye_drops.map((d, idx) => (
+                    <tr key={idx} className="hover:bg-stone-50/50">
+                      <td className="px-2 py-1.5 font-bold text-stone-950">{d.name}</td>
+                      <td className="px-2 py-1.5 font-semibold text-stone-800">
+                        {d.eye === 'Operated Eye' ? summary.operated_eye : d.eye}
+                      </td>
+                      <td className="px-2 py-1.5 text-stone-800">{d.schedule}</td>
+                      <td className="px-2 py-1.5 font-semibold text-stone-800">{d.duration}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
 
           {summary.oral_meds && summary.oral_meds.length > 0 && (
-            <table className="w-full border-collapse text-[10.5px]">
-              <thead>
-                <tr className="border-b border-slate-400 bg-slate-100 text-left">
-                  <th className="px-1.5 py-1 font-bold">Oral Tablets</th>
-                  <th className="w-28 px-1.5 py-1 font-bold">Dose (M-A-N)</th>
-                  <th className="w-32 px-1.5 py-1 font-bold">Food Timing</th>
-                  <th className="w-24 px-1.5 py-1 font-bold">Duration</th>
-                </tr>
-              </thead>
-              <tbody>
-                {summary.oral_meds.map((m, idx) => (
-                  <tr key={idx} className="border-b border-slate-200">
-                    <td className="px-1.5 py-1 font-bold">{m.name}</td>
-                    <td className="px-1.5 py-1 font-semibold">{m.dosage}</td>
-                    <td className="px-1.5 py-1">{m.timing}</td>
-                    <td className="px-1.5 py-1 font-semibold">{m.duration}</td>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse text-[10.5px]">
+                <thead>
+                  <tr className="border-b border-stone-300 bg-stone-100 text-left text-stone-800">
+                    <th className="px-2 py-1 font-bold">Oral Tablets</th>
+                    <th className="w-28 px-2 py-1 font-bold">Dose (M-A-N)</th>
+                    <th className="w-32 px-2 py-1 font-bold">Food Timing</th>
+                    <th className="w-24 px-2 py-1 font-bold">Duration</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-stone-150">
+                  {summary.oral_meds.map((m, idx) => (
+                    <tr key={idx} className="hover:bg-stone-50/50">
+                      <td className="px-2 py-1.5 font-bold text-stone-950">{m.name}</td>
+                      <td className="px-2 py-1.5 font-semibold text-stone-800">{m.dosage}</td>
+                      <td className="px-2 py-1.5 text-stone-800">{m.timing}</td>
+                      <td className="px-2 py-1.5 font-semibold text-stone-800">{m.duration}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
 
-          <div className="rounded bg-slate-100 px-2 py-1 text-[9.5px] font-semibold text-slate-800">
-            • Wash hands before applying drops • Shake milky drops well • Keep 5 minutes gap between two drops • Continue your regular BP / Sugar / Heart tablets as advised by your physician.
+          <div className="rounded-lg bg-stone-50 border border-stone-200 px-3 py-1.5 text-[10px] text-stone-700">
+            • Wash hands before instilling drops • Shake suspension drops well • Keep 5 minutes gap between two drops • Continue regular BP, Sugar & Cardiac medications as directed.
           </div>
         </div>
       </div>
 
-      {/* 5. FOLLOW-UP + BILINGUAL PRECAUTIONS & RED FLAGS */}
-      <div className="mt-2 grid grid-cols-12 gap-2">
-        <div className="col-span-6 space-y-1.5 rounded border border-slate-400 p-2">
-          <div className="text-[10.5px] font-extrabold uppercase text-slate-900">
-            Follow-Up Dates / ಮರು ತಪಾಸಣೆ ದಿನಾಂಕಗಳು
-          </div>
-          <div className="grid grid-cols-3 gap-1.5 text-center text-[10px]">
-            <div className="rounded border border-slate-300 bg-slate-50 p-1">
-              <div className="text-[9px] font-semibold text-slate-500">1st Visit (Next Day)</div>
-              <div className="font-extrabold">{formatDisplayDate(summary.follow_up_1)}</div>
-            </div>
-            <div className="rounded border border-slate-300 bg-slate-50 p-1">
-              <div className="text-[9px] font-semibold text-slate-500">2nd Visit (1 Wk)</div>
-              <div className="font-extrabold">{formatDisplayDate(summary.follow_up_2)}</div>
-            </div>
-            <div className="rounded border border-slate-300 bg-slate-50 p-1">
-              <div className="text-[9px] font-semibold text-slate-500">Glasses Check</div>
-              <div className="font-extrabold">{formatDisplayDate(summary.follow_up_3)}</div>
-            </div>
-          </div>
-          <div className="text-[9.5px] font-bold text-slate-700">
-            * Bring all eye drops & this sheet on every visit.
+      {/* ── 5. FOLLOW-UP DATES & PRECAUTIONS ── */}
+      <div className="mt-3 grid grid-cols-1 sm:grid-cols-12 gap-3">
+        {/* Follow-up & Care */}
+        <div className="sm:col-span-7 space-y-2 rounded-xl border border-stone-300 p-3 bg-white">
+          <div className="flex items-center justify-between text-[11px] font-bold text-stone-900 border-b border-stone-150 pb-1">
+            <span className="uppercase tracking-wider">Follow-Up Schedule</span>
+            <span className="font-kannada text-xs font-normal text-stone-600">ಮರು ತಪಾಸಣೆ</span>
           </div>
 
-          <div className="border-t border-slate-200 pt-1 text-[9.5px] space-y-0.5">
-            <div className="font-extrabold text-slate-900">
-              Post-Op Care / ಎಚ್ಚರಿಕೆಗಳು:
+          <div className="grid grid-cols-3 gap-1.5 text-center text-[10px]">
+            <div className="rounded-lg border border-stone-200 bg-stone-50 p-1.5">
+              <div className="text-[9px] font-semibold text-stone-500">1st Visit (Next Day)</div>
+              <div className="font-bold text-stone-900 mt-0.5">{formatDisplayDate(summary.follow_up_1)}</div>
             </div>
-            <div>• Do NOT rub, press, or splash water in operated eye for <strong>{summary.head_bath_days} days</strong> (head bath restricted).</div>
-            <div className="font-kannada text-slate-800">• ಕಣ್ಣನ್ನು ಉಜ್ಜಬೇಡಿ. {summary.head_bath_days} ದಿನಗಳವರೆಗೆ ಕಣ್ಣಿಗೆ ನೀರು ತಾಗಿಸಬೇಡಿ (ತಲೆ ಸ್ನಾನ ಬೇಡ).</div>
-            <div>• Wear dark glasses outdoors & protective shield at night. Avoid smoke, dust & heavy lifting.</div>
-            <div className="font-kannada text-slate-800">• ಹೊರಗೆ ಹೋಗುವಾಗ ಕಪ್ಪು ಕನ್ನಡಕ ಧರಿಸಿ. ಹೊಗೆ, ಧೂಳು ಮತ್ತು ಭಾರ ಎತ್ತುವುದನ್ನು ತಪ್ಪಿಸಿ.</div>
+            <div className="rounded-lg border border-stone-200 bg-stone-50 p-1.5">
+              <div className="text-[9px] font-semibold text-stone-500">2nd Visit (1 Wk)</div>
+              <div className="font-bold text-stone-900 mt-0.5">{formatDisplayDate(summary.follow_up_2)}</div>
+            </div>
+            <div className="rounded-lg border border-stone-200 bg-stone-50 p-1.5">
+              <div className="text-[9px] font-semibold text-stone-500">Glasses Check</div>
+              <div className="font-bold text-stone-900 mt-0.5">{formatDisplayDate(summary.follow_up_3)}</div>
+            </div>
+          </div>
+
+          <div className="border-t border-stone-100 pt-1.5 text-[9.5px] space-y-1 text-stone-800">
+            <div>• Do NOT rub or splash water in operated eye for <strong>{summary.head_bath_days} days</strong> (head bath restricted).</div>
+            <div className="font-kannada text-stone-700">• ಕಣ್ಣನ್ನು ಉಜ್ಜಬೇಡಿ. {summary.head_bath_days} ದಿನಗಳವರೆಗೆ ಕಣ್ಣಿಗೆ ನೀರು ತಾಗಿಸಬೇಡಿ (ತಲೆ ಸ್ನಾನ ಬೇಡ).</div>
+            <div>• Wear dark glasses outdoors & eye shield while sleeping. Avoid dust and heavy lifting.</div>
+            <div className="font-kannada text-stone-700">• ಹೊರಗೆ ಹೋಗುವಾಗ ಕಪ್ಪು ಕನ್ನಡಕ ಧರಿಸಿ. ಮಲಗುವಾಗ ಶೀಲ್ಡ್ ಹಾಕಿ. ಧೂಳು ಮತ್ತು ಭಾರ ಎತ್ತುವುದನ್ನು ತಪ್ಪಿಸಿ.</div>
           </div>
         </div>
 
-        <div className="col-span-6 flex flex-col justify-between rounded border-2 border-red-700 bg-red-50/40 p-2">
+        {/* Emergency Warning Signs */}
+        <div className="sm:col-span-5 flex flex-col justify-between rounded-xl border border-amber-300 bg-amber-50/50 p-3">
           <div>
-            <div className="rounded bg-red-700 px-2 py-0.5 text-center text-[10.5px] font-extrabold uppercase tracking-wide text-white">
-              EMERGENCY WARNING SIGNS / ತುರ್ತು ಎಚ್ಚರಿಕೆ ಲಕ್ಷಣಗಳು
+            <div className="rounded-md bg-stone-900 px-2.5 py-1 text-center text-[10.5px] font-bold uppercase tracking-wider text-white">
+              Emergency Warning Signs / ತುರ್ತು ಎಚ್ಚರಿಕೆ
             </div>
-            <div className="mt-1.5 space-y-1 text-[10px]">
-              <div className="font-bold text-red-900">
-                Report IMMEDIATELY or call if you notice any of these:
-              </div>
-              <ul className="list-disc pl-4 space-y-0.5 font-semibold text-slate-900">
-                <li>Sudden or severe eye pain / ತೀವ್ರವಾದ ಕಣ್ಣಿನ ನೋವು</li>
-                <li>Sudden decrease or blurring of vision / ದೃಷ್ಟಿ ಹಠಾತ್ ಮಂಜಾಗುವುದು</li>
-                <li>Increasing redness or eyelid swelling / ಕಣ್ಣು ಕೆಂಪಾಗುವುದು ಅಥವಾ ಊತ</li>
-                <li>Yellowish/white pus discharge / ಕಣ್ಣಿನಿಂದ ಕೀವು ಅಥವಾ ಹಳದಿ ಸ್ರಾವ</li>
-                <li>Accidental hit or injury to eye / ಕಣ್ಣಿಗೆ ಪೆಟ್ಟು ಬಿದ್ದರೆ</li>
+            <div className="mt-2 space-y-1 text-[10px] text-stone-800">
+              <div className="font-bold text-amber-950">Call helpline immediately if you notice:</div>
+              <ul className="list-disc pl-3.5 space-y-0.5">
+                <li>Severe sudden eye pain / ತೀವ್ರ ಕಣ್ಣಿನ ನೋವು</li>
+                <li>Sudden drop in vision / ದೃಷ್ಟಿ ಮಂಜಾಗುವುದು</li>
+                <li>Excessive redness or swelling / ಕಣ್ಣು ಕೆಂಪಾಗುವುದು</li>
+                <li>White/yellow discharge / ಕಣ್ಣಿನಲ್ಲಿ ಸ್ರಾವ</li>
               </ul>
             </div>
           </div>
 
-          <div className="mt-2 rounded border border-red-300 bg-white px-2 py-1 text-center text-[10.5px] font-extrabold text-red-800">
-            24/7 Emergency Helpline: {emergencyNo}
+          <div className="mt-2.5 rounded-lg border border-amber-300 bg-white px-2.5 py-1.5 text-center text-[11px] font-bold text-amber-950 shadow-sm">
+            24/7 Helpline: {emergencyNo}
           </div>
         </div>
       </div>
 
-      {/* 6. SIGN-OFF BAR */}
-      <div className="mt-3 grid grid-cols-3 gap-3 border-t border-slate-400 pt-2 text-[9.5px]">
+      {/* ── 6. FORMAL DOCTOR & STAFF SIGN-OFF ── */}
+      <div className="mt-4 grid grid-cols-3 gap-4 border-t-2 border-stone-800 pt-3 text-[10px]">
         <div>
-          <div className="h-8" />
-          <div className="border-t border-slate-400 pt-0.5 font-bold">
-            Prepared By: {summary.prepared_by || 'Assistant'}
+          <div className="h-9" />
+          <div className="border-t border-stone-300 pt-1 font-bold text-stone-900">
+            {summary.prepared_by || 'Staff Assistant'}
           </div>
-          <div className="text-[9px] text-slate-500">Staff Signature</div>
+          <div className="text-[9px] text-stone-500">Prepared By (Staff Signature)</div>
         </div>
 
         <div className="text-center">
-          <div className="h-8" />
-          <div className="border-t border-slate-400 pt-0.5 font-bold">
+          <div className="h-9" />
+          <div className="border-t border-stone-300 pt-1 font-bold text-stone-950">
             {clinic.doctor_name}, {clinic.doctor_qualification}
           </div>
-          <div className="text-[9px] text-slate-500">
-            Operating Surgeon Sign & Stamp {clinic.doctor_kmc_no ? `• KMC: ${clinic.doctor_kmc_no}` : ''}
+          <div className="text-[9px] text-stone-500">
+            Surgeon Signature & Hospital Stamp {clinic.doctor_kmc_no ? `· KMC: ${clinic.doctor_kmc_no}` : ''}
           </div>
         </div>
 
         <div className="text-right">
-          <div className="h-8" />
-          <div className="border-t border-slate-400 pt-0.5 font-bold">
-            Patient / Attendant Sign or Thumbprint
+          <div className="h-9" />
+          <div className="border-t border-stone-300 pt-1 font-bold text-stone-900">
+            Patient / Attendant
           </div>
-          <div className="text-[8.5px] text-slate-600">
-            Summary received; eye drops & warning signs explained.
-          </div>
+          <div className="text-[9px] text-stone-500">Signature / Thumb Impression</div>
         </div>
       </div>
     </div>

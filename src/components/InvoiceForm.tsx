@@ -236,7 +236,7 @@ export function InvoiceForm({ patient, clinic, catalog, onCreated }: InvoiceForm
       </div>
 
       {step === 0 && (
-        <div className="card-surface p-5 sm:p-6 space-y-5">
+        <div className="card-surface p-4 sm:p-6 space-y-5 w-full min-w-0 max-w-full overflow-hidden">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h3 className="font-display text-2xl text-ivory-50">Select services</h3>
@@ -250,7 +250,7 @@ export function InvoiceForm({ patient, clinic, catalog, onCreated }: InvoiceForm
           </div>
 
           {/* Custom Select for Category + Search */}
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-2 w-full min-w-0 max-w-full">
             <CustomSelect
               label="Filter Category"
               value={activeCat}
@@ -274,7 +274,7 @@ export function InvoiceForm({ patient, clinic, catalog, onCreated }: InvoiceForm
           </div>
 
           {/* Service items list */}
-          <div className="grid gap-2 sm:grid-cols-2">
+          <div className="grid gap-2 sm:grid-cols-2 w-full min-w-0 max-w-full">
             {filteredCatalog.map((svc) => {
               const inBill = items.find((x) => x.name === svc.name);
               return (
@@ -282,19 +282,19 @@ export function InvoiceForm({ patient, clinic, catalog, onCreated }: InvoiceForm
                   key={svc.id}
                   type="button"
                   onClick={() => addCatalogItem(svc)}
-                  className={`flex items-center justify-between gap-2 rounded-2xl border p-3.5 text-left transition ${
+                  className={`flex w-full min-w-0 max-w-full box-border items-center justify-between gap-2.5 rounded-2xl border p-3.5 text-left transition ${
                     inBill
-                      ? 'border-gold-400 bg-gold-400/10 shadow-soft'
+                      ? 'border-gold-400 bg-gold-400/15 shadow-soft'
                       : 'border-ivory-50/10 bg-ink-950 hover:border-gold-400/50 hover:bg-ink-850'
                   }`}
                 >
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1 overflow-hidden">
                     <span className="block truncate text-xs font-semibold text-ivory-50">{svc.name}</span>
                     <span className="text-[11px] text-ivory-400">{svc.category}</span>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex shrink-0 items-center gap-2">
                     {inBill && (
-                      <span className="rounded-full bg-gold-400 px-2 py-0.5 text-[11px] font-bold text-ink-900">
+                      <span className="rounded-full bg-gold-400 px-2 py-0.5 text-[11px] font-bold text-white">
                         x{inBill.qty}
                       </span>
                     )}
@@ -313,9 +313,9 @@ export function InvoiceForm({ patient, clinic, catalog, onCreated }: InvoiceForm
           </div>
 
           {/* Custom line item */}
-          <div className="border-t border-ivory-50/10 pt-4">
+          <div className="border-t border-ivory-50/10 pt-4 w-full min-w-0 max-w-full">
             <label className="label-field">Or Add Custom Item</label>
-            <div className="flex flex-col gap-2 sm:flex-row">
+            <div className="flex flex-col gap-2 sm:flex-row w-full min-w-0 max-w-full">
               <input
                 type="text"
                 value={customName}
@@ -343,7 +343,7 @@ export function InvoiceForm({ patient, clinic, catalog, onCreated }: InvoiceForm
       )}
 
       {step === 1 && (
-        <div className="card-surface p-5 sm:p-6 space-y-5">
+        <div className="card-surface p-4 sm:p-6 space-y-5 w-full min-w-0 max-w-full overflow-hidden">
           <div className="flex items-center justify-between border-b border-ivory-50/10 pb-3">
             <div className="flex items-center gap-2 font-display text-2xl text-ivory-50">
               <Receipt className="h-5 w-5 text-gold-400" />
