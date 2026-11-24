@@ -1,16 +1,20 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
-  Plus,
-  Trash2,
-  Printer,
-  MessageCircle,
   CheckCircle2,
   Loader2,
-  Receipt,
+  MessageCircle,
+  Mic,
+  Minus,
+  Plus,
+  Printer,
   Search,
+  Sparkles,
+  Square,
+  Trash2,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { formatINR } from '../lib/dates';
+import { runAiExtract, useVoiceRecorder } from '../lib/aiExtract';
 import { shareInvoiceOnWhatsApp } from '../lib/whatsapp';
 import { PrintableInvoice } from './PrintableInvoice';
 import { CustomSelect, CustomSelectOption } from './CustomSelect';
@@ -28,8 +32,8 @@ const CATEGORIES: ServiceCategory[] = ['Consultation', 'Diagnostic', 'Procedure'
 
 const PAYMENT_MODE_OPTIONS: CustomSelectOption[] = [
   { value: 'Cash', label: 'Cash', sublabel: 'Direct cash at reception' },
-  { value: 'UPI', label: 'UPI / QR Code', sublabel: 'Instant GPay / PhonePe / Paytm' },
-  { value: 'Card', label: 'Card (POS Machine)', sublabel: 'Debit / Credit card swipe' },
+  { value: 'UPI', label: 'UPI / QR Code', sublabel: 'GPay / PhonePe / Paytm' },
+  { value: 'Card', label: 'Card (POS)', sublabel: 'Debit / Credit card' },
   { value: 'TPA / Scheme', label: 'TPA / Insurance Scheme', sublabel: 'Cashless / Reimbursement' },
 ];
 
@@ -49,23 +53,81 @@ export function InvoiceForm({ patient, clinic, catalog, onCreated }: InvoiceForm
   const [discount, setDiscount] = useState('0');
   const [paymentMode, setPaymentMode] = useState<PaymentMode>('Cash');
   const [paymentRef, setPaymentRef] = useState('');
+  const [ipdNo, setIpdNo] = useState('');
+  const [tpaName, setTpaName] = useState('');
+  const [policyNo, setPolicyNo] = useState('');
   const [notes, setNotes] = useState('');
   const [createdBy, setCreatedBy] = useState('Reception');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [savedInvoice, setSavedInvoice] = useState<Invoice | null>(null);
-  const [step, setStep] = useState(0);
 
-  const categoryOptions: CustomSelectOption[] = useMemo(() => {
-    return [
-      { value: 'All', label: `All Services (${catalog.length} items)` },
-      ...CATEGORIES.map((c) => ({
-        value: c,
-        label: c,
-        sublabel: `${catalog.filter((x) => x.category === c).length} items configured`,
-      })),
-    ];
-  }, [catalog]);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiMessage, setAiMessage] = useState('');
+
+  const handleVoiceComplete = useCallback(
+    async (base64: string, mimeType: string) => {
+      setAiLoading(true);
+      setAiMessage('Extracting bill items from voice…');
+      setError('');
+      try {
+        const activeCatalog = catalog
+          .filter((c) => c.is_active)
+          .map((c) => ({ name: c.name, category: c.category, default_price: c.default_price }));
+
+        const { extracted, warnings } = await runAiExtract({
+          target: 'invoice',
+          mode: 'audio',
+          mimeType,
+          base64,
+          catalog: activeCatalog,
+        });
+
+        if (Array.isArray(extracted.items) && extracted.items.length > 0) {
+          const parsed: InvoiceLineItem[] = extracted.items.map((raw: any) => {
+            const qty = Math.max(1, Number(raw.qty) || 1);
+            const unit_price = Math.max(0, Number(raw.unit_price) || 0);
+            return {
+              name: String(raw.name || 'Service'),
+              category: String(raw.category || 'Procedure'),
+              qty,
+              unit_price,
+              amount: qty * unit_price,
+            };
+          });
+          setItems((prev) => [...prev, ...parsed]);
+        }
+
+        if (typeof extracted.discount === 'number' && extracted.discount > 0) {
+          setDiscount(String(extracted.discount));
+        }
+        const pm = String(extracted.payment_mode || '');
+        if (['Cash', 'UPI', 'Card', 'TPA / Scheme'].includes(pm)) {
+          setPaymentMode(pm as PaymentMode);
+        }
+        if (typeof extracted.payment_ref === 'string' && extracted.payment_ref.trim()) {
+          setPaymentRef(extracted.payment_ref.trim());
+        }
+        if (typeof extracted.notes === 'string' && extracted.notes.trim()) {
+          setNotes(extracted.notes.trim());
+        }
+
+        setAiMessage(
+          warnings.length > 0
+            ? `Voice items added (${warnings.join(' · ')})`
+            : 'Voice items added. Review quantities and total before saving.',
+        );
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Voice billing extraction failed');
+        setAiMessage('');
+      } finally {
+        setAiLoading(false);
+      }
+    },
+    [catalog],
+  );
+
+  const voice = useVoiceRecorder(handleVoiceComplete);
 
   const filteredCatalog = useMemo(() => {
     return catalog.filter((c) => {
@@ -81,6 +143,31 @@ export function InvoiceForm({ patient, clinic, catalog, onCreated }: InvoiceForm
   const subtotal = useMemo(() => items.reduce((sum, i) => sum + i.amount, 0), [items]);
   const discountNum = Math.max(0, Math.min(subtotal, parseInt(discount || '0', 10) || 0));
   const total = Math.max(0, subtotal - discountNum);
+
+  const previewInvoice: Invoice = useMemo(
+    () => ({
+      id: 'preview',
+      invoice_no: 'INV-PREVIEW',
+      ipd_no: ipdNo.trim(),
+      tpa_name: tpaName.trim(),
+      policy_no: policyNo.trim(),
+      patient_id: patient.id,
+      items,
+      subtotal,
+      discount: discountNum,
+      total,
+      payment_mode: paymentMode,
+      payment_ref: paymentRef.trim(),
+      notes: notes.trim(),
+      status: 'active',
+      void_reason: null,
+      voided_at: null,
+      share_token: '',
+      created_by: createdBy.trim() || 'Reception',
+      created_at: new Date().toISOString(),
+    }),
+    [ipdNo, tpaName, policyNo, patient.id, items, subtotal, discountNum, total, paymentMode, paymentRef, notes, createdBy],
+  );
 
   function addCatalogItem(svc: ServiceCatalogItem) {
     setItems((prev) => {
@@ -101,6 +188,18 @@ export function InvoiceForm({ patient, clinic, catalog, onCreated }: InvoiceForm
           amount: svc.default_price,
         },
       ];
+    });
+  }
+
+  function decrementByName(name: string) {
+    setItems((prev) => {
+      const idx = prev.findIndex((x) => x.name === name);
+      if (idx < 0) return prev;
+      if (prev[idx].qty <= 1) return prev.filter((_, i) => i !== idx);
+      const next = [...prev];
+      const qty = next[idx].qty - 1;
+      next[idx] = { ...next[idx], qty, amount: qty * next[idx].unit_price };
+      return next;
     });
   }
 
@@ -139,7 +238,7 @@ export function InvoiceForm({ patient, clinic, catalog, onCreated }: InvoiceForm
 
   async function handleSave() {
     if (items.length === 0) {
-      setError('Please add at least one item or procedure to the bill.');
+      setError('Tap at least one service to generate a receipt.');
       return;
     }
     setSaving(true);
@@ -149,6 +248,9 @@ export function InvoiceForm({ patient, clinic, catalog, onCreated }: InvoiceForm
       .from('invoices')
       .insert({
         patient_id: patient.id,
+        ipd_no: ipdNo.trim(),
+        tpa_name: tpaName.trim(),
+        policy_no: policyNo.trim(),
         items,
         subtotal,
         discount: discountNum,
@@ -175,7 +277,7 @@ export function InvoiceForm({ patient, clinic, catalog, onCreated }: InvoiceForm
   if (savedInvoice) {
     return (
       <div className="space-y-4">
-        <div className="no-print flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-300 bg-emerald-50/80 p-4">
+        <div className="no-print flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-emerald-300 bg-emerald-50/90 p-5">
           <div className="flex items-center gap-2.5">
             <CheckCircle2 className="h-6 w-6 text-emerald-700" />
             <div>
@@ -183,26 +285,20 @@ export function InvoiceForm({ patient, clinic, catalog, onCreated }: InvoiceForm
                 Receipt {savedInvoice.invoice_no} Saved ({formatINR(savedInvoice.total)})
               </div>
               <div className="text-xs text-emerald-800">
-                Linked to {patient.full_name} ({patient.patient_code})
+                {patient.full_name} · MRD: {patient.patient_code}
               </div>
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => window.print()}
-              className="btn-primary !min-h-[42px] text-xs"
-            >
-              <Printer className="h-4 w-4" />
-              Print Receipt
+            <button type="button" onClick={() => window.print()} className="btn-primary !min-h-[40px] text-xs">
+              <Printer className="h-4 w-4" /> Print Receipt
             </button>
             <button
               type="button"
               onClick={() => shareInvoiceOnWhatsApp(patient, savedInvoice, clinic)}
-              className="inline-flex items-center gap-1.5 rounded-full bg-emerald-700 px-4 py-2 text-xs font-semibold text-white shadow-soft hover:bg-emerald-800 transition"
+              className="inline-flex items-center gap-1.5 rounded-full bg-emerald-700 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-800 transition"
             >
-              <MessageCircle className="h-4 w-4" />
-              Send on WhatsApp
+              <MessageCircle className="h-4 w-4" /> WhatsApp
             </button>
             <button
               type="button"
@@ -213,7 +309,7 @@ export function InvoiceForm({ patient, clinic, catalog, onCreated }: InvoiceForm
                 setPaymentRef('');
                 setNotes('');
               }}
-              className="btn-ghost !min-h-[42px] text-xs"
+              className="btn-ghost !min-h-[40px] text-xs"
             >
               New Bill
             </button>
@@ -226,282 +322,318 @@ export function InvoiceForm({ patient, clinic, catalog, onCreated }: InvoiceForm
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <p className="eyebrow">{step === 0 ? 'Step 1 · Select items' : 'Step 2 · Payment & Receipt'}</p>
-        <div className="wizard-progress mt-3 max-w-[8rem]">
-          <div className="wizard-dot wizard-dot-active" />
-          <div className={`wizard-dot ${step >= 1 ? 'wizard-dot-active' : ''}`} />
-        </div>
-      </div>
+    <div className="grid gap-6 xl:grid-cols-12">
+      {/* LEFT PANE: POS SERVICE PICKER & PAYMENT (7 cols) */}
+      <div className="no-print space-y-4 xl:col-span-7">
+        {/* Obsidian Voice Billing Bar */}
+        <div className="card-obsidian flex flex-wrap items-center justify-between gap-3 p-4 sm:p-5">
+          <div>
+            <p className="text-[10.5px] font-semibold uppercase tracking-[0.18em] text-gold-300">
+              Itemized TPA-Ready Billing
+            </p>
+            <h3 className="mt-0.5 font-display text-xl text-white">Quick POS & Voice Bill</h3>
+          </div>
 
-      {step === 0 && (
-        <div className="card-surface p-4 sm:p-6 space-y-5 w-full min-w-0 max-w-full overflow-hidden">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h3 className="font-display text-2xl text-ivory-50">Select services</h3>
-              <p className="mt-0.5 text-xs text-ivory-400">Tap any item to add. Tap again to increment quantity.</p>
-            </div>
-            {items.length > 0 && (
-              <span className="rounded-full bg-gold-400/20 px-3 py-1 text-xs font-bold text-gold-500">
-                {items.length} item(s) · {formatINR(total)}
-              </span>
+          <button
+            type="button"
+            disabled={aiLoading}
+            onClick={voice.toggle}
+            className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold transition ${
+              voice.recording
+                ? 'animate-pulse bg-red-600 text-white'
+                : 'bg-gold-400 text-white hover:bg-gold-300'
+            }`}
+          >
+            {aiLoading ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : voice.recording ? (
+              <Square className="h-3.5 w-3.5" />
+            ) : (
+              <Mic className="h-3.5 w-3.5" />
             )}
-          </div>
+            <span>{voice.recording ? `Stop (${voice.elapsedSec}s)` : 'Voice Fill Bill'}</span>
+          </button>
 
-          {/* Custom Select for Category + Search */}
-          <div className="grid gap-3 sm:grid-cols-2 w-full min-w-0 max-w-full">
-            <CustomSelect
-              label="Filter Category"
-              value={activeCat}
-              onChange={(val) => setActiveCat(val as ServiceCategory | 'All')}
-              options={categoryOptions}
-            />
-
-            <div>
-              <label className="label-field">Quick Search</label>
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ivory-400" />
-                <input
-                  type="text"
-                  value={catalogSearch}
-                  onChange={(e) => setCatalogSearch(e.target.value)}
-                  placeholder="Search item name..."
-                  className="input-field pl-10 text-xs"
-                />
-              </div>
+          {(aiMessage || voice.micError) && (
+            <div className="flex w-full items-start gap-2 rounded-2xl border border-gold-300/30 bg-white/[0.07] p-3 text-xs text-white/90">
+              <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-gold-300" />
+              <span>{voice.micError || aiMessage}</span>
             </div>
+          )}
+        </div>
+
+        {/* Service Catalog Picker */}
+        <div className="card-surface space-y-3.5 p-4 sm:p-5">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ivory-400" />
+            <input
+              type="text"
+              value={catalogSearch}
+              onChange={(e) => setCatalogSearch(e.target.value)}
+              placeholder="Filter services (Phaco, OPD, A-Scan, YAG)…"
+              className="input-field !min-h-[44px] pl-10 text-xs"
+            />
           </div>
 
-          {/* Service items list */}
-          <div className="grid gap-2 sm:grid-cols-2 w-full min-w-0 max-w-full">
+          {/* Horizontal Category Pills */}
+          <div className="flex gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {(['All', ...CATEGORIES] as const).map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setActiveCat(cat)}
+                className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
+                  activeCat === cat
+                    ? 'bg-ivory-50 text-ink-900 shadow-soft'
+                    : 'border border-ivory-50/12 bg-ink-950 text-ivory-300 hover:border-gold-400/40'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+
+          <div className="grid max-h-72 gap-2 overflow-y-auto pr-0.5 sm:grid-cols-2">
             {filteredCatalog.map((svc) => {
               const inBill = items.find((x) => x.name === svc.name);
               return (
-                <button
+                <div
                   key={svc.id}
-                  type="button"
-                  onClick={() => addCatalogItem(svc)}
-                  className={`flex w-full min-w-0 max-w-full box-border items-center justify-between gap-2.5 rounded-2xl border p-3.5 text-left transition ${
+                  className={`flex items-center justify-between gap-2 rounded-2xl border p-3 transition ${
                     inBill
-                      ? 'border-gold-400 bg-gold-400/15 shadow-soft'
-                      : 'border-ivory-50/10 bg-ink-950 hover:border-gold-400/50 hover:bg-ink-850'
+                      ? 'border-gold-400 bg-clinic-50/80 shadow-soft'
+                      : 'border-ivory-50/10 bg-ink-950 hover:border-gold-400/50'
                   }`}
                 >
-                  <div className="min-w-0 flex-1 overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => addCatalogItem(svc)}
+                    className="min-w-0 flex-1 text-left"
+                  >
                     <span className="block truncate text-xs font-semibold text-ivory-50">{svc.name}</span>
-                    <span className="text-[11px] text-ivory-400">{svc.category}</span>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-2">
-                    {inBill && (
-                      <span className="rounded-full bg-gold-400 px-2 py-0.5 text-[11px] font-bold text-white">
-                        x{inBill.qty}
-                      </span>
-                    )}
-                    <span className="shrink-0 rounded-xl bg-ink-900 px-2.5 py-1 text-xs font-bold text-ivory-50 border border-ivory-50/10">
-                      {formatINR(svc.default_price)}
+                    <span className="text-[10.5px] text-ivory-400">
+                      {svc.category} · <strong className="text-ivory-100">{formatINR(svc.default_price)}</strong>
                     </span>
-                  </div>
-                </button>
+                  </button>
+
+                  {inBill ? (
+                    <div className="flex shrink-0 items-center gap-1 rounded-full bg-ivory-50 p-0.5 text-ink-900">
+                      <button
+                        type="button"
+                        onClick={() => decrementByName(svc.name)}
+                        className="grid h-6 w-6 place-items-center rounded-full hover:bg-white/15"
+                        aria-label="Decrease"
+                      >
+                        <Minus className="h-3 w-3" />
+                      </button>
+                      <span className="min-w-[1.25rem] text-center text-xs font-bold">{inBill.qty}</span>
+                      <button
+                        type="button"
+                        onClick={() => addCatalogItem(svc)}
+                        className="grid h-6 w-6 place-items-center rounded-full hover:bg-white/15"
+                        aria-label="Increase"
+                      >
+                        <Plus className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => addCatalogItem(svc)}
+                      className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-ivory-50/15 bg-ink-900 text-ivory-100 hover:bg-ivory-50 hover:text-ink-900 transition"
+                      aria-label="Add"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
               );
             })}
-            {filteredCatalog.length === 0 && (
-              <div className="col-span-2 rounded-2xl border border-dashed border-ivory-50/15 p-6 text-center text-xs text-ivory-400">
-                No services found. Add a custom item below.
-              </div>
-            )}
           </div>
 
-          {/* Custom line item */}
-          <div className="border-t border-ivory-50/10 pt-4 w-full min-w-0 max-w-full">
-            <label className="label-field">Or Add Custom Item</label>
-            <div className="flex flex-col gap-2 sm:flex-row w-full min-w-0 max-w-full">
+          <div className="border-t border-ivory-50/10 pt-3">
+            <label className="label-field">Custom Item / IOL Implant / Consumable</label>
+            <div className="flex flex-col gap-2 sm:flex-row">
               <input
                 type="text"
                 value={customName}
                 onChange={(e) => setCustomName(e.target.value)}
-                placeholder="Custom service / medicine / eye drops kit..."
-                className="input-field flex-1 text-xs"
+                placeholder="e.g. Imported Hydrophobic IOL (SN 99421)"
+                className="input-field !min-h-[42px] flex-1 text-xs"
               />
-              <input
-                type="number"
-                value={customPrice}
-                onChange={(e) => setCustomPrice(e.target.value)}
-                placeholder="Rate ₹"
-                className="input-field sm:w-32 text-xs"
-              />
-              <button
-                type="button"
-                onClick={addCustomItem}
-                className="btn-ghost !min-h-[50px] shrink-0 text-xs"
-              >
-                <Plus className="h-4 w-4" /> Add Item
-              </button>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  value={customPrice}
+                  onChange={(e) => setCustomPrice(e.target.value)}
+                  placeholder="Rate ₹"
+                  className="input-field !min-h-[42px] flex-1 text-xs sm:w-28"
+                />
+                <button type="button" onClick={addCustomItem} className="btn-ghost !min-h-[42px] shrink-0 text-xs">
+                  <Plus className="h-4 w-4" /> Add
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      )}
 
-      {step === 1 && (
-        <div className="card-surface p-4 sm:p-6 space-y-5 w-full min-w-0 max-w-full overflow-hidden">
-          <div className="flex items-center justify-between border-b border-ivory-50/10 pb-3">
-            <div className="flex items-center gap-2 font-display text-2xl text-ivory-50">
-              <Receipt className="h-5 w-5 text-gold-400" />
-              Invoice summary
-            </div>
-            <span className="text-xs text-ivory-400">{items.length} item(s)</span>
+        {/* Selected Line Items & Checkout */}
+        <div id="invoice-checkout" className="card-surface space-y-4 p-4 sm:p-5">
+          <div className="flex items-center justify-between">
+            <h4 className="font-display text-lg font-medium text-ivory-50">
+              Line Items ({items.length})
+            </h4>
+            <span className="font-display text-xl font-semibold text-gold-600">{formatINR(total)}</span>
           </div>
 
-          {/* Items breakdown */}
-          <div className="space-y-2">
-            {items.map((it, idx) => (
-              <div
-                key={idx}
-                className="flex items-center justify-between gap-3 rounded-2xl border border-ivory-50/10 bg-ink-950 p-3"
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-xs font-semibold text-ivory-50">{it.name}</div>
-                  <div className="mt-1 flex items-center gap-3 text-xs text-ivory-400">
-                    <label className="inline-flex items-center gap-1">
-                      Qty:
-                      <input
-                        type="number"
-                        min={1}
-                        value={it.qty}
-                        onChange={(e) => updateItem(idx, 'qty', e.target.value)}
-                        className="w-14 rounded-lg border border-ivory-50/15 bg-ink-900 px-2 py-0.5 text-center text-xs font-bold text-ivory-50"
-                      />
-                    </label>
-                    <label className="inline-flex items-center gap-1">
-                      Rate:
-                      <input
-                        type="number"
-                        min={0}
-                        value={it.unit_price}
-                        onChange={(e) => updateItem(idx, 'unit_price', e.target.value)}
-                        className="w-20 rounded-lg border border-ivory-50/15 bg-ink-900 px-2 py-0.5 text-right text-xs font-bold text-ivory-50"
-                      />
-                    </label>
+          {items.length > 0 && (
+            <div className="space-y-2">
+              {items.map((it, idx) => (
+                <div key={idx} className="flex items-center justify-between gap-2 rounded-2xl border border-ivory-50/10 bg-ink-950 p-2.5">
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-xs font-semibold text-ivory-50">{it.name}</div>
+                    <div className="mt-1 flex items-center gap-2 text-[11px] text-ivory-400">
+                      <label className="inline-flex items-center gap-1">
+                        Qty:
+                        <input
+                          type="number"
+                          min={1}
+                          value={it.qty}
+                          onChange={(e) => updateItem(idx, 'qty', e.target.value)}
+                          className="w-12 rounded-lg border border-ivory-50/15 bg-ink-900 px-1.5 py-0.5 text-center font-bold text-ivory-50"
+                        />
+                      </label>
+                      <label className="inline-flex items-center gap-1">
+                        Rate:
+                        <input
+                          type="number"
+                          min={0}
+                          value={it.unit_price}
+                          onChange={(e) => updateItem(idx, 'unit_price', e.target.value)}
+                          className="w-20 rounded-lg border border-ivory-50/15 bg-ink-900 px-1.5 py-0.5 text-right font-bold text-ivory-50"
+                        />
+                      </label>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-ivory-50">{formatINR(it.amount)}</span>
+                    <button type="button" onClick={() => removeItem(idx)} className="p-1 text-red-600 hover:text-red-700">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-xs font-bold text-ivory-50">{formatINR(it.amount)}</div>
-                  <button
-                    type="button"
-                    onClick={() => removeItem(idx)}
-                    className="mt-1 text-red-600 hover:text-red-700 p-1"
-                    title="Remove item"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
 
-          {/* Totals */}
-          <div className="rounded-2xl border border-ivory-50/10 bg-ink-950 p-4 space-y-2 text-xs">
-            <div className="flex justify-between text-ivory-400">
-              <span>Subtotal</span>
-              <span className="font-semibold text-ivory-50">{formatINR(subtotal)}</span>
-            </div>
-            <div className="flex items-center justify-between text-ivory-400">
-              <span>Discount / Concession (₹)</span>
-              <input
-                type="number"
-                min={0}
-                max={subtotal}
-                value={discount}
-                onChange={(e) => setDiscount(e.target.value)}
-                className="w-24 rounded-lg border border-ivory-50/15 bg-ink-900 px-2 py-1 text-right text-xs font-bold text-ivory-50"
-              />
-            </div>
-            <div className="flex justify-between border-t border-ivory-50/10 pt-2 text-sm font-bold text-ivory-50">
-              <span>Total Payable</span>
-              <span className="text-gold-400 text-base">{formatINR(total)}</span>
-            </div>
-          </div>
-
-          {/* Payment Mode & Details - Using CustomSelect */}
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-3">
             <CustomSelect
               label="Payment Mode"
               value={paymentMode}
               onChange={(val) => setPaymentMode(val as PaymentMode)}
               options={PAYMENT_MODE_OPTIONS}
             />
-
             <div>
-              <label className="label-field">Reference / UTR / Claim No. (Optional)</label>
+              <label className="label-field">Discount (₹)</label>
+              <input
+                type="number"
+                min={0}
+                max={subtotal}
+                value={discount}
+                onChange={(e) => setDiscount(e.target.value)}
+                className="input-field !min-h-[46px] text-xs font-bold"
+              />
+            </div>
+            <div>
+              <label className="label-field">UTR / Ref / Claim ID</label>
               <input
                 type="text"
                 value={paymentRef}
                 onChange={(e) => setPaymentRef(e.target.value)}
-                placeholder="UPI UTR, Card Auth, or Policy ID"
-                className="input-field text-xs"
+                placeholder="Optional"
+                className="input-field !min-h-[46px] text-xs"
               />
             </div>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-3">
             <div>
-              <label className="label-field">Billed By (Staff Signature)</label>
-              <input
-                type="text"
-                value={createdBy}
-                onChange={(e) => setCreatedBy(e.target.value)}
-                placeholder="Staff name"
-                className="input-field text-xs"
-              />
+              <label className="label-field">IPD No. (Optional)</label>
+              <input value={ipdNo} onChange={(e) => setIpdNo(e.target.value.toUpperCase())} placeholder="IPD-26-XXXX" className="input-field !min-h-[42px] font-mono text-xs uppercase" />
             </div>
             <div>
-              <label className="label-field">Remarks (Optional)</label>
-              <input
-                type="text"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="e.g. Balance paid after surgery"
-                className="input-field text-xs"
-              />
+              <label className="label-field">Billed By</label>
+              <input value={createdBy} onChange={(e) => setCreatedBy(e.target.value)} className="input-field !min-h-[42px] text-xs" />
+            </div>
+            <div>
+              <label className="label-field">Remarks</label>
+              <input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Optional" className="input-field !min-h-[42px] text-xs" />
             </div>
           </div>
+
+          {paymentMode === 'TPA / Scheme' && (
+            <div className="grid gap-3 rounded-2xl border border-gold-400/30 bg-clinic-50/70 p-3.5 sm:grid-cols-2">
+              <div>
+                <label className="label-field">TPA / Scheme Name</label>
+                <input value={tpaName} onChange={(e) => setTpaName(e.target.value)} placeholder="Star Health / AB-ArK" className="input-field !min-h-[40px] text-xs" />
+              </div>
+              <div>
+                <label className="label-field">Policy / Beneficiary No.</label>
+                <input value={policyNo} onChange={(e) => setPolicyNo(e.target.value)} placeholder="Policy / Card ID" className="input-field !min-h-[40px] text-xs" />
+              </div>
+            </div>
+          )}
 
           {error && (
-            <div className="rounded-2xl border border-red-200 bg-red-50 p-3 text-xs font-bold text-red-700">
+            <div className="rounded-2xl border border-red-300 bg-red-50 p-3 text-xs font-semibold text-red-800">
               {error}
             </div>
           )}
-        </div>
-      )}
 
-      {/* Sticky footer actions */}
-      <div className="sticky bottom-0 z-10 border-t border-ivory-50/10 bg-ink-950/95 py-3 backdrop-blur">
-        {step === 0 ? (
           <button
             type="button"
-            disabled={items.length === 0}
-            onClick={() => setStep(1)}
+            disabled={saving || items.length === 0}
+            onClick={handleSave}
             className="btn-primary w-full"
           >
-            Review bill ({items.length === 0 ? '0 items' : formatINR(total)}) →
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+            Save & Print Receipt ({formatINR(total)})
           </button>
-        ) : (
-          <div className="flex gap-2">
-            <button type="button" onClick={() => setStep(0)} className="btn-ghost flex-1">
-              ← Back to items
-            </button>
+        </div>
+      </div>
+
+      {/* RIGHT PANE: LIVE RECEIPT PREVIEW */}
+      <div className="hidden xl:col-span-5 xl:block">
+        <div className="sticky top-20 space-y-2.5">
+          <div className="no-print rounded-2xl border border-ivory-50/10 bg-ink-900 px-4 py-2.5 text-xs font-semibold text-ivory-200 shadow-soft">
+            Live Itemized Receipt Preview
+          </div>
+          <PrintableInvoice clinic={clinic} patient={patient} invoice={previewInvoice} />
+        </div>
+      </div>
+
+      {/* MOBILE FLOATING TOTAL BAR */}
+      {items.length > 0 && (
+        <div className="mobile-float-dock">
+          <div className="flex items-center justify-between gap-3 px-2 py-1">
+            <div>
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-gold-300">
+                {items.length} item(s) · {paymentMode}
+              </div>
+              <div className="font-display text-lg font-semibold text-white">{formatINR(total)}</div>
+            </div>
             <button
               type="button"
-              disabled={saving || items.length === 0}
+              disabled={saving}
               onClick={handleSave}
-              className="btn-primary flex-[2]"
+              className="inline-flex min-h-[44px] items-center gap-1.5 rounded-2xl bg-[#FBF9F6] px-5 text-xs font-bold text-[#141210] active:scale-[0.97] transition"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-              Save receipt ({formatINR(total)})
+              Save Receipt
             </button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

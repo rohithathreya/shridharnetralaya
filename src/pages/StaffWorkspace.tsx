@@ -1,22 +1,22 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
+  AlertCircle,
   ArrowLeft,
   Calendar,
   FileImage,
   FileText,
   History,
+  Loader2,
+  MapPin,
   MessageCircle,
   Pencil,
   Phone,
-  MapPin,
   Receipt,
-  AlertCircle,
   Users,
-  Loader2,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
-import { formatDisplayDate, todayIsoDate, addDaysIso } from '../lib/dates';
+import { addDaysIso, formatDisplayDate, todayIsoDate } from '../lib/dates';
 import { sendFollowUpReminderWhatsApp } from '../lib/whatsapp';
 import { PinGate } from '../components/PinGate';
 import { PatientSearch } from '../components/PatientSearch';
@@ -47,12 +47,10 @@ export function StaffWorkspace() {
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [activeTab, setActiveTab] = useState<PatientTab>('invoice');
 
-  // Modals
   const [patientModalOpen, setPatientModalOpen] = useState(false);
   const [newPatientPhone, setNewPatientPhone] = useState('');
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
 
-  // Catalog & Protocols
   const [catalog, setCatalog] = useState<ServiceCatalogItem[]>(() => {
     try {
       const c = localStorage.getItem(CATALOG_CACHE_KEY);
@@ -70,13 +68,11 @@ export function StaffWorkspace() {
     }
   });
 
-  // Patient History
   const [historyLoading, setHistoryLoading] = useState(false);
   const [summaries, setSummaries] = useState<DischargeSummary[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [documents, setDocuments] = useState<PatientDocument[]>([]);
 
-  // Follow-ups list
   const [followUps, setFollowUps] = useState<Patient[]>([]);
   const [followUpsLoading, setFollowUpsLoading] = useState(false);
 
@@ -87,20 +83,40 @@ export function StaffWorkspace() {
     ]);
     if (catRes.data) {
       setCatalog(catRes.data as ServiceCatalogItem[]);
-      try { localStorage.setItem(CATALOG_CACHE_KEY, JSON.stringify(catRes.data)); } catch {}
+      try {
+        localStorage.setItem(CATALOG_CACHE_KEY, JSON.stringify(catRes.data));
+      } catch {
+        // ignore
+      }
     }
     if (protoRes.data) {
       setProtocols(protoRes.data as SurgicalProtocol[]);
-      try { localStorage.setItem(PROTOCOLS_CACHE_KEY, JSON.stringify(protoRes.data)); } catch {}
+      try {
+        localStorage.setItem(PROTOCOLS_CACHE_KEY, JSON.stringify(protoRes.data));
+      } catch {
+        // ignore
+      }
     }
   }, []);
 
   const loadPatientHistory = useCallback(async (patientId: string) => {
     setHistoryLoading(true);
     const [dsRes, invRes, docRes] = await Promise.all([
-      supabase.from('discharge_summaries').select('*').eq('patient_id', patientId).order('created_at', { ascending: false }),
-      supabase.from('invoices').select('*').eq('patient_id', patientId).order('created_at', { ascending: false }),
-      supabase.from('patient_documents').select('*').eq('patient_id', patientId).order('visit_date', { ascending: false }),
+      supabase
+        .from('discharge_summaries')
+        .select('*')
+        .eq('patient_id', patientId)
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('invoices')
+        .select('*')
+        .eq('patient_id', patientId)
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('patient_documents')
+        .select('*')
+        .eq('patient_id', patientId)
+        .order('visit_date', { ascending: false }),
     ]);
     setSummaries((dsRes.data as DischargeSummary[]) || []);
     setInvoices((invRes.data as Invoice[]) || []);
@@ -144,7 +160,7 @@ export function StaffWorkspace() {
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-clinic-400" />
+        <Loader2 className="h-8 w-8 animate-spin text-gold-500" />
       </div>
     );
   }
@@ -156,121 +172,124 @@ export function StaffWorkspace() {
   const today = todayIsoDate();
 
   const patientTabs = [
-    { id: 'invoice' as PatientTab, label: 'Bill', long: 'New invoice', icon: <Receipt className="h-4 w-4" /> },
-    { id: 'discharge' as PatientTab, label: 'Discharge', long: 'Discharge', icon: <FileText className="h-4 w-4" /> },
-    { id: 'upload' as PatientTab, label: 'Upload', long: 'Upload', icon: <FileImage className="h-4 w-4" /> },
+    { id: 'invoice' as PatientTab, label: 'Bill', long: 'New Invoice', icon: <Receipt className="h-3.5 w-3.5" /> },
+    { id: 'discharge' as PatientTab, label: 'Discharge', long: 'Discharge Summary', icon: <FileText className="h-3.5 w-3.5" /> },
+    { id: 'upload' as PatientTab, label: 'Upload', long: 'Upload Rx / Scan', icon: <FileImage className="h-3.5 w-3.5" /> },
     {
       id: 'history' as PatientTab,
       label: `Files (${invoices.length + summaries.length + documents.length})`,
       long: `History (${invoices.length + summaries.length + documents.length})`,
-      icon: <History className="h-4 w-4" />,
+      icon: <History className="h-3.5 w-3.5" />,
     },
   ];
 
   return (
     <div className="page-shell">
-      <header className="no-print mb-6">
-        <p className="eyebrow">Staff</p>
-        <h1 className="mt-2 font-display text-4xl text-ivory-50">Today's desk</h1>
-      </header>
-      <div className="no-print mb-6 space-y-4">
-        <div className="flex w-full gap-2">
-          <button
-            type="button"
-            onClick={() => setSection('desk')}
-            className={`inline-flex min-h-[48px] items-center justify-center gap-2 px-4 text-sm font-semibold ${
-              section === 'desk' ? 'section-tab-active' : 'section-tab-idle'
-            }`}
-          >
-            <Users className="h-4 w-4 shrink-0" />
-            <span className="hidden sm:inline">Patient desk</span>
-            <span className="sm:hidden">Desk</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setSection('followups')}
-            className={`inline-flex min-h-[48px] items-center justify-center gap-2 px-4 text-sm font-semibold ${
-              section === 'followups' ? 'section-tab-active' : 'section-tab-idle'
-            }`}
-          >
-            <Calendar className="h-4 w-4 shrink-0" />
-            <span className="hidden sm:inline">Follow-ups</span>
-            <span className="sm:hidden">Recalls</span>
-          </button>
+      {/* Compact Workspace Header */}
+      <div className="no-print mb-5 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="eyebrow">Staff Clinical Desk</p>
+          <h1 className="font-display text-2xl font-medium text-ivory-50 sm:text-3xl">
+            {selectedPatient && section === 'desk' ? 'Patient Chart' : 'Today’s Desk'}
+          </h1>
         </div>
 
-        {selectedPatient && section === 'desk' && (
-          <button
-            type="button"
-            onClick={() => setSelectedPatient(null)}
-            className="btn-ghost !w-full sm:!w-auto"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to search
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          <div className="inline-flex rounded-full border border-ivory-50/12 bg-ink-900 p-1 shadow-soft">
+            <button
+              type="button"
+              onClick={() => setSection('desk')}
+              className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
+                section === 'desk' ? 'bg-ivory-50 text-ink-900' : 'text-ivory-400 hover:text-ivory-50'
+              }`}
+            >
+              <Users className="h-3.5 w-3.5" />
+              Desk
+            </button>
+            <button
+              type="button"
+              onClick={() => setSection('followups')}
+              className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
+                section === 'followups' ? 'bg-ivory-50 text-ink-900' : 'text-ivory-400 hover:text-ivory-50'
+              }`}
+            >
+              <Calendar className="h-3.5 w-3.5" />
+              Recalls
+            </button>
+          </div>
+
+          {selectedPatient && section === 'desk' && (
+            <button
+              type="button"
+              onClick={() => setSelectedPatient(null)}
+              className="inline-flex min-h-[38px] items-center gap-1.5 rounded-full border border-ivory-50/15 bg-ink-900 px-3.5 text-xs font-semibold text-ivory-100 shadow-soft hover:border-gold-400"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">All Patients</span>
+              <span className="sm:hidden">Back</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* SECTION A: FOLLOW-UPS DUE */}
       {section === 'followups' && (
-        <div className="space-y-3">
-          <header className="space-y-2">
-            <span className="step-badge">Follow-ups · ±7 days</span>
-            <p className="text-sm font-light text-ivory-500">
-              Tap a patient to open their chart or send a WhatsApp reminder.
+        <div className="space-y-4">
+          <div className="space-y-1">
+            <span className="step-badge">Follow-Up Recalls · ±7 Days</span>
+            <p className="text-xs text-ivory-400">
+              Send 1-tap bilingual WhatsApp reminders directly into the patient&apos;s chat.
             </p>
-          </header>
+          </div>
 
           {followUpsLoading ? (
             <div className="flex justify-center py-10">
-              <Loader2 className="h-6 w-6 animate-spin text-clinic-600" />
+              <Loader2 className="h-6 w-6 animate-spin text-gold-500" />
             </div>
           ) : followUps.length === 0 ? (
-            <div className="rounded-3xl border border-dashed border-ivory-50/15 bg-ink-900/70 p-8 text-center text-sm text-ivory-400">
-              No scheduled follow-ups in this 14-day window yet.
+            <div className="card-surface border-dashed p-10 text-center text-sm text-ivory-400">
+              No scheduled follow-ups in this 14-day window.
             </div>
           ) : (
-            <div className="space-y-2.5">
+            <div className="grid gap-3 sm:grid-cols-2">
               {followUps.map((p) => {
                 const isToday = p.next_follow_up === today;
                 const isOverdue = Boolean(p.next_follow_up && p.next_follow_up < today);
                 return (
-                  <div
-                    key={p.id}
-                    className="card-surface flex flex-wrap items-center justify-between gap-3 p-4"
-                  >
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm font-semibold text-ivory-50">{p.full_name}</span>
-                        <span className="rounded-full bg-clinic-50 px-2.5 py-0.5 text-xs font-semibold text-gold-500">
-                          {p.patient_code}
-                        </span>
+                  <div key={p.id} className="card-surface flex flex-col justify-between gap-3.5 p-4">
+                    <div className="space-y-1.5">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="text-sm font-bold text-ivory-50">{p.full_name}</span>
                         <span
-                          className={`rounded-full px-2.5 py-0.5 text-[11px] font-extrabold ${
+                          className={`rounded-full px-2.5 py-0.5 text-[10.5px] font-bold ${
                             isToday
-                              ? 'bg-clinic-600 text-white'
+                              ? 'bg-ivory-50 text-gold-300'
                               : isOverdue
                                 ? 'bg-red-100 text-red-800'
-                                : 'bg-amber-100 text-amber-800'
+                                : 'bg-amber-100 text-amber-900'
                           }`}
                         >
                           {isToday
                             ? 'TODAY'
                             : isOverdue
-                              ? `Overdue (${formatDisplayDate(p.next_follow_up)})`
+                              ? `Overdue · ${formatDisplayDate(p.next_follow_up)}`
                               : formatDisplayDate(p.next_follow_up)}
                         </span>
                       </div>
-                      <div className="mt-1 text-xs text-ivory-500">
-                        Phone: <strong>{p.phone}</strong>
-                        {p.village_address ? ` • ${p.village_address}` : ''}
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-ivory-400">
+                        <span className="rounded bg-ink-850 px-1.5 py-0.5 font-mono text-[10.5px] font-bold text-ivory-200">
+                          {p.patient_code}
+                        </span>
+                        <span className="font-medium text-ivory-100">{p.phone}</span>
+                        {p.village_address && <span>· {p.village_address}</span>}
                       </div>
                     </div>
-                    <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+
+                    <div className="grid grid-cols-2 gap-2">
                       <button
                         type="button"
                         onClick={() => sendFollowUpReminderWhatsApp(p, clinic)}
-                        className="btn-primary !min-h-[44px] text-[10px] sm:!w-auto"
+                        className="inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-full bg-emerald-700 px-3 text-xs font-semibold text-white hover:bg-emerald-800 transition"
                       >
                         <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
                       </button>
@@ -281,9 +300,9 @@ export function StaffWorkspace() {
                           setSection('desk');
                           setActiveTab('history');
                         }}
-                        className="btn-ghost !min-h-[44px] text-[10px] sm:!w-auto"
+                        className="btn-ghost !min-h-[40px] !px-3 text-xs"
                       >
-                        Open chart
+                        Open Chart
                       </button>
                     </div>
                   </div>
@@ -294,7 +313,7 @@ export function StaffWorkspace() {
         </div>
       )}
 
-      {/* SECTION B: PATIENT DESK */}
+      {/* SECTION B: PATIENT SEARCH */}
       {section === 'desk' && !selectedPatient && (
         <PatientSearch
           onSelectPatient={(p) => {
@@ -309,51 +328,51 @@ export function StaffWorkspace() {
         />
       )}
 
+      {/* SECTION C: ACTIVE PATIENT CHART */}
       {section === 'desk' && selectedPatient && (
-        <div className="space-y-6">
-          <div className="card-surface no-print space-y-5 p-4 sm:p-6">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-              <div className="min-w-0 space-y-3">
-                <span className="step-badge">Step 2 · Patient chart</span>
-                <div>
-                  <h2 className="font-display text-2xl text-ivory-50 sm:text-3xl">{selectedPatient.full_name}</h2>
-                  <p className="mt-1 text-xs uppercase tracking-[0.2em] text-gold-400">{selectedPatient.patient_code}</p>
+        <div className="space-y-5">
+          {/* Sleek Compact Patient Identity Banner */}
+          <div className="card-surface no-print space-y-3.5 p-4 sm:p-5">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 space-y-1.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="font-display text-xl font-semibold text-ivory-50 sm:text-2xl">
+                    {selectedPatient.full_name}
+                  </h2>
+                  <span className="rounded-full border border-gold-400/30 bg-clinic-50 px-2.5 py-0.5 font-mono text-[11px] font-bold text-gold-600">
+                    MRD: {selectedPatient.patient_code}
+                  </span>
+                  {selectedPatient.allergies && selectedPatient.allergies.toUpperCase() !== 'NKDA' && (
+                    <span className="inline-flex items-center gap-1 rounded-full border border-red-300 bg-red-50 px-2.5 py-0.5 text-[11px] font-bold text-red-800">
+                      <AlertCircle className="h-3 w-3" /> {selectedPatient.allergies}
+                    </span>
+                  )}
                 </div>
-                {selectedPatient.allergies && selectedPatient.allergies.toUpperCase() !== 'NKDA' && (
-                  <p className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-xs text-red-700">
-                    <AlertCircle className="h-3.5 w-3.5" /> {selectedPatient.allergies}
-                  </p>
-                )}
-                <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-medium text-ivory-300">
+
+                <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1 text-xs text-ivory-300">
                   <span>
-                    {selectedPatient.age ? `${selectedPatient.age} yrs` : 'Age —'} / {selectedPatient.sex || '—'}
+                    {selectedPatient.age ? `${selectedPatient.age}y` : '—'} / {selectedPatient.sex || '—'}
                   </span>
-                  <span className="inline-flex items-center gap-1 font-medium text-ivory-50">
-                    <Phone className="h-3.5 w-3.5 text-clinic-600" />
+                  <a
+                    href={`tel:${selectedPatient.phone}`}
+                    className="inline-flex items-center gap-1 font-semibold text-ivory-50 hover:text-gold-500"
+                  >
+                    <Phone className="h-3 w-3 text-gold-500" />
                     {selectedPatient.phone}
-                  </span>
+                  </a>
                   {selectedPatient.village_address && (
                     <span className="inline-flex items-center gap-1">
-                      <MapPin className="h-3.5 w-3.5 text-slate-400" />
+                      <MapPin className="h-3 w-3 text-ivory-400" />
                       {selectedPatient.village_address}
                     </span>
                   )}
                   {selectedPatient.next_follow_up && (
-                    <span className="inline-flex items-center gap-1 text-gold-300">
-                      <Calendar className="h-3.5 w-3.5" />
+                    <span className="inline-flex items-center gap-1 font-semibold text-gold-600">
+                      <Calendar className="h-3 w-3" />
                       {formatDisplayDate(selectedPatient.next_follow_up)}
                     </span>
                   )}
                 </div>
-                {selectedPatient.comorbidities?.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {selectedPatient.comorbidities.map((c) => (
-                      <span key={c} className="border border-gold-500/25 px-2 py-0.5 text-[11px] text-gold-300">
-                        {c}
-                      </span>
-                    ))}
-                  </div>
-                )}
               </div>
 
               <button
@@ -362,32 +381,30 @@ export function StaffWorkspace() {
                   setEditingPatient(selectedPatient);
                   setPatientModalOpen(true);
                 }}
-                className="btn-ghost shrink-0"
+                className="inline-flex min-h-[38px] shrink-0 items-center gap-1.5 rounded-full border border-ivory-50/15 bg-ink-950 px-3.5 text-xs font-semibold text-ivory-100 hover:border-gold-400"
               >
-                <Pencil className="h-3.5 w-3.5" /> Edit
+                <Pencil className="h-3.5 w-3.5 text-gold-500" />
+                <span className="hidden sm:inline">Edit / MRD</span>
+                <span className="sm:hidden">Edit</span>
               </button>
             </div>
 
-            <div>
-              <p className="label-field mb-3">Step 3 · Choose action</p>
-              <div className="scroll-tabs">
-                {patientTabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`tab-chip ${activeTab === tab.id ? 'tab-chip-active' : 'tab-chip-idle'}`}
-                  >
-                    {tab.icon}
-                    <span className="sm:hidden">{tab.label}</span>
-                    <span className="hidden sm:inline">{tab.long}</span>
-                  </button>
-                ))}
-              </div>
+            <div className="scroll-tabs border-t border-ivory-50/[0.08] pt-3">
+              {patientTabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`tab-chip ${activeTab === tab.id ? 'tab-chip-active' : 'tab-chip-idle'}`}
+                >
+                  {tab.icon}
+                  <span className="sm:hidden">{tab.label}</span>
+                  <span className="hidden sm:inline">{tab.long}</span>
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Active Workspace Tab */}
           {activeTab === 'invoice' && (
             <InvoiceForm
               patient={selectedPatient}
@@ -402,10 +419,13 @@ export function StaffWorkspace() {
               patient={selectedPatient}
               clinic={clinic}
               protocols={protocols}
+              onPatientUpdated={(updated) => setSelectedPatient(updated)}
               onCreated={(ds) => {
                 setSummaries((prev) => [ds, ...prev]);
                 if (ds.follow_up_1) {
-                  setSelectedPatient((prev) => (prev ? { ...prev, next_follow_up: ds.follow_up_1 } : prev));
+                  setSelectedPatient((prev) =>
+                    prev ? { ...prev, next_follow_up: ds.follow_up_1 } : prev,
+                  );
                 }
               }}
             />
@@ -422,7 +442,7 @@ export function StaffWorkspace() {
           {activeTab === 'history' &&
             (historyLoading ? (
               <div className="flex justify-center py-10">
-                <Loader2 className="h-6 w-6 animate-spin text-clinic-600" />
+                <Loader2 className="h-6 w-6 animate-spin text-gold-500" />
               </div>
             ) : (
               <PatientTimeline
@@ -436,7 +456,6 @@ export function StaffWorkspace() {
         </div>
       )}
 
-      {/* New / Edit Patient Modal */}
       {patientModalOpen && (
         <PatientModal
           initialPhone={newPatientPhone}

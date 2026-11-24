@@ -1,5 +1,6 @@
-import { HashRouter, Route, Routes, Navigate, useLocation } from 'react-router-dom';
+import { HashRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { LanguageProvider } from './context/LanguageContext';
 import { Navbar } from './components/Navbar';
 import { PublicHome } from './pages/PublicHome';
 import { StaffWorkspace } from './pages/StaffWorkspace';
@@ -28,11 +29,14 @@ function AppLayout() {
 
 export function App() {
   return (
-    <AuthProvider>
-      <HashRouter>
-        <AppLayout />
-      </HashRouter>
-    </AuthProvider>
+    <LanguageProvider>
+      <AuthProvider>
+        <HashRouter>
+          <AppLayout />
+        </HashRouter>
+      </AuthProvider>
+    </LanguageProvider>
   );
 }
+
 export default App;

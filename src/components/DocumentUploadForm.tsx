@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Camera, Upload, CheckCircle2, Loader2, MessageCircle, FileImage } from 'lucide-react';
+import { Camera, CheckCircle2, FileImage, Loader2, MessageCircle, Upload } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { compressClinicalImage } from '../lib/imageCompress';
 import { todayIsoDate } from '../lib/dates';
@@ -7,23 +7,13 @@ import { shareDocumentLinkOnWhatsApp } from '../lib/whatsapp';
 import { CustomSelect, CustomSelectOption } from './CustomSelect';
 import type { ClinicSettings, DocumentType, Patient, PatientDocument } from '../types/database';
 
-const DOC_TYPES: DocumentType[] = [
-  'Medicine Rx',
-  'Spectacle Rx',
-  'Surgery / OT Slip',
-  'Lab / Scan Report',
-  'IOL Sticker',
-  'Old File',
-  'Other',
-];
-
 const DOC_TYPE_OPTIONS: CustomSelectOption[] = [
   { value: 'Medicine Rx', label: 'Medicine Prescription (Rx)', sublabel: 'Handwritten doctor prescription' },
-  { value: 'Spectacle Rx', label: 'Spectacle & Refraction Rx', sublabel: 'Digital autorefraction & trial frame numbers' },
+  { value: 'Spectacle Rx', label: 'Spectacle & Refraction Rx', sublabel: 'Autorefraction & trial frame numbers' },
   { value: 'Surgery / OT Slip', label: 'Surgery / OT Notes Slip', sublabel: 'Intra-op surgical notes & consent' },
-  { value: 'Lab / Scan Report', label: 'Lab / Scan / Biometry Report', sublabel: 'A-Scan optical biometry, sugar, blood tests' },
+  { value: 'Lab / Scan Report', label: 'Lab / Scan / Biometry Report', sublabel: 'A-Scan biometry, blood sugar, labs' },
   { value: 'IOL Sticker', label: 'IOL Box Sticker', sublabel: 'Physical sticker of implanted lens' },
-  { value: 'Old File', label: 'Previous Hospital File / Record', sublabel: 'Historical records from other centres' },
+  { value: 'Old File', label: 'Previous Hospital Record', sublabel: 'Records from other centres' },
   { value: 'Other', label: 'Other Document', sublabel: 'General clinical papers' },
 ];
 
@@ -41,9 +31,11 @@ export function DocumentUploadForm({ patient, clinic, onUploaded }: DocumentUplo
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
-  const [lastUploaded, setLastUploaded] = useState<{ doc: PatientDocument; signedUrl: string; savedKb: number } | null>(
-    null,
-  );
+  const [lastUploaded, setLastUploaded] = useState<{
+    doc: PatientDocument;
+    signedUrl: string;
+    savedKb: number;
+  } | null>(null);
 
   function handleFilePick(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
@@ -60,7 +52,7 @@ export function DocumentUploadForm({ patient, clinic, onUploaded }: DocumentUplo
 
   async function handleUpload() {
     if (!selectedFile) {
-      setError('Please take a photo or select a file first.');
+      setError('Take a photo or choose a file first.');
       return;
     }
 
@@ -120,123 +112,100 @@ export function DocumentUploadForm({ patient, clinic, onUploaded }: DocumentUplo
   }
 
   return (
-    <div className="card-surface p-5 sm:p-7 space-y-6">
+    <div className="card-surface mx-auto max-w-3xl space-y-5 p-5 sm:p-7">
       <div>
-        <span className="eyebrow">Document capture</span>
-        <h3 className="mt-1 font-display text-2xl text-ivory-50">Upload clinical document or prescription</h3>
+        <span className="eyebrow">Clinical Archive</span>
+        <h3 className="mt-1 font-display text-2xl text-ivory-50">Upload Prescription or Scan</h3>
         <p className="mt-0.5 text-xs text-ivory-400">
-          Mobile photos are compressed client-side (~200KB) to ensure rapid saving and private cloud storage.
+          Photos auto-compress to ~200 KB in the browser and store in a private Supabase bucket.
         </p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        {/* Custom Select for Document Type */}
         <CustomSelect
           label="1. Document Type"
           value={docType}
           onChange={(val) => setDocType(val as DocumentType)}
           options={DOC_TYPE_OPTIONS}
         />
-
-        {/* Visit Date */}
         <div>
           <label className="label-field">2. Visit Date</label>
           <input
             type="date"
             value={visitDate}
             onChange={(e) => setVisitDate(e.target.value)}
-            className="input-field font-semibold text-xs"
+            className="input-field text-xs font-semibold"
           />
         </div>
       </div>
 
-      {/* Camera / File options */}
       <div>
-        <label className="label-field">3. Capture or select file</label>
+        <label className="label-field">3. Capture or Select File</label>
         <div className="grid gap-3 sm:grid-cols-2">
-          <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gold-400/30 bg-ink-950 p-6 text-center transition hover:border-gold-400 hover:bg-ink-850">
-            <Camera className="h-8 w-8 text-gold-400" />
-            <span className="mt-2 text-sm font-semibold text-ivory-50">Take photo (camera)</span>
-            <span className="mt-0.5 text-xs text-ivory-500">Opens phone / tablet camera</span>
-            <input
-              type="file"
-              accept="image/*"
-              capture="environment"
-              onChange={handleFilePick}
-              className="hidden"
-            />
+          <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gold-400/35 bg-clinic-50/40 p-6 text-center transition hover:border-gold-400 hover:bg-clinic-50">
+            <Camera className="h-7 w-7 text-gold-500" />
+            <span className="mt-2 text-sm font-semibold text-ivory-50">Take Photo (Camera)</span>
+            <span className="mt-0.5 text-xs text-ivory-400">Instant phone / tablet capture</span>
+            <input type="file" accept="image/*" capture="environment" onChange={handleFilePick} className="hidden" />
           </label>
 
-          <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-ivory-50/15 bg-ink-950 p-6 text-center transition hover:border-ivory-50/30 hover:bg-ink-850">
-            <Upload className="h-8 w-8 text-ivory-400" />
-            <span className="mt-2 text-sm font-semibold text-ivory-50">Choose image or PDF</span>
-            <span className="mt-0.5 text-xs text-ivory-500">From gallery or desktop</span>
-            <input
-              type="file"
-              accept="image/*,application/pdf"
-              onChange={handleFilePick}
-              className="hidden"
-            />
+          <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-ivory-50/15 bg-ink-950 p-6 text-center transition hover:border-gold-400/40 hover:bg-ink-850">
+            <Upload className="h-7 w-7 text-ivory-400" />
+            <span className="mt-2 text-sm font-semibold text-ivory-50">Choose Image or PDF</span>
+            <span className="mt-0.5 text-xs text-ivory-400">From gallery or desktop</span>
+            <input type="file" accept="image/*,application/pdf" onChange={handleFilePick} className="hidden" />
           </label>
         </div>
       </div>
 
-      {/* File Preview */}
       {selectedFile && (
-        <div className="flex flex-col gap-3 rounded-2xl border border-ivory-50/10 bg-ink-950 p-3.5 sm:flex-row sm:items-center">
+        <div className="flex items-center gap-3 rounded-2xl border border-ivory-50/12 bg-ink-950 p-3">
           {previewUrl ? (
-            <img src={previewUrl} alt="Preview" className="h-24 w-24 rounded-xl border border-ivory-50/15 object-cover" />
+            <img src={previewUrl} alt="Preview" className="h-20 w-20 rounded-xl border border-ivory-50/15 object-cover" />
           ) : (
-            <div className="flex h-20 w-20 items-center justify-center rounded-xl bg-ink-800 text-ivory-400">
-              <FileImage className="h-8 w-8" />
+            <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-ink-850 text-ivory-400">
+              <FileImage className="h-7 w-7" />
             </div>
           )}
-          <div className="flex-1 text-xs">
-            <div className="font-semibold text-ivory-50">{selectedFile.name}</div>
-            <div className="mt-0.5 text-ivory-500">
-              Original: {Math.round(selectedFile.size / 1024)} KB · Auto-compressed to ~200 KB on upload
+          <div className="min-w-0 flex-1 text-xs">
+            <div className="truncate font-semibold text-ivory-50">{selectedFile.name}</div>
+            <div className="mt-0.5 text-ivory-400">
+              {Math.round(selectedFile.size / 1024)} KB original · auto-compressed on save
             </div>
           </div>
         </div>
       )}
 
-      {/* Note */}
       <div>
-        <label className="label-field">4. Note (optional)</label>
+        <label className="label-field">4. Note (Optional)</label>
         <input
           type="text"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          placeholder="e.g. Post-op Day 1 prescription, or Bifocal Rx"
+          placeholder="e.g. Post-op Day 1 Rx or A-Scan report"
           className="input-field text-xs"
         />
       </div>
 
       {error && (
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-3.5 text-xs font-semibold text-red-700">
+        <div className="rounded-2xl border border-red-300 bg-red-50 p-3 text-xs font-semibold text-red-800">
           {error}
         </div>
       )}
 
-      <button
-        type="button"
-        disabled={uploading || !selectedFile}
-        onClick={handleUpload}
-        className="btn-primary w-full"
-      >
+      <button type="button" disabled={uploading || !selectedFile} onClick={handleUpload} className="btn-primary w-full">
         {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-        {uploading ? 'Compressing & saving…' : `Save ${docType} to ${patient.patient_code}`}
+        {uploading ? 'Compressing & Saving…' : `Save ${docType} to ${patient.patient_code}`}
       </button>
 
-      {/* Success Banner */}
       {lastUploaded && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-300 bg-emerald-50/80 p-4 text-xs">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-300 bg-emerald-50/90 p-4 text-xs">
           <div>
-            <div className="font-bold text-emerald-900">
-              ✓ Saved to patient history ({lastUploaded.savedKb} KB)!
+            <div className="font-bold text-emerald-950">
+              Saved to history ({lastUploaded.savedKb} KB)
             </div>
-            <div className="text-emerald-700 text-[11px] mt-0.5">
-              Permanently archived. 7-day secure link ready for WhatsApp.
+            <div className="mt-0.5 text-[11px] text-emerald-800">
+              7-day private link ready to share on WhatsApp.
             </div>
           </div>
           {lastUploaded.signedUrl && (
@@ -251,10 +220,10 @@ export function DocumentUploadForm({ patient, clinic, onUploaded }: DocumentUplo
                   clinic,
                 )
               }
-              className="inline-flex items-center gap-1.5 rounded-full bg-emerald-700 px-4 py-2 font-semibold text-white shadow-soft hover:bg-emerald-800 transition"
+              className="inline-flex items-center gap-1.5 rounded-full bg-emerald-700 px-4 py-2 font-semibold text-white hover:bg-emerald-800 transition"
             >
               <MessageCircle className="h-3.5 w-3.5" />
-              Send to patient on WhatsApp
+              Send on WhatsApp
             </button>
           )}
         </div>

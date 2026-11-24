@@ -9,51 +9,58 @@ export default {
         display: ['Fraunces', 'Georgia', 'serif'],
       },
       colors: {
-        // Warm, soothing canvas tones (Cashmere, Bone, Alabaster, Warm Sand)
         ink: {
-          950: '#FAF6F0', // Soft bone/cashmere canvas
-          900: '#FFFDF9', // Warm alabaster card surface
-          850: '#F5EFEB', // Warm linen
-          800: '#EFE7DE', // Warm oat
-          700: '#E4D9CA', // Warm sand
-          600: '#D5C7B5', // Warm stone border
+          950: '#FBF9F6', // Crisp warm alabaster canvas
+          900: '#FFFFFF', // Pure elevated surface
+          850: '#F4EFE8', // Warm linen tint
+          800: '#EBE4DA', // Soft oat
+          700: '#DFD5C7', // Sand divider
+          600: '#CCC0AE', // Stone border
         },
-        // Rich warm espresso/umber typography (gentle on eyes, high contrast without harsh black)
         ivory: {
-          50: '#1F1A16',  // Deep warm espresso ink
-          100: '#2E2721', // Rich dark roast
-          200: '#433A32', // Deep umber
-          300: '#5C5046', // Warm deep taupe
-          400: '#7E6F62', // Muted warm slate
-          500: '#A39486', // Warm stone
+          50: '#161412',  // Deep obsidian-espresso primary ink
+          100: '#25211D', // Rich charcoal
+          200: '#3B342E', // Deep umber
+          300: '#574E45', // Body muted ink
+          400: '#786D63', // Secondary label
+          500: '#9B8F83', // Subtle hint
         },
-        // Warm antique bronze / honey amber accents (organic, prestigious, comforting)
         gold: {
-          300: '#C48D52', // Soft warm amber
-          400: '#A46E38', // Warm antique bronze
-          500: '#8C5928', // Deep burnished bronze
-          600: '#73461D', // Deep umber bronze
+          200: '#E8C9A2',
+          300: '#D49B5E', // Luminous warm amber
+          400: '#B57636', // Signature burnished bronze
+          500: '#965D24', // Deep bronze interactive
+          600: '#784819', // Rich umber bronze
         },
-        // Soft warm clinical tones (subtle warm honey/cream tints, NO harsh greens)
         clinic: {
-          50: '#F8F2EA',
-          100: '#EFE4D4',
-          200: '#DFCEB7',
-          300: '#C7AF91',
-          400: '#A68865',
-          500: '#8C5928',
-          600: '#73461D',
-          700: '#5A3514',
-          800: '#42250C',
-          900: '#2B1705',
+          50: '#F7F1E8',
+          100: '#EFE3D3',
+          200: '#DFCCB3',
+          300: '#C8AD8B',
+          400: '#A9845B',
+          500: '#965D24',
+          600: '#784819',
+          700: '#5B3512',
+          800: '#42250B',
+          900: '#2A1705',
         },
       },
       boxShadow: {
-        lift: '0 18px 50px -28px rgba(31, 26, 22, 0.3)',
-        soft: '0 1px 0 rgba(255,255,255,0.85) inset, 0 8px 24px -14px rgba(31, 26, 22, 0.12)',
+        lift: '0 22px 48px -24px rgba(22, 20, 18, 0.28)',
+        soft: '0 1px 2px rgba(22, 20, 18, 0.04), 0 8px 24px -16px rgba(22, 20, 18, 0.12)',
+        dock: '0 16px 40px -12px rgba(22, 20, 18, 0.32)',
       },
       letterSpacing: {
-        brand: '0.22em',
+        brand: '0.2em',
+      },
+      keyframes: {
+        fadeUp: {
+          '0%': { opacity: '0', transform: 'translateY(8px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+      },
+      animation: {
+        'fade-in': 'fadeUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards',
       },
     },
   },

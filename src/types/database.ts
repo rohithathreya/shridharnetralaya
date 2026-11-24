@@ -8,6 +8,7 @@ export interface ClinicSettings {
   doctor_qualification: string;
   doctor_kmc_no: string;
   kpme_reg_no: string;
+  rohini_id: string;
   address: string;
   phone: string;
   emergency_phone: string;
@@ -67,7 +68,7 @@ export interface SurgicalProtocol {
 
 export interface Patient {
   id: string;
-  patient_code: string;
+  patient_code: string; // Permanent Hospital MRD No.
   full_name: string;
   age: number | null;
   sex: 'M' | 'F' | 'O' | null;
@@ -94,6 +95,9 @@ export type PaymentMode = 'Cash' | 'UPI' | 'Card' | 'TPA / Scheme';
 export interface Invoice {
   id: string;
   invoice_no: string;
+  ipd_no?: string;
+  tpa_name?: string;
+  policy_no?: string;
   patient_id: string;
   items: InvoiceLineItem[];
   subtotal: number;
@@ -116,13 +120,16 @@ export type OperatedEye = 'RE (OD)' | 'LE (OS)' | 'BE (OU)';
 export interface DischargeSummary {
   id: string;
   summary_no: string;
+  ipd_no?: string;
   patient_id: string;
   case_type: 'Day Care' | 'In-Patient';
   admission_at: string;
   surgery_at: string;
   discharge_at: string;
   operated_eye: OperatedEye;
+  chief_complaints?: string;
   diagnosis: string;
+  icd10_code?: string;
   procedure_name: string;
   anesthesia: string;
   pre_op_va_re: string;
@@ -138,6 +145,7 @@ export interface DischargeSummary {
   iol_model: string;
   iol_power: string;
   iol_batch: string;
+  no_iol_confirmed?: boolean;
   discharge_condition: string;
   dressing_status: string;
   eye_drops: EyeDropItem[];
@@ -149,7 +157,10 @@ export interface DischargeSummary {
   prepared_by: string;
   discharge_status: 'Routine' | 'DAMA' | 'Referred';
   billing_category: string;
+  tpa_name?: string;
   policy_no: string;
+  claim_no?: string;
+  attendant_name?: string;
   ai_assisted: boolean;
   share_token: string;
   created_at: string;
@@ -185,10 +196,11 @@ export const DEFAULT_CLINIC_SETTINGS: ClinicSettings = {
   doctor_qualification: 'MBBS, DOMS, FGO',
   doctor_kmc_no: '',
   kpme_reg_no: '',
+  rohini_id: '',
   address: 'Eye Hospital Road, Near Gramadevate Temple, Magadi, Karnataka 562120',
   phone: '7026046677',
   emergency_phone: '7026046677',
-  timings: 'Mon - Sat: 10:00 AM - 5:00 PM (By Prior Appointment) | Sun: Closed (Emergency / Post-Op On-Call)',
+  timings: 'Mon – Sat: 10:00 AM – 5:00 PM (Prior Appointment) | Sun: Emergency & Post-Op On-Call',
   default_head_bath_days: 14,
   google_maps_url: 'https://maps.google.com/?q=Shridhar+Netralaya+Magadi+Karnataka+562120',
 };
