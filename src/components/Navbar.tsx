@@ -54,13 +54,6 @@ export function Navbar() {
             >
               {lang === 'kn' ? copy.brandName : clinic.clinic_name}
             </span>
-            <span
-              className={`mt-0.5 block text-[10.5px] font-medium tracking-wide ${
-                isHome ? 'text-white/70' : 'text-ivory-400'
-              }`}
-            >
-              {copy.brandLocation}
-            </span>
           </span>
         </Link>
 

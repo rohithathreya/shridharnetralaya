@@ -105,7 +105,7 @@ export const SITE_COPY: Record<SiteLang, SiteCopy> = {
       directionsCta: 'Directions',
       whatsappCta: 'WhatsApp',
       timingsLabel: 'OPD Hours',
-      timingsValue: 'Mon – Sat · 10:00 AM – 5:00 PM (Prior Appointment)',
+      timingsValue: 'Mon – Sat · 10:00 AM – 5:00 PM',
       stats: [
         { value: '30+ yrs', label: 'Surgical practice in Magadi' },
         { value: 'Day-Care', label: 'Same-day cataract discharge' },
@@ -210,11 +210,11 @@ export const SITE_COPY: Record<SiteLang, SiteCopy> = {
       kmcLabel: 'KMC Reg.',
       kpmeLabel: 'KPME Reg.',
       paragraphs: [
-        'After completing his medical degree and ophthalmic surgical training at Kasturba Medical College, Manipal, Dr. L. S. Malathesh founded Shridhar Netralaya with one clear mission: bring city-grade eye microsurgery home to Magadi and stay.',
-        'For over three decades on Eye Hospital Road, families across Magadi and Ramanagara district have relied on his unhurried diagnosis, transparent counsel, and dependable surgical follow-through — without travelling to Bengaluru.',
+        'After completing his medical degree and ophthalmic surgical training at Kasturba Medical College, Manipal, Dr. L. S. Malathesh founded Shridhar Netralaya in Magadi, so families here could have city-grade eye microsurgery without leaving town.',
+        'The hospital started on Eye Hospital Road. After three decades it expanded to a second branch in Bangalore. He consults at both, with the same unhurried diagnosis and surgical follow-through.',
       ],
       highlights: [
-        { title: '30+ Years', detail: 'Continuous surgical practice serving Magadi & Ramanagara' },
+        { title: '30+ Years', detail: 'Started in Magadi, now also in Bangalore' },
         { title: 'KMC, Manipal', detail: 'MBBS, DOMS & FGO specialist ophthalmic training' },
         { title: 'Full In-House OT', detail: 'Cataract, Pterygium, Glaucoma, Lid & Squint microsurgery' },
       ],
@@ -262,7 +262,7 @@ export const SITE_COPY: Record<SiteLang, SiteCopy> = {
       directionsCta: 'ದಾರಿ',
       whatsappCta: 'ವಾಟ್ಸಾಪ್',
       timingsLabel: 'ಆಸ್ಪತ್ರೆ ಸಮಯ',
-      timingsValue: 'ಸೋಮ – ಶನಿ · ಬೆಳಿಗ್ಗೆ 10:00 – ಸಂಜೆ 5:00 (ಮುಂಚಿತ ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್)',
+      timingsValue: 'ಸೋಮ – ಶನಿ · ಬೆಳಿಗ್ಗೆ 10:00 – ಸಂಜೆ 5:00',
       stats: [
         { value: '30+ ವರ್ಷ', label: 'ಮಾಗಡಿಯಲ್ಲಿ ನಿರಂತರ ಸೇವೆ' },
         { value: 'ಅದೇ ದಿನ', label: 'ಮೋತಿಬಿಂದು ಶಸ್ತ್ರಚಿಕಿತ್ಸೆ ಮತ್ತು ಡಿಸ್ಚಾರ್ಜ್' },
@@ -367,11 +367,11 @@ export const SITE_COPY: Record<SiteLang, SiteCopy> = {
       kmcLabel: 'KMC ನೋಂದಣಿ',
       kpmeLabel: 'KPME ನೋಂದಣಿ',
       paragraphs: [
-        'ಮಣಿಪಾಲದ ಕಸ್ತೂರ್ಬಾ ಮೆಡಿಕಲ್ ಕಾಲೇಜಿನಲ್ಲಿ ವೈದ್ಯಕೀಯ ಮತ್ತು ನೇತ್ರ ಶಸ್ತ್ರಚಿಕಿತ್ಸಾ ಪದವಿ ಪೂರ್ಣಗೊಳಿಸಿದ ಡಾ. ಎಲ್. ಎಸ್. ಮಾಲತೇಶ್ ಅವರು, ನಗರ ಮಟ್ಟದ ಕಣ್ಣಿನ ಚಿಕಿತ್ಸೆಯನ್ನು ಮಾಗಡಿ ಮತ್ತು ರಾಮನಗರ ಜಿಲ್ಲೆಯ ಜನರಿಗೆ ತಲುಪಿಸುವ ಉದ್ದೇಶದಿಂದ ಶ್ರೀಧರ್ ನೇತ್ರಾಲಯವನ್ನು ಸ್ಥಾಪಿಸಿದರು.',
-        'ಕಳೆದ ಮೂರು ದಶಕಗಳಿಂದ ಐ ಹಾಸ್ಪಿಟಲ್ ರಸ್ತೆಯಲ್ಲಿ ನಿರಂತರ ಸೇವೆ ಸಲ್ಲಿಸುತ್ತಾ, ಬೆಂಗಳೂರಿಗೆ ಅಲೆಯುವ ಅಗತ್ಯವಿಲ್ಲದೆ ಸಾವಿರಾರು ಕುಟುಂಬಗಳಿಗೆ ನಿಖರ ತಪಾಸಣೆ ಮತ್ತು ಸುರಕ್ಷಿತ ಶಸ್ತ್ರಚಿಕಿತ್ಸೆ ನೀಡಿದ್ದಾರೆ.',
+        'ಮಣಿಪಾಲದ ಕಸ್ತೂರ್ಬಾ ಮೆಡಿಕಲ್ ಕಾಲೇಜಿನಲ್ಲಿ ವೈದ್ಯಕೀಯ ಮತ್ತು ನೇತ್ರ ಶಸ್ತ್ರಚಿಕಿತ್ಸಾ ಪದವಿ ಪೂರ್ಣಗೊಳಿಸಿದ ಡಾ. ಎಲ್. ಎಸ್. ಮಾಲತೇಶ್ ಅವರು, ನಗರ ಮಟ್ಟದ ಕಣ್ಣಿನ ಚಿಕಿತ್ಸೆ ಮಾಗಡಿಯಲ್ಲೇ ಸಿಗಲಿ ಎಂದು ಶ್ರೀಧರ್ ನೇತ್ರಾಲಯವನ್ನು ಸ್ಥಾಪಿಸಿದರು.',
+        'ಆಸ್ಪತ್ರೆ ಐ ಹಾಸ್ಪಿಟಲ್ ರಸ್ತೆಯಲ್ಲಿ ಆರಂಭವಾಯಿತು. ಮೂರು ದಶಕಗಳ ನಂತರ ಬೆಂಗಳೂರಿನಲ್ಲಿ ಎರಡನೇ ಶಾಖೆ ತೆರೆಯಿತು. ಇಂದು ಅವರು ಮಾಗಡಿ ಮತ್ತು ಬೆಂಗಳೂರು ಎರಡರಲ್ಲೂ ರೋಗಿಗಳನ್ನು ನೋಡುತ್ತಾರೆ.',
       ],
       highlights: [
-        { title: '30+ ವರ್ಷ', detail: 'ಮಾಗಡಿ ಮತ್ತು ರಾಮನಗರ ಜಿಲ್ಲೆಯಲ್ಲಿ ನಿರಂತರ ಕಣ್ಣಿನ ಸೇವೆ' },
+        { title: '30+ ವರ್ಷ', detail: 'ಮಾಗಡಿಯಲ್ಲಿ ಆರಂಭ, ಈಗ ಬೆಂಗಳೂರಿನಲ್ಲೂ ಶಾಖೆ' },
         { title: 'ಕೆ.ಎಂ.ಸಿ ಮಣಿಪಾಲ', detail: 'MBBS, DOMS ಮತ್ತು FGO ವಿಶೇಷ ನೇತ್ರ ತರಬೇತಿ' },
         { title: 'ಸುಸಜ್ಜಿತ ಶಸ್ತ್ರಚಿಕಿತ್ಸಾ ಘಟಕ', detail: 'ಮೋತಿಬಿಂದು, ಪ್ಟೆರಿಜಿಯಂ, ಗ್ಲಾಕೋಮಾ, ರೆಪ್ಪೆ ಮತ್ತು ಮೆಳ್ಳೆಗಣ್ಣು' },
       ],

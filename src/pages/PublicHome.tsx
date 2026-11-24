@@ -78,7 +78,7 @@ export function PublicHome() {
 
   return (
     <div className={`fixed inset-0 z-0 bg-[#100e0c] ${isKn ? 'font-kannada' : ''}`}>
-      <div ref={vertRef} className="home-vert h-full snap-y snap-mandatory overflow-y-auto overscroll-y-contain">
+      <div ref={vertRef} className="home-vert h-full snap-y snap-proximity overflow-y-auto overscroll-y-contain scroll-smooth">
         <section data-deck="row" className="h-full snap-start snap-always">
           <div
             ref={rowRef}
@@ -144,7 +144,7 @@ export function PublicHome() {
                     <Phone className="h-4 w-4 shrink-0 text-white" strokeWidth={1.75} />
                     <div className="min-w-0">
                       <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/60">
-                        {isKn ? 'ಸಂಪರ್ಕ' : 'Contact'}
+                        {isKn ? 'ಸಂಪರ್ಕ (ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್)' : 'Contact (for appointments)'}
                       </div>
                       <div className="mt-0.5 text-[13px] leading-snug text-white">{clinic.phone}</div>
                     </div>
@@ -206,8 +206,8 @@ export function PublicHome() {
           </div>
         </section>
 
-        <section id="doctor" data-deck="doctor" className="flex h-full snap-start snap-always flex-col bg-ink-950">
-          <div className="relative h-[58%] shrink-0 overflow-hidden bg-[#1a1614] pt-16">
+        <section id="doctor" data-deck="doctor" className="snap-start bg-ink-950 pb-16">
+          <div className="relative h-[68vh] max-h-[720px] overflow-hidden bg-[#1a1614] pt-16">
             <img
               src={`${base}care/doctor.jpg`}
               alt=""
@@ -221,7 +221,7 @@ export function PublicHome() {
               />
             </div>
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 text-ivory-50 sm:px-10 lg:px-16 [scrollbar-width:none]">
+          <div className="px-5 py-6 text-ivory-50 sm:px-10 lg:px-16">
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gold-500">
               {copy.doctor.eyebrow}
             </p>

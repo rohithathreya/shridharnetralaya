@@ -171,3 +171,6 @@ REVOKE ALL ON FUNCTION public.get_shared_document_meta(TEXT) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.get_shared_document(TEXT, TEXT) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.get_shared_document_meta(TEXT) TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.get_shared_document(TEXT, TEXT) TO anon, authenticated;
+
+-- Sequences created above are not covered by the earlier ALL SEQUENCES grant.
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO authenticated;
