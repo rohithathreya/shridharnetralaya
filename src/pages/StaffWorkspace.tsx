@@ -330,7 +330,7 @@ export function StaffWorkspace() {
 
       {/* SECTION C: ACTIVE PATIENT CHART */}
       {section === 'desk' && selectedPatient && (
-        <div className="space-y-5">
+        <div className="min-w-0 max-w-full space-y-5">
           {/* Sleek Compact Patient Identity Banner */}
           <div className="card-surface no-print space-y-3.5 p-4 sm:p-5">
             <div className="flex items-start justify-between gap-3">

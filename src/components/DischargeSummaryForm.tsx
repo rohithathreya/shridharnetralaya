@@ -796,9 +796,9 @@ export function DischargeSummaryForm({
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-12">
+    <div className="grid min-w-0 max-w-full gap-6 xl:grid-cols-12">
       {/* LEFT PANE: CLINICAL WORKBENCH (7 cols on xl) */}
-      <div className="no-print space-y-4 xl:col-span-7">
+      <div className="no-print min-w-0 space-y-4 xl:col-span-7">
         {/* Obsidian AI Command & Quick-Preset Strip */}
         <div className="card-obsidian space-y-4 p-4 sm:p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">

@@ -114,6 +114,27 @@ RULES:
 4. Extract integer discount (in INR), payment_mode ("Cash", "UPI", "Card", "TPA / Scheme", or ""), payment_ref, and notes when stated.`;
 }
 
+function audioFormat(mime: string): string {
+  const subtype = mime.split('/')[1] || '';
+  if (subtype.includes('mpeg') || subtype.includes('mp3')) return 'mp3';
+  if (subtype.includes('wav')) return 'wav';
+  if (subtype.includes('ogg')) return 'ogg';
+  if (subtype.includes('mp4') || subtype.includes('m4a')) return 'm4a';
+  if (subtype.includes('aac')) return 'aac';
+  if (subtype.includes('flac')) return 'flac';
+  return 'webm';
+}
+
+function messageText(content: unknown): string {
+  if (typeof content === 'string') return content;
+  if (Array.isArray(content)) {
+    return content
+      .map((part) => (part && typeof part === 'object' && 'text' in part ? String(part.text || '') : ''))
+      .join('');
+  }
+  return '';
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -127,9 +148,10 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    const geminiKey = Deno.env.get('GEMINI_API_KEY');
-    if (!geminiKey) {
-      return jsonResponse({ error: 'GEMINI_API_KEY secret is not configured in Supabase.' }, 503);
+    // The saved secret is an OpenRouter key. Older deploys stored it under GEMINI_API_KEY.
+    const openRouterKey = Deno.env.get('OPENROUTER_API_KEY') || Deno.env.get('GEMINI_API_KEY');
+    if (!openRouterKey) {
+      return jsonResponse({ error: 'OPENROUTER_API_KEY secret is not configured in Supabase.' }, 503);
     }
 
     const userClient = createClient(supabaseUrl, anonKey, {
@@ -167,6 +189,7 @@ Deno.serve(async (req) => {
           )
         : DISCHARGE_PROMPT;
 
+    const schema = target === 'invoice' ? INVOICE_SCHEMA : DISCHARGE_SCHEMA;
     const userText =
       target === 'invoice'
         ? 'Extract billable items, discount, and payment details from this voice note.'
@@ -174,40 +197,57 @@ Deno.serve(async (req) => {
           ? 'Extract ophthalmology discharge, prescription, or IOL box sticker fields from this image.'
           : 'Extract ophthalmology discharge summary fields from this voice note.';
 
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(geminiKey)}`;
+    const mediaPart =
+      mode === 'image'
+        ? {
+            type: 'image_url',
+            image_url: { url: `data:${cleanMimeType};base64,${base64}` },
+          }
+        : {
+            type: 'input_audio',
+            input_audio: { data: base64, format: audioFormat(cleanMimeType) },
+          };
 
-    const geminiRes = await fetch(endpoint, {
+    const openRouterRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        Authorization: `Bearer ${openRouterKey}`,
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({
-        systemInstruction: { parts: [{ text: systemText }] },
-        contents: [
+        model: 'google/gemini-2.5-flash',
+        temperature: 0,
+        response_format: { type: 'json_object' },
+        messages: [
+          {
+            role: 'system',
+            content: `${systemText}\n\nReturn one JSON object and nothing else. Match this schema:\n${JSON.stringify(schema)}`,
+          },
           {
             role: 'user',
-            parts: [{ text: userText }, { inlineData: { mimeType: cleanMimeType, data: base64 } }],
+            content: [{ type: 'text', text: userText }, mediaPart],
           },
         ],
-        generationConfig: {
-          temperature: 0,
-          responseMimeType: 'application/json',
-          responseSchema: target === 'invoice' ? INVOICE_SCHEMA : DISCHARGE_SCHEMA,
-        },
       }),
     });
 
-    if (!geminiRes.ok) {
-      const errDetail = await geminiRes.text();
-      console.error('Gemini API failure:', errDetail);
+    if (!openRouterRes.ok) {
+      const errDetail = await openRouterRes.text();
+      console.error('OpenRouter API failure:', errDetail);
       return jsonResponse({ error: 'AI extraction failed. Please retry or enter manually.' }, 502);
     }
 
-    const geminiJson = await geminiRes.json();
-    const rawJsonText = geminiJson?.candidates?.[0]?.content?.parts?.[0]?.text;
+    const openRouterJson = await openRouterRes.json();
+    const rawJsonText = messageText(openRouterJson?.choices?.[0]?.message?.content).trim();
     if (!rawJsonText) {
       return jsonResponse({ error: 'AI returned an empty response.' }, 502);
     }
 
-    const extracted = JSON.parse(rawJsonText);
+    const jsonStart = rawJsonText.indexOf('{');
+    const jsonEnd = rawJsonText.lastIndexOf('}');
+    const extracted = JSON.parse(
+      jsonStart >= 0 && jsonEnd > jsonStart ? rawJsonText.slice(jsonStart, jsonEnd + 1) : rawJsonText,
+    );
     const warnings = Array.isArray(extracted.warnings) ? extracted.warnings.map(String) : [];
 
     return jsonResponse({ extracted, warnings });

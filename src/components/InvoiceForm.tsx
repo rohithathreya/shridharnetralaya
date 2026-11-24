@@ -322,9 +322,9 @@ export function InvoiceForm({ patient, clinic, catalog, onCreated }: InvoiceForm
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-12">
+    <div className="grid min-w-0 max-w-full gap-6 xl:grid-cols-12">
       {/* LEFT PANE: POS SERVICE PICKER & PAYMENT (7 cols) */}
-      <div className="no-print space-y-4 xl:col-span-7">
+      <div className="no-print min-w-0 space-y-4 xl:col-span-7">
         {/* Obsidian Voice Billing Bar */}
         <div className="card-obsidian flex flex-wrap items-center justify-between gap-3 p-4 sm:p-5">
           <div>
@@ -459,7 +459,7 @@ export function InvoiceForm({ patient, clinic, catalog, onCreated }: InvoiceForm
                 value={customName}
                 onChange={(e) => setCustomName(e.target.value)}
                 placeholder="e.g. Imported Hydrophobic IOL (SN 99421)"
-                className="input-field !min-h-[42px] flex-1 text-xs"
+                className="input-field !min-h-[42px] min-w-0 w-full text-xs"
               />
               <div className="flex gap-2">
                 <input
@@ -489,7 +489,7 @@ export function InvoiceForm({ patient, clinic, catalog, onCreated }: InvoiceForm
           {items.length > 0 && (
             <div className="space-y-2">
               {items.map((it, idx) => (
-                <div key={idx} className="flex items-center justify-between gap-2 rounded-2xl border border-ivory-50/10 bg-ink-950 p-2.5">
+                <div key={idx} className="flex min-w-0 flex-wrap items-center justify-between gap-2 rounded-2xl border border-ivory-50/10 bg-ink-950 p-2.5">
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-xs font-semibold text-ivory-50">{it.name}</div>
                     <div className="mt-1 flex items-center gap-2 text-[11px] text-ivory-400">

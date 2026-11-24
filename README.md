@@ -35,7 +35,7 @@ supabase login
 supabase link --project-ref YOUR_PROJECT_REF
 
 # Optional (enables AI Scan Rx / IOL Photo & AI Voice Fill):
-supabase secrets set GEMINI_API_KEY=your_google_ai_studio_key
+supabase secrets set OPENROUTER_API_KEY=your_openrouter_key
 
 # Deploy both functions (--no-verify-jwt ONLY on pin-login so staff can log in)
 supabase functions deploy pin-login --no-verify-jwt

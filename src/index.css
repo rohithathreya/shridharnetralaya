@@ -34,7 +34,7 @@
 
 @layer components {
   .page-shell {
-    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 pt-5 sm:pt-8 overflow-x-clip;
+    @apply mx-auto w-full min-w-0 max-w-7xl px-4 sm:px-6 lg:px-8 pt-5 sm:pt-8 overflow-x-clip;
     padding-bottom: max(7.5rem, calc(2.5rem + env(safe-area-inset-bottom)));
   }
 
@@ -47,15 +47,15 @@
   }
 
   .card-surface {
-    @apply rounded-[24px] border border-ivory-50/[0.08] bg-ink-900 shadow-soft max-w-full;
+    @apply min-w-0 max-w-full rounded-[24px] border border-ivory-50/[0.08] bg-ink-900 shadow-soft;
   }
 
   .card-obsidian {
-    @apply rounded-[28px] bg-[#161412] text-[#FBF9F6] shadow-lift;
+    @apply min-w-0 max-w-full rounded-[28px] bg-[#161412] text-[#FBF9F6] shadow-lift;
   }
 
   .input-field {
-    @apply w-full min-h-[46px] rounded-2xl border border-ivory-50/15 bg-ink-900 px-3.5 py-2.5 text-[15px] text-ivory-50 shadow-soft placeholder:text-ivory-500 transition focus:border-gold-400 focus:outline-none focus:ring-4 focus:ring-gold-400/15 sm:text-sm;
+    @apply w-full min-w-0 max-w-full min-h-[46px] rounded-2xl border border-ivory-50/15 bg-ink-900 px-3.5 py-2.5 text-[15px] text-ivory-50 shadow-soft placeholder:text-ivory-500 transition focus:border-gold-400 focus:outline-none focus:ring-4 focus:ring-gold-400/15 sm:text-sm;
   }
 
   .label-field {
