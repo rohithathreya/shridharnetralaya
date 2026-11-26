@@ -1,51 +1,93 @@
-export function ClinicMark({ className = 'h-10 w-10' }: { className?: string }) {
+import { useId } from 'react';
+
+interface ClinicMarkProps {
+  className?: string;
+  showWordmark?: boolean;
+  variant?: 'color' | 'watermark';
+}
+
+/**
+ * Transparent interlocking S-eye emblem for Shridhar Netralaya.
+ * Uses unique SVG gradient IDs per instance so multiple marks + watermarks
+ * on the same page never collide.
+ */
+export function ClinicMark({
+  className = 'h-10 w-10',
+  showWordmark = false,
+  variant = 'color',
+}: ClinicMarkProps) {
+  const uid = useId().replace(/:/g, '');
+  const topGradId = `sn-top-${uid}`;
+  const botGradId = `sn-bot-${uid}`;
+  const isWatermark = variant === 'watermark';
+
   return (
-    <svg viewBox="0 0 100 100" className={className} aria-hidden>
-      {/* Crisp outer square emblem frame */}
-      <rect
-        x="3"
-        y="3"
-        width="94"
-        height="94"
-        rx="8"
+    <svg
+      viewBox={showWordmark ? '0 0 140 108' : '0 0 140 84'}
+      className={className}
+      fill="none"
+      aria-hidden
+    >
+      <defs>
+        <linearGradient id={topGradId} x1="15%" y1="15%" x2="90%" y2="75%">
+          <stop offset="0%" stopColor={isWatermark ? '#13345B' : '#13345B'} />
+          <stop offset="65%" stopColor={isWatermark ? '#1E4E79' : '#26618D'} />
+          <stop offset="100%" stopColor={isWatermark ? '#3A7CA5' : '#4086AD'} />
+        </linearGradient>
+        <linearGradient id={botGradId} x1="10%" y1="30%" x2="92%" y2="85%">
+          <stop offset="0%" stopColor={isWatermark ? '#13345B' : '#13345B'} />
+          <stop offset="55%" stopColor={isWatermark ? '#2A5478' : '#2B5B84'} />
+          <stop offset="100%" stopColor={isWatermark ? '#A67C46' : '#C09556'} />
+        </linearGradient>
+      </defs>
+
+      {/* Upper-to-inner-lower sweeping S-ribbon (Navy to Cerulean) */}
+      <path
+        d="M 118 27 C 88 4, 42 7, 20 34 C 38 49, 64 60, 102 47"
+        stroke={`url(#${topGradId})`}
+        strokeWidth="9"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+
+      {/* Inner-upper-to-bottom sweeping S-ribbon (Navy to Warm Gold) */}
+      <path
+        d="M 38 35 C 76 22, 102 33, 120 48 C 98 75, 52 78, 22 55"
+        stroke={`url(#${botGradId})`}
+        strokeWidth="9"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+
+      {/* Crisp concentric iris ring, dark pupil & light reflection */}
+      <circle
+        cx="70"
+        cy="41"
+        r="13.5"
         fill="#FFFFFF"
-        stroke="#1E293B"
+        fillOpacity={isWatermark ? 0 : 0.92}
+        stroke="#274E73"
         strokeWidth="2.2"
       />
-      {/* Stylized double-arc ophthalmology eye mark */}
-      <path
-        d="M14 39 C29 17, 71 17, 86 39 C71 61, 29 61, 14 39 Z"
-        fill="none"
-        stroke="#0284C7"
-        strokeWidth="4"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M22 39 C34 25, 66 25, 78 39 C66 53, 34 53, 22 39 Z"
-        fill="none"
-        stroke="#0284C7"
-        strokeWidth="2.4"
-        strokeLinejoin="round"
-      />
-      {/* Crisp iris, pupil & light reflection */}
-      <circle cx="50" cy="39" r="9.5" fill="#0369A1" opacity="0.16" />
-      <circle cx="50" cy="39" r="6.2" fill="#0F172A" />
-      <circle cx="47.8" cy="36.8" r="1.9" fill="#FFFFFF" />
-      {/* Wordmark strictly bounded inside frame */}
-      <text
-        x="50"
-        y="82"
-        textAnchor="middle"
-        textLength="80"
-        lengthAdjust="spacingAndGlyphs"
-        fill="#0369A1"
-        fontSize="7.2"
-        fontWeight="700"
-        fontFamily="Figtree, system-ui, sans-serif"
-        letterSpacing="0.2"
-      >
-        SHRIDHAR NETRALAYA
-      </text>
+      <circle cx="70" cy="41" r="8.2" fill="#0F1D32" />
+      <circle cx="67.2" cy="38.2" r="2.3" fill="#FFFFFF" fillOpacity={isWatermark ? 0.4 : 0.95} />
+
+      {showWordmark && (
+        <text
+          x="70"
+          y="99"
+          textAnchor="middle"
+          textLength="126"
+          lengthAdjust="spacingAndGlyphs"
+          fill="#13345B"
+          fontSize="10.2"
+          fontWeight="700"
+          fontFamily="Figtree, system-ui, sans-serif"
+          letterSpacing="0.8"
+        >
+          SHRIDHAR NETRALAYA
+        </text>
+      )}
     </svg>
   );
 }

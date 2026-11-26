@@ -28,49 +28,58 @@ export function PrintableDischargeSummary({
 
   return (
     <A4PreviewSheet>
-      <div className="print-sheet-a4 flex min-h-[1047px] flex-col justify-between bg-white p-7 font-sans text-[11px] leading-snug text-stone-900">
-        <div>
-          {/* ── 1. TOP HEADER: Symmetrical Logos on Either Side (Matched to Invoice) ── */}
-          <div className="flex items-center justify-between gap-4 border-b border-stone-300 pb-3.5">
-            <ClinicMark className="h-14 w-14 shrink-0" />
+      <div className="print-sheet-a4 relative flex min-h-[1047px] flex-col justify-between overflow-hidden bg-white p-7 font-sans text-[11px] leading-snug text-stone-900">
+        {/* ── SUBTLE CENTERED WATERMARK ── */}
+        <div className="pointer-events-none absolute inset-0 flex select-none items-center justify-center">
+          <ClinicMark className="w-[340px] opacity-[0.045]" variant="watermark" />
+        </div>
+
+        <div className="relative z-[1]">
+          {/* ── 1. TOP HEADER: Symmetrical Transparent Logos + Prestige Letterhead ── */}
+          <div className="flex items-center justify-between gap-4 border-b-2 border-[#13345B] pb-3.5">
+            <ClinicMark className="h-14 w-[4.5rem] shrink-0" showWordmark />
 
             <div className="min-w-0 flex-1 text-center">
-              <h1 className="font-display text-2xl font-bold uppercase tracking-wide text-stone-950">
+              <h1 className="font-display text-[25px] font-bold uppercase tracking-[0.06em] text-[#13345B]">
                 {clinic.clinic_name}
               </h1>
-              <p className="mt-0.5 text-[11px] text-stone-600">{clinic.address}</p>
+              <p className="mt-0.5 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-[#A67C46]">
+                {clinic.tagline}
+              </p>
+              <p className="mt-1 text-[11px] text-stone-600">{clinic.address}</p>
               <p className="mt-0.5 text-[11px] font-medium text-stone-800">
                 Mob: +91 {clinic.phone}, 7026200077 · Email: shridharnetra@gmail.com
               </p>
-              <p className="mt-0.5 text-[11px] font-semibold italic text-stone-600">
+              <p className="mt-0.5 text-[10.5px] font-medium italic text-stone-500">
                 Timings: Mon – Sat 10:00 AM – 5:00 PM · Sunday Holiday
               </p>
             </div>
 
-            <ClinicMark className="h-14 w-14 shrink-0" />
+            <ClinicMark className="h-14 w-[4.5rem] shrink-0" showWordmark />
           </div>
+          <div className="h-[2px] w-full bg-[#C09556]/45" />
 
           {/* ── 2. DOCUMENT TITLE & DATE ROW ── */}
           <div className="mt-3 flex items-baseline justify-between gap-4 text-[13px]">
-            <div className="font-bold text-stone-950">
+            <div className="font-bold text-[#13345B]">
               Surgical Discharge Summary:{' '}
-              <span className="font-mono font-extrabold">{summary.summary_no}</span>
-              <span className="ml-2 rounded border border-stone-300 bg-stone-50 px-1.5 py-0.5 text-[10px] font-semibold text-stone-700">
+              <span className="font-mono font-extrabold text-stone-950">{summary.summary_no}</span>
+              <span className="ml-2 rounded border border-[#13345B]/20 bg-[#13345B]/[0.04] px-2 py-0.5 text-[10px] font-semibold text-[#13345B]">
                 {summary.case_type}
               </span>
             </div>
-            <div className="text-xs font-semibold text-stone-700">
+            <div className="text-xs font-semibold text-stone-600">
               Date: <span className="font-bold text-stone-950">{formatDisplayDate(summary.discharge_at)}</span>
             </div>
           </div>
 
           {/* ── 3. CLEAN PATIENT & TIMELINE STRIP ── */}
-          <div className="mt-2 space-y-1 border-y border-stone-200 bg-stone-50/70 px-3 py-2 text-[10.5px] text-stone-700">
+          <div className="mt-2 space-y-1 rounded-lg border border-stone-200/90 bg-[#FAF8F5]/90 px-3.5 py-2 text-[10.5px] text-stone-700">
             <div className="flex items-center justify-between gap-4">
               <div>
                 <span className="text-stone-500">Patient:</span>{' '}
                 <span className="font-bold uppercase text-stone-950">{patient.full_name}</span>
-                <span className="ml-1.5 font-mono text-[10px] font-semibold text-stone-600">
+                <span className="ml-1.5 font-mono text-[10px] font-semibold text-[#13345B]">
                   ({patient.patient_code})
                 </span>
               </div>
@@ -110,16 +119,16 @@ export function PrintableDischargeSummary({
           {/* ── 4. OPERATED EYE, DIAGNOSIS & IOL STICKER ── */}
           <div className="mt-3 grid grid-cols-12 gap-3">
             <div className="col-span-8 space-y-2">
-              <div className="flex items-center justify-between rounded-lg border border-stone-300 bg-stone-100/80 px-3 py-1.5">
-                <span className="text-[10.5px] font-semibold uppercase tracking-wider text-stone-600">
+              <div className="flex items-center justify-between rounded-lg border border-[#13345B]/25 bg-[#13345B]/[0.05] px-3.5 py-1.5">
+                <span className="text-[10.5px] font-semibold uppercase tracking-wider text-[#13345B]">
                   Operated Eye {showKn ? '/ ಶಸ್ತ್ರಚಿಕಿತ್ಸೆ ಮಾಡಿದ ಕಣ್ಣು' : ''}
                 </span>
-                <span className="text-sm font-extrabold tracking-wide text-stone-950">
+                <span className="text-sm font-extrabold tracking-wide text-[#13345B]">
                   {summary.operated_eye || 'UNSPECIFIED'}
                 </span>
               </div>
 
-              <div className="space-y-1.5 rounded-lg border border-stone-300 bg-white p-3 text-[10.5px]">
+              <div className="space-y-1.5 rounded-lg border border-stone-300/90 bg-white/85 p-3 text-[10.5px]">
                 <div className="flex items-baseline justify-between gap-2">
                   <div>
                     <span className="text-stone-500">Diagnosis:</span>{' '}
@@ -171,9 +180,9 @@ export function PrintableDischargeSummary({
             </div>
 
             {/* Clean 60mm x 35mm IOL Sticker Zone */}
-            <div className="col-span-4 flex flex-col justify-between rounded-lg border border-stone-300 bg-stone-50/50 p-2.5">
-              <div className="flex min-h-[30mm] flex-col items-center justify-center rounded border border-dashed border-stone-400 bg-white p-1.5 text-center">
-                <span className="text-[9.5px] font-bold uppercase tracking-wider text-stone-500">
+            <div className="col-span-4 flex flex-col justify-between rounded-lg border border-stone-300/90 bg-[#FAF8F5]/80 p-2.5">
+              <div className="flex min-h-[30mm] flex-col items-center justify-center rounded border border-dashed border-stone-400 bg-white/90 p-1.5 text-center">
+                <span className="text-[9.5px] font-bold uppercase tracking-wider text-[#13345B]/75">
                   Affix IOL Sticker
                 </span>
                 <span className="mt-0.5 text-[8px] text-stone-400">60mm × 35mm Implant Barcode</span>
@@ -197,8 +206,8 @@ export function PrintableDischargeSummary({
 
           {/* ── 5. GLANCEABLE POST-OP MEDICATIONS ── */}
           <div className="mt-3.5">
-            <div className="flex items-baseline justify-between border-b border-stone-400 pb-1">
-              <span className="text-[11px] font-bold uppercase tracking-wide text-stone-950">
+            <div className="flex items-baseline justify-between border-b border-[#13345B]/30 pb-1">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[#13345B]">
                 {showEn ? 'Post-Operative Medications' : 'ಶಸ್ತ್ರಚಿಕಿತ್ಸೆಯ ನಂತರದ ಔಷಧಿಗಳು'}
               </span>
               {printLang === 'bilingual' && (
@@ -209,17 +218,17 @@ export function PrintableDischargeSummary({
             </div>
 
             {summary.eye_drops && summary.eye_drops.length > 0 && (
-              <div className="mt-1.5 overflow-hidden rounded-lg border border-stone-300">
+              <div className="mt-1.5 overflow-hidden rounded-lg border border-stone-300/90 bg-white/85">
                 <table className="w-full border-collapse text-[10.5px]">
                   <thead>
-                    <tr className="border-b border-stone-300 bg-stone-100/80 text-left text-[9.5px] uppercase text-stone-700">
+                    <tr className="border-b border-stone-200 bg-[#13345B]/[0.04] text-left text-[9.5px] uppercase text-[#13345B]">
                       <th className="px-2.5 py-1.5 font-bold">Eye Drop / Ointment</th>
                       <th className="w-24 px-2.5 py-1.5 font-bold">Eye</th>
                       <th className="px-2.5 py-1.5 font-bold">Dosage</th>
                       <th className="w-24 px-2.5 py-1.5 text-right font-bold">Duration</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-stone-200">
+                  <tbody className="divide-y divide-stone-200/80">
                     {summary.eye_drops.map((d, idx) => (
                       <tr key={idx}>
                         <td className="px-2.5 py-1.5 font-semibold text-stone-950">{d.name}</td>
@@ -236,17 +245,17 @@ export function PrintableDischargeSummary({
             )}
 
             {summary.oral_meds && summary.oral_meds.length > 0 && (
-              <div className="mt-2 overflow-hidden rounded-lg border border-stone-300">
+              <div className="mt-2 overflow-hidden rounded-lg border border-stone-300/90 bg-white/85">
                 <table className="w-full border-collapse text-[10.5px]">
                   <thead>
-                    <tr className="border-b border-stone-300 bg-stone-100/80 text-left text-[9.5px] uppercase text-stone-700">
+                    <tr className="border-b border-stone-200 bg-[#13345B]/[0.04] text-left text-[9.5px] uppercase text-[#13345B]">
                       <th className="px-2.5 py-1.5 font-bold">Oral Tablet</th>
                       <th className="w-24 px-2.5 py-1.5 font-bold">Dose</th>
                       <th className="w-28 px-2.5 py-1.5 font-bold">Timing</th>
                       <th className="w-24 px-2.5 py-1.5 text-right font-bold">Duration</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-stone-200">
+                  <tbody className="divide-y divide-stone-200/80">
                     {summary.oral_meds.map((m, idx) => (
                       <tr key={idx}>
                         <td className="px-2.5 py-1.5 font-semibold text-stone-950">{m.name}</td>
@@ -260,7 +269,7 @@ export function PrintableDischargeSummary({
               </div>
             )}
 
-            <div className="mt-1.5 rounded bg-stone-50 px-2.5 py-1.5 text-[9.5px] text-stone-700">
+            <div className="mt-1.5 rounded bg-[#FAF8F5] px-2.5 py-1.5 text-[9.5px] text-stone-700">
               {showEn && (
                 <span>
                   Wash hands before drops · Shake white bottles · Keep 5 min gap between drops · Continue regular BP/Sugar tablets.
@@ -276,25 +285,25 @@ export function PrintableDischargeSummary({
 
           {/* ── 6. FOLLOW-UP TIMELINE, PRECAUTIONS & EMERGENCY HELPLINE ── */}
           <div className="mt-3 grid grid-cols-12 gap-3">
-            <div className="col-span-7 space-y-2 rounded-lg border border-stone-300 bg-white p-2.5">
-              <div className="grid grid-cols-3 gap-1.5 rounded bg-stone-50 p-1.5 text-center text-[10px]">
+            <div className="col-span-7 space-y-2 rounded-lg border border-stone-300/90 bg-white/85 p-2.5">
+              <div className="grid grid-cols-3 gap-1.5 rounded bg-[#FAF8F5] p-1.5 text-center text-[10px]">
                 <div>
                   <div className="text-[8.5px] text-stone-500">
                     {showEn ? '1st Visit (Day 1)' : 'ಮೊದಲ ಭೇಟಿ'}
                   </div>
-                  <div className="font-bold text-stone-950">{formatDisplayDate(summary.follow_up_1)}</div>
+                  <div className="font-bold text-[#13345B]">{formatDisplayDate(summary.follow_up_1)}</div>
                 </div>
                 <div className="border-x border-stone-200">
                   <div className="text-[8.5px] text-stone-500">
                     {showEn ? '2nd Visit (1 Wk)' : 'ಎರಡನೇ ಭೇಟಿ'}
                   </div>
-                  <div className="font-bold text-stone-950">{formatDisplayDate(summary.follow_up_2)}</div>
+                  <div className="font-bold text-[#13345B]">{formatDisplayDate(summary.follow_up_2)}</div>
                 </div>
                 <div>
                   <div className="text-[8.5px] text-stone-500">
                     {showEn ? 'Glasses Check' : 'ಕನ್ನಡಕ ಪರೀಕ್ಷೆ'}
                   </div>
-                  <div className="font-bold text-stone-950">{formatDisplayDate(summary.follow_up_3)}</div>
+                  <div className="font-bold text-[#13345B]">{formatDisplayDate(summary.follow_up_3)}</div>
                 </div>
               </div>
 
@@ -322,9 +331,9 @@ export function PrintableDischargeSummary({
               </ul>
             </div>
 
-            <div className="col-span-5 flex flex-col justify-between rounded-lg border border-amber-300 bg-amber-50/40 p-2.5">
+            <div className="col-span-5 flex flex-col justify-between rounded-lg border border-[#C09556]/60 bg-[#FAF6EE]/80 p-2.5">
               <div>
-                <div className="border-b border-amber-200 pb-1 text-[10px] font-bold uppercase tracking-wide text-amber-950">
+                <div className="border-b border-[#C09556]/35 pb-1 text-[10px] font-bold uppercase tracking-wide text-[#734D22]">
                   {showEn ? 'Report Immediately If:' : 'ತುರ್ತು ಎಚ್ಚರಿಕೆ:'}
                 </div>
                 <ul className="mt-1.5 space-y-0.5 pl-3.5 text-[9.5px] text-stone-800" style={{ listStyle: 'disc' }}>
@@ -345,7 +354,7 @@ export function PrintableDischargeSummary({
                   </li>
                 </ul>
               </div>
-              <div className="mt-2 rounded border border-amber-300 bg-white px-2 py-1 text-center text-[10.5px] font-bold text-amber-950">
+              <div className="mt-2 rounded border border-[#C09556]/50 bg-white/95 px-2 py-1 text-center text-[10.5px] font-bold text-[#734D22]">
                 24/7 Helpline: {emergencyNo}
               </div>
             </div>
@@ -353,7 +362,7 @@ export function PrintableDischargeSummary({
         </div>
 
         {/* ── 7. CLEAN SIGN-OFF BAR (Matched to Invoice) ── */}
-        <div className="mt-6 grid grid-cols-3 gap-4 border-t border-stone-300 pt-3 text-[10px] text-stone-800">
+        <div className="relative z-[1] mt-6 grid grid-cols-3 gap-4 border-t border-stone-200 pt-3 text-[10px] text-stone-800">
           <div>
             <div className="h-6" />
             <div className="font-bold text-stone-900">{summary.prepared_by || 'OT Assistant'}</div>
@@ -362,10 +371,10 @@ export function PrintableDischargeSummary({
 
           <div className="text-center">
             <div className="h-6" />
-            <div className="font-bold text-stone-950">
+            <div className="font-bold text-[#13345B]">
               {clinic.doctor_name}, {clinic.doctor_qualification}
             </div>
-            <div className="text-[9px] text-stone-500">KMC Reg no: {kmcNo}</div>
+            <div className="text-[9px] font-semibold text-stone-600">KMC Reg no: {kmcNo}</div>
           </div>
 
           <div className="text-right">
