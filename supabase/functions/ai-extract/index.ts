@@ -16,12 +16,13 @@ const BILL_HEADS = [
   'Others',
 ] as const;
 
-const INVOICE_SYSTEM_PROMPT = `You are a fast billing extractor for Shridhar Netralaya (Magadi, Karnataka).
-Input is a staff voice note in English, Kannada, or Kanglish.
-Return ONE compact JSON object matching this exact shape (omit nothing, use "" or [] or 0 when unmentioned):
+const INVOICE_SYSTEM_PROMPT = `You extract core billing intent for Shridhar Netralaya (Magadi, Karnataka) from a staff voice note (English/Kannada/Kanglish).
+The app will automatically look up catalog prices and split procedures across the 10 bill heads — DO NOT guess or invent catalog prices.
+
+Return ONE compact JSON object:
 {
-  "procedures": [{"name": "exact catalog name", "qty": 1, "total_price": 0}],
-  "head_charges": [{"head": "one of the 10 bill heads", "amount": 0}],
+  "procedures": [{"name": "exact catalog name", "qty": 1, "price_override": null}],
+  "head_charges": [{"head": "exact name from 10 heads below", "amount": 0}],
   "discount": 0,
   "payment_mode": "Cash" | "UPI" | "Card" | "TPA / Scheme" | "",
   "payment_ref": "",
@@ -33,14 +34,16 @@ VALID 10 BILL HEADS:
 ${BILL_HEADS.map((h, i) => `${i + 1}. ${h}`).join('\n')}
 
 RULES:
-1. If the speaker names a procedure/service from the catalog (e.g. Phaco, SICS, OPD Consultation, YAG, A-Scan, Pterygium), put it in "procedures" with its exact catalog name. Set "total_price" to the spoken price (or catalog default if no override was spoken).
-2. If the speaker dictates specific head amounts directly (e.g. "bed charges 1000, nursing 500, IOL 4500, anesthetist 1500, OT 2000"), put those in "head_charges" using the exact head name from the 10-head list above. Do NOT duplicate an amount in both "procedures" and "head_charges".
-3. Never invent items or prices. If an item's price is unknown, set 0 and add a brief note in "warnings".`;
+1. Match spoken services/procedures to the CATALOG NAMES list and put them in "procedures". Leave "price_override" as null UNLESS the speaker explicitly states a custom price for that procedure.
+2. Only use "head_charges" if the speaker explicitly dictates an amount for a specific bill head (e.g. "bed charges 1000, IOL 4500"). Never duplicate a procedure in both.
+3. Extract discount (INR), payment_mode, payment_ref, and notes only if spoken.`;
 
-const DISCHARGE_SYSTEM_PROMPT = `You are a fast ophthalmology discharge extractor for Shridhar Netralaya (Magadi, Karnataka).
-Input is a voice note (English/Kannada/Kanglish) or clinical photo (IOL box sticker, prescription, OT slip).
-Return ONE compact JSON object matching this exact shape (use "" for unmentioned strings, [] for unmentioned arrays, null for unmentioned numbers):
+const DISCHARGE_SYSTEM_PROMPT = `You extract core clinical intent for Shridhar Netralaya (Magadi, Karnataka) from a voice note or photo (IOL sticker, Rx, OT slip).
+The form already has Surgical Protocols that auto-fill standard diagnosis, drops, tablets, follow-up dates, and post-op notes.
+
+Return ONE compact JSON object (use "" for unmentioned strings, [] for unmentioned arrays, null for unmentioned numbers):
 {
+  "protocol_id": "",
   "operated_eye": "RE (OD)" | "LE (OS)" | "BE (OU)" | "",
   "case_type": "Day Care" | "In-Patient" | "",
   "discharge_status": "Routine" | "DAMA" | "Referred" | "",
@@ -71,17 +74,15 @@ Return ONE compact JSON object matching this exact shape (use "" for unmentioned
   "warnings": []
 }
 
-CLINICAL MAPPINGS:
-- Right eye / RE / OD / bala kannu -> "RE (OD)"
-- Left eye / LE / OS / eda kannu -> "LE (OS)"
-- Both eyes / BE / OU / eradu kannu -> "BE (OU)"
-- SIMC -> diagnosis "Senile Immature Cataract", icd10_code "H25.1"
-- SMC -> diagnosis "Senile Mature Cataract", icd10_code "H25.2"
-- Pterygium -> icd10_code "H11.0"
-- QID = "4 times/day", TDS = "3 times/day", BD = "2 times/day", OD = "1 time/day", HS = "At night"
-- Comorbidities allowed labels: "Diabetes", "Hypertension", "Cardiac / IHD", "Asthma / COPD", "Thyroid", "Blood Thinners"
-- IOL stickers: brand/model -> iol_model, diopter (e.g. "+21.5 D") -> iol_power, SN/LOT -> iol_batch.
-- Extract ONLY explicitly stated or clearly legible facts. Put unclear audio/handwriting in "warnings".`;
+RULES:
+1. If the input matches one of the CLINIC PROTOCOLS below (e.g. Phaco, SICS, Pterygium, Intravitreal), set "protocol_id" to that exact id. Only populate diagnosis/procedure_name/anesthesia/eye_drops/oral_meds/head_bath_days if NO protocol matches OR if the speaker explicitly specifies custom overrides/additions.
+2. Always extract patient-specific facts: operated_eye, iol_model, iol_power, iol_batch, allergies, comorbidities, and pre-op vitals (VA, IOP, BP, RBS).
+3. Mappings:
+   - Right eye / RE / OD / bala kannu -> "RE (OD)"; Left / LE / OS / eda kannu -> "LE (OS)"; Both / BE / OU -> "BE (OU)"
+   - SIMC -> "Senile Immature Cataract" (H25.1); SMC -> "Senile Mature Cataract" (H25.2); Pterygium -> H11.0
+   - QID = "4 times/day", TDS = "3 times/day", BD = "2 times/day", OD = "1 time/day", HS = "At night"
+   - Comorbidities allowed: "Diabetes", "Hypertension", "Cardiac / IHD", "Asthma / COPD", "Thyroid", "Blood Thinners"
+   - IOL stickers: brand/model -> iol_model, diopter (e.g. "+21.5 D") -> iol_power, SN/LOT -> iol_batch.`;
 
 function audioFormat(mime: string): string {
   const subtype = mime.split('/')[1] || '';
@@ -121,7 +122,6 @@ async function callOpenRouterJson(params: {
       model: OPENROUTER_MODEL,
       temperature: 0,
       max_tokens: params.maxTokens,
-      // Disable thinking tokens on Gemini 2.5 Flash for 3-4x faster & cheaper extraction
       reasoning: { effort: 'none' },
       response_format: { type: 'json_object' },
       messages: [
@@ -149,18 +149,18 @@ async function callOpenRouterJson(params: {
 async function runInvoicePipeline(params: {
   apiKey: string;
   mediaPart: Record<string, unknown>;
-  catalog: Array<{ name: string; category: string; default_price: number }>;
+  catalogNames: string[];
 }) {
-  const catalogText = params.catalog.length
-    ? params.catalog.map((c) => `- ${c.name} (₹${c.default_price})`).join('\n')
-    : 'No catalog provided';
+  const catalogList = params.catalogNames.length
+    ? params.catalogNames.map((name) => `- ${name}`).join('\n')
+    : 'No catalog items provided';
 
   return callOpenRouterJson({
     apiKey: params.apiKey,
-    systemPrompt: `${INVOICE_SYSTEM_PROMPT}\n\nCATALOG:\n${catalogText}`,
-    userText: 'Extract procedures, 10-head charges, discount, and payment mode from this voice note.',
+    systemPrompt: `${INVOICE_SYSTEM_PROMPT}\n\nCATALOG NAMES:\n${catalogList}`,
+    userText: 'Extract matched procedure names, any explicit head charges, discount, and payment mode.',
     mediaPart: params.mediaPart,
-    maxTokens: 550,
+    maxTokens: 450,
   });
 }
 
@@ -168,18 +168,23 @@ async function runDischargePipeline(params: {
   apiKey: string;
   mode: 'image' | 'audio';
   mediaPart: Record<string, unknown>;
+  protocols: Array<{ id: string; short_label: string; procedure_name: string }>;
 }) {
+  const protoText = params.protocols.length
+    ? params.protocols.map((p) => `- id: "${p.id}" | ${p.short_label} (${p.procedure_name})`).join('\n')
+    : 'None provided';
+
   const userText =
     params.mode === 'image'
-      ? 'Extract discharge summary, prescription, or IOL sticker fields from this image.'
-      : 'Extract ophthalmology discharge summary fields from this voice note.';
+      ? 'Match protocol_id if clear, and extract patient-specific fields / IOL / prescription from this image.'
+      : 'Match protocol_id if spoken, and extract patient-specific fields and any overrides from this voice note.';
 
   return callOpenRouterJson({
     apiKey: params.apiKey,
-    systemPrompt: DISCHARGE_SYSTEM_PROMPT,
+    systemPrompt: `${DISCHARGE_SYSTEM_PROMPT}\n\nCLINIC PROTOCOLS:\n${protoText}`,
     userText,
     mediaPart: params.mediaPart,
-    maxTokens: 900,
+    maxTokens: 850,
   });
 }
 
@@ -217,13 +222,21 @@ Deno.serve(async (req) => {
     const mode: 'image' | 'audio' = body.mode;
     const rawMimeType: string = body.mimeType || '';
     const base64: string = body.base64 || '';
-    const catalog: Array<{ name: string; category: string; default_price: number }> = Array.isArray(body.catalog)
-      ? body.catalog
-      : [];
 
     if (!base64 || !rawMimeType || !['image', 'audio'].includes(mode)) {
       return jsonResponse({ error: 'Provide mode ("image"|"audio"), mimeType, and base64 payload' }, 400);
     }
+
+    // Accept either catalogNames (string[]) or legacy catalog ({ name }[])
+    const catalogNames: string[] = Array.isArray(body.catalogNames)
+      ? body.catalogNames.map(String)
+      : Array.isArray(body.catalog)
+        ? body.catalog.map((c: any) => String(c.name || '')).filter(Boolean)
+        : [];
+
+    const protocols: Array<{ id: string; short_label: string; procedure_name: string }> = Array.isArray(body.protocols)
+      ? body.protocols
+      : [];
 
     const cleanMimeType = rawMimeType.split(';')[0].trim();
     const mediaPart =
@@ -233,8 +246,8 @@ Deno.serve(async (req) => {
 
     const extracted =
       target === 'invoice'
-        ? await runInvoicePipeline({ apiKey: openRouterKey, mediaPart, catalog })
-        : await runDischargePipeline({ apiKey: openRouterKey, mode, mediaPart });
+        ? await runInvoicePipeline({ apiKey: openRouterKey, mediaPart, catalogNames })
+        : await runDischargePipeline({ apiKey: openRouterKey, mode, mediaPart, protocols });
 
     const warnings = Array.isArray(extracted.warnings) ? extracted.warnings.map(String) : [];
     return jsonResponse({ extracted, warnings });

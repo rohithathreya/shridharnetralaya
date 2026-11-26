@@ -387,12 +387,25 @@ export function DischargeSummaryForm({
     setError('');
   }
 
-  const applyAiExtraction = useCallback((ext: DischargeAiExtraction) => {
-    const tagged: Record<string, boolean> = {};
-    const str = (k: keyof DischargeAiExtraction) =>
-      typeof ext[k] === 'string' ? (ext[k] as string).trim() : '';
+  const applyAiExtraction = useCallback(
+    (ext: DischargeAiExtraction) => {
+      const tagged: Record<string, boolean> = {};
+      const str = (k: keyof DischargeAiExtraction) =>
+        typeof ext[k] === 'string' ? (ext[k] as string).trim() : '';
 
-    const eye = str('operated_eye');
+      // 1. If a clinic protocol matched, cascade all standard protocol defaults first
+      const protoId = str('protocol_id');
+      if (protoId) {
+        const matchedProto = protocols.find((p) => p.id === protoId && p.is_active);
+        if (matchedProto) {
+          applyProtocol(matchedProto);
+          tagged.procedure_name = true;
+          tagged.diagnosis = true;
+        }
+      }
+
+      // 2. Layer patient-specific fields & explicit overrides on top
+      const eye = str('operated_eye');
     if (eye === 'RE (OD)' || eye === 'LE (OS)' || eye === 'BE (OU)') {
       setOperatedEye(eye);
       tagged.operated_eye = true;
@@ -492,7 +505,7 @@ export function DischargeSummaryForm({
 
     setAiTaggedFields((prev) => ({ ...prev, ...tagged }));
     setAiAssisted(true);
-  }, []);
+  }, [protocols]);
 
   const handleVoiceComplete = useCallback(
     async (base64: string, mimeType: string) => {
@@ -501,10 +514,14 @@ export function DischargeSummaryForm({
       setAiWarnings([]);
       setError('');
       try {
+        const activeProtoSummaries = protocols
+          .filter((p) => p.is_active)
+          .map((p) => ({ id: p.id, short_label: p.short_label, procedure_name: p.procedure_name }));
         const { extracted, warnings } = await extractDischargeFromMedia({
           mode: 'audio',
           mimeType,
           base64,
+          protocols: activeProtoSummaries,
         });
         applyAiExtraction(extracted);
         setAiWarnings(warnings);
@@ -516,7 +533,7 @@ export function DischargeSummaryForm({
         setAiLoading(false);
       }
     },
-    [applyAiExtraction],
+    [applyAiExtraction, protocols],
   );
 
   const voice = useVoiceRecorder(handleVoiceComplete);
@@ -531,10 +548,14 @@ export function DischargeSummaryForm({
     try {
       const comp = await compressClinicalImage(file, 1400, 0.78);
       const b64 = await blobToBase64(comp.blob);
+      const activeProtoSummaries = protocols
+        .filter((p) => p.is_active)
+        .map((p) => ({ id: p.id, short_label: p.short_label, procedure_name: p.procedure_name }));
       const { extracted, warnings } = await extractDischargeFromMedia({
         mode: 'image',
         mimeType: comp.mimeType,
         base64: b64,
+        protocols: activeProtoSummaries,
       });
       applyAiExtraction(extracted);
       setAiWarnings(warnings);

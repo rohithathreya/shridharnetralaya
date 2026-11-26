@@ -94,19 +94,17 @@ export function InvoiceForm({ patient, clinic, catalog, onCreated }: InvoiceForm
       setAiMessage('Extracting bill items from voice…');
       setError('');
       try {
-        const activeCatalog = catalog
-          .filter((c) => c.is_active)
-          .map((c) => ({ name: c.name, category: c.category, default_price: c.default_price }));
+        const catalogNames = catalog.filter((c) => c.is_active).map((c) => c.name);
 
         const { extracted, warnings } = await extractInvoiceFromVoice({
           mimeType,
           base64,
-          catalog: activeCatalog,
+          catalogNames,
         });
 
         const parsed: InvoiceLineItem[] = [];
 
-        // 1. Procedures matched from catalog -> split across the 10 heads (scaled if custom total_price spoken)
+        // 1. Procedures matched from catalog -> look up clinic price & split across 10 heads (scaled only if explicit price_override spoken)
         if (Array.isArray(extracted.procedures)) {
           for (const proc of extracted.procedures) {
             const name = String(proc.name || '').trim();
@@ -114,10 +112,11 @@ export function InvoiceForm({ patient, clinic, catalog, onCreated }: InvoiceForm
             const qty = Math.max(1, Number(proc.qty) || 1);
             const matchedSvc = catalog.find((c) => c.name.toLowerCase() === name.toLowerCase());
             if (matchedSvc) {
-              const spokenTotal = Number(proc.total_price);
+              const rawOverride = proc.price_override ?? proc.total_price;
+              const spokenOverride = rawOverride != null ? Number(rawOverride) : NaN;
               const basePrice = matchedSvc.default_price;
               const targetUnitTotal =
-                Number.isFinite(spokenTotal) && spokenTotal > 0 ? spokenTotal : basePrice;
+                Number.isFinite(spokenOverride) && spokenOverride > 0 ? spokenOverride : basePrice;
               const ratio = basePrice > 0 ? targetUnitTotal / basePrice : 1;
 
               for (let q = 0; q < qty; q++) {

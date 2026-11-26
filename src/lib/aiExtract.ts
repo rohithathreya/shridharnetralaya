@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase, SUPABASE_ANON_KEY, SUPABASE_URL } from './supabase';
 import { blobToBase64 } from './imageCompress';
 import type { BillHead } from './invoiceHeads';
-import type { ServiceCatalogItem } from '../types/database';
+import type { SurgicalProtocol } from '../types/database';
 
 export interface AiExtractResult<T = Record<string, unknown>> {
   extracted: T;
@@ -10,9 +10,8 @@ export interface AiExtractResult<T = Record<string, unknown>> {
 }
 
 export interface InvoiceVoiceExtraction {
-  procedures?: Array<{ name: string; qty: number; total_price: number }>;
+  procedures?: Array<{ name: string; qty: number; price_override?: number | null; total_price?: number }>;
   head_charges?: Array<{ head: BillHead | string; amount: number }>;
-  // Legacy fallback field
   items?: Array<{ name: string; category: string; qty: number; unit_price: number }>;
   discount?: number;
   payment_mode?: string;
@@ -22,6 +21,7 @@ export interface InvoiceVoiceExtraction {
 }
 
 export interface DischargeAiExtraction {
+  protocol_id?: string;
   operated_eye?: string;
   case_type?: string;
   discharge_status?: string;
@@ -57,7 +57,8 @@ export async function runAiExtract<T = Record<string, unknown>>(params: {
   mode: 'image' | 'audio';
   mimeType: string;
   base64: string;
-  catalog?: Pick<ServiceCatalogItem, 'name' | 'category' | 'default_price'>[];
+  catalogNames?: string[];
+  protocols?: Array<Pick<SurgicalProtocol, 'id' | 'short_label' | 'procedure_name'>>;
 }): Promise<AiExtractResult<T>> {
   const { data: sessionData } = await supabase.auth.getSession();
   const accessToken = sessionData.session?.access_token;
@@ -87,32 +88,34 @@ export async function runAiExtract<T = Record<string, unknown>>(params: {
   };
 }
 
-/** Dedicated Invoice Voice Pipeline */
+/** Dedicated Invoice Voice Pipeline: sends catalog names only (no prices); app derives prices & 10-head splits. */
 export function extractInvoiceFromVoice(params: {
   mimeType: string;
   base64: string;
-  catalog: Pick<ServiceCatalogItem, 'name' | 'category' | 'default_price'>[];
+  catalogNames: string[];
 }) {
   return runAiExtract<InvoiceVoiceExtraction>({
     target: 'invoice',
     mode: 'audio',
     mimeType: params.mimeType,
     base64: params.base64,
-    catalog: params.catalog,
+    catalogNames: params.catalogNames,
   });
 }
 
-/** Dedicated Discharge Summary Voice & Image Pipeline */
+/** Dedicated Discharge Summary Voice & Image Pipeline: sends active protocol IDs so form cascades defaults first. */
 export function extractDischargeFromMedia(params: {
   mode: 'image' | 'audio';
   mimeType: string;
   base64: string;
+  protocols: Array<Pick<SurgicalProtocol, 'id' | 'short_label' | 'procedure_name'>>;
 }) {
   return runAiExtract<DischargeAiExtraction>({
     target: 'discharge',
     mode: params.mode,
     mimeType: params.mimeType,
     base64: params.base64,
+    protocols: params.protocols,
   });
 }
 
