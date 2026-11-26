@@ -3,43 +3,46 @@ export function ClinicMark({ className = 'h-10 w-10' }: { className?: string }) 
     <svg viewBox="0 0 100 100" className={className} aria-hidden>
       {/* Crisp outer square emblem frame */}
       <rect
-        x="2"
-        y="2"
-        width="96"
-        height="96"
-        rx="6"
+        x="3"
+        y="3"
+        width="94"
+        height="94"
+        rx="8"
         fill="#FFFFFF"
-        stroke="#272420"
-        strokeWidth="2.5"
+        stroke="#1E293B"
+        strokeWidth="2.2"
       />
-      {/* Stylized double-arc eye mark matching clinic stationery */}
+      {/* Stylized double-arc ophthalmology eye mark */}
       <path
-        d="M12 41 C28 19, 72 19, 88 41 C72 63, 28 63, 12 41 Z"
+        d="M14 39 C29 17, 71 17, 86 39 C71 61, 29 61, 14 39 Z"
         fill="none"
-        stroke="#0277BD"
-        strokeWidth="4.2"
+        stroke="#0284C7"
+        strokeWidth="4"
         strokeLinejoin="round"
       />
       <path
-        d="M19 41 C33 27, 67 27, 81 41 C67 55, 33 55, 19 41 Z"
+        d="M22 39 C34 25, 66 25, 78 39 C66 53, 34 53, 22 39 Z"
         fill="none"
-        stroke="#0277BD"
-        strokeWidth="2.6"
+        stroke="#0284C7"
+        strokeWidth="2.4"
         strokeLinejoin="round"
       />
-      {/* Central pupil */}
-      <circle cx="50" cy="41" r="7.5" fill="#141210" />
-      <circle cx="47.5" cy="38.5" r="2" fill="#FFFFFF" />
-      {/* Wordmark inside emblem */}
+      {/* Crisp iris, pupil & light reflection */}
+      <circle cx="50" cy="39" r="9.5" fill="#0369A1" opacity="0.16" />
+      <circle cx="50" cy="39" r="6.2" fill="#0F172A" />
+      <circle cx="47.8" cy="36.8" r="1.9" fill="#FFFFFF" />
+      {/* Wordmark strictly bounded inside frame */}
       <text
         x="50"
-        y="83"
+        y="82"
         textAnchor="middle"
-        fill="#01579B"
-        fontSize="8.8"
+        textLength="80"
+        lengthAdjust="spacingAndGlyphs"
+        fill="#0369A1"
+        fontSize="7.2"
         fontWeight="700"
         fontFamily="Figtree, system-ui, sans-serif"
-        letterSpacing="0.35"
+        letterSpacing="0.2"
       >
         SHRIDHAR NETRALAYA
       </text>

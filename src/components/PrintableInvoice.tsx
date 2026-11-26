@@ -1,4 +1,5 @@
 import { formatDisplayDate, formatINR } from '../lib/dates';
+import { BILL_HEADS, groupItemsByBillHead } from '../lib/invoiceHeads';
 import { ClinicMark } from './ClinicMark';
 import type { ClinicSettings, Invoice, Patient } from '../types/database';
 
@@ -40,6 +41,7 @@ interface PrintableInvoiceProps {
 
 export function PrintableInvoice({ clinic, patient, invoice }: PrintableInvoiceProps) {
   const kmcNo = clinic.doctor_kmc_no || '26550';
+  const grouped = groupItemsByBillHead(invoice.items);
 
   return (
     <div className="print-sheet-a5 relative mx-auto w-full max-w-[680px] rounded-2xl border border-stone-200 bg-white p-4 font-sans text-xs text-stone-900 shadow-sm sm:p-7">
@@ -53,7 +55,7 @@ export function PrintableInvoice({ clinic, patient, invoice }: PrintableInvoiceP
 
       {/* ── TOP HEADER: Symmetrical Logos on Either Side + Crisp Centered Clinic Details ── */}
       <div className="flex items-center justify-between gap-2 border-b border-stone-300 pb-3 sm:gap-4">
-        <ClinicMark className="h-10 w-10 shrink-0 sm:h-14 sm:w-14" />
+        <ClinicMark className="h-11 w-11 shrink-0 sm:h-14 sm:w-14" />
 
         <div className="min-w-0 flex-1 text-center">
           <h1 className="whitespace-nowrap font-display text-[15px] font-bold uppercase tracking-wide text-stone-950 sm:text-xl">
@@ -70,7 +72,7 @@ export function PrintableInvoice({ clinic, patient, invoice }: PrintableInvoiceP
           </p>
         </div>
 
-        <ClinicMark className="h-10 w-10 shrink-0 sm:h-14 sm:w-14" />
+        <ClinicMark className="h-11 w-11 shrink-0 sm:h-14 sm:w-14" />
       </div>
 
       {/* ── RECEIPT NUMBER & DATE ── */}
@@ -105,7 +107,7 @@ export function PrintableInvoice({ clinic, patient, invoice }: PrintableInvoiceP
         </div>
       </div>
 
-      {/* ── CLEAN 3-COLUMN TABLE (Sl.No | Details | Amount in Rs.) ── */}
+      {/* ── ALWAYS-ON 10-HEAD RECEIPT TABLE WITH INDENTED SUB-ITEMS ── */}
       <div className="mt-3 overflow-hidden rounded-lg border border-stone-400">
         <table className="w-full border-collapse text-xs">
           <thead>
@@ -118,32 +120,44 @@ export function PrintableInvoice({ clinic, patient, invoice }: PrintableInvoiceP
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-200">
-            {invoice.items.length === 0 ? (
-              <tr>
-                <td colSpan={3} className="px-3 py-6 text-center text-stone-400">
-                  Add items on the left to preview receipt
-                </td>
-              </tr>
-            ) : (
-              invoice.items.map((item, idx) => (
-                <tr key={idx}>
-                  <td className="border-r border-stone-300 px-2 py-1.5 text-center font-medium text-stone-600 tabular-nums">
+            {BILL_HEADS.map((head, idx) => {
+              const headItems = grouped[head];
+              const headTotal = headItems.reduce((s, it) => s + it.amount, 0);
+
+              return (
+                <tr key={head} className={headTotal > 0 ? 'bg-white' : 'bg-stone-50/25'}>
+                  <td className="border-r border-stone-300 px-2 py-1.5 text-center align-top font-medium text-stone-500 tabular-nums">
                     {idx + 1}.
                   </td>
-                  <td className="border-r border-stone-300 px-2.5 py-1.5 font-medium text-stone-900 sm:px-3">
-                    {item.name}
-                    {item.qty > 1 && (
-                      <span className="ml-1.5 text-[10.5px] text-stone-500">
-                        ({item.qty} × ₹{item.unit_price.toLocaleString('en-IN')})
-                      </span>
+                  <td className="border-r border-stone-300 px-2.5 py-1.5 align-top sm:px-3">
+                    <div className={`font-semibold ${headTotal > 0 ? 'text-stone-950' : 'text-stone-500'}`}>
+                      {head}
+                    </div>
+                    {headItems.length > 0 && (
+                      <div className="mt-0.5 space-y-0.5 pl-3">
+                        {headItems.map((sub, subIdx) => (
+                          <div
+                            key={`${sub.name}-${subIdx}`}
+                            className="flex items-baseline justify-between gap-2 text-[10.5px] text-stone-600"
+                          >
+                            <span className="truncate">
+                              ↳ {sub.name}
+                              {sub.qty > 1 ? ` (×${sub.qty})` : ''}
+                            </span>
+                            <span className="shrink-0 font-medium text-stone-700 tabular-nums">
+                              {sub.amount.toLocaleString('en-IN')}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
                     )}
                   </td>
-                  <td className="whitespace-nowrap px-2.5 py-1.5 text-right font-semibold text-stone-950 tabular-nums sm:px-3">
-                    {item.amount > 0 ? item.amount.toLocaleString('en-IN') : '—'}
+                  <td className="whitespace-nowrap px-2.5 py-1.5 text-right align-top font-bold text-stone-950 tabular-nums sm:px-3">
+                    {headTotal > 0 ? headTotal.toLocaleString('en-IN') : '—'}
                   </td>
                 </tr>
-              ))
-            )}
+              );
+            })}
           </tbody>
           <tfoot>
             {invoice.discount > 0 && (
