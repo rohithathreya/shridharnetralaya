@@ -67,19 +67,55 @@ export async function runAiExtract<T = Record<string, unknown>>(params: {
     throw new Error('Staff session expired. Please sign in with your PIN again.');
   }
 
-  const res = await fetch(`${SUPABASE_URL}/functions/v1/ai-extract`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      apikey: SUPABASE_ANON_KEY,
-      Authorization: `Bearer ${accessToken}`,
-    },
-    body: JSON.stringify(params),
+  const endpoint = `${SUPABASE_URL}/functions/v1/ai-extract`;
+  const approxKb = Math.round((params.base64.length * 0.75) / 1024);
+  console.info('[ai-extract] → POST', {
+    endpoint,
+    target: params.target,
+    mode: params.mode,
+    mimeType: params.mimeType,
+    approxKb,
   });
 
-  const payload = await res.json().catch(() => ({}));
+  let res: Response;
+  try {
+    res = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(params),
+    });
+  } catch (networkErr) {
+    console.error('[ai-extract] ✗ Network / CORS failure:', networkErr);
+    throw new Error(
+      `Failed to fetch (${params.mode}, ${params.mimeType}, ~${approxKb}KB) at ${endpoint}. Possible CORS/gateway block or offline connection — check Console/Network tab.`,
+    );
+  }
+
+  const rawText = await res.text();
+  let payload: Record<string, unknown> = {};
+  try {
+    payload = rawText ? JSON.parse(rawText) : {};
+  } catch {
+    // non-JSON body
+  }
+
+  console.info('[ai-extract] ← Response', {
+    status: res.status,
+    ok: res.ok,
+    payload,
+    rawText: res.ok ? undefined : rawText.slice(0, 500),
+  });
+
   if (!res.ok) {
-    throw new Error(payload.error || `AI service returned status ${res.status}`);
+    const detail =
+      (typeof payload.error === 'string' && payload.error) ||
+      rawText.slice(0, 200) ||
+      res.statusText;
+    throw new Error(`AI service HTTP ${res.status}: ${detail}`);
   }
 
   return {

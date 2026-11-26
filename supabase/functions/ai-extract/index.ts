@@ -133,8 +133,8 @@ async function callOpenRouterJson(params: {
 
   if (!res.ok) {
     const errDetail = await res.text();
-    console.error('OpenRouter API failure:', errDetail);
-    throw new Error('AI extraction failed. Please retry or enter manually.');
+    console.error('OpenRouter API failure:', res.status, errDetail);
+    throw new Error(`OpenRouter HTTP ${res.status}: ${errDetail.slice(0, 220)}`);
   }
 
   const data = await res.json();

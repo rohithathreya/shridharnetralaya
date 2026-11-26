@@ -4,4 +4,4 @@ project_id = "shridhar-netralaya"
 verify_jwt = false
 
 [functions.ai-extract]
-verify_jwt = true
+verify_jwt = false
