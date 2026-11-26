@@ -30,6 +30,19 @@ import type {
 
 const CATEGORIES: ServiceCategory[] = ['Consultation', 'Diagnostic', 'Procedure', 'Surgery', 'Optical', 'Other'];
 
+const STANDARD_SURGICAL_HEADS: Array<{ name: string; category: ServiceCategory }> = [
+  { name: 'Bed charges', category: 'Surgery' },
+  { name: 'Nursing charges', category: 'Surgery' },
+  { name: 'Asst charges', category: 'Surgery' },
+  { name: 'Professional charges', category: 'Surgery' },
+  { name: 'Intra ocular lens', category: 'Surgery' },
+  { name: 'Anesthetist', category: 'Surgery' },
+  { name: 'Anesthesia', category: 'Surgery' },
+  { name: 'OT charges', category: 'Surgery' },
+  { name: 'OT drugs and implants', category: 'Surgery' },
+  { name: 'Others', category: 'Other' },
+];
+
 const PAYMENT_MODE_OPTIONS: CustomSelectOption[] = [
   { value: 'Cash', label: 'Cash', sublabel: 'Direct cash at reception' },
   { value: 'UPI', label: 'UPI / QR Code', sublabel: 'GPay / PhonePe / Paytm' },
@@ -232,13 +245,37 @@ export function InvoiceForm({ patient, clinic, catalog, onCreated }: InvoiceForm
     );
   }
 
+  function updateItemPriceByName(name: string, raw: string) {
+    const unit_price = Math.max(0, parseInt(raw, 10) || 0);
+    setItems((prev) =>
+      prev.map((it) => (it.name === name ? { ...it, unit_price, amount: it.qty * unit_price } : it)),
+    );
+  }
+
+  function loadSurgicalHeads() {
+    setItems((prev) => {
+      const existingNames = new Set(prev.map((x) => x.name.toLowerCase()));
+      const additions: InvoiceLineItem[] = STANDARD_SURGICAL_HEADS.filter(
+        (h) => !existingNames.has(h.name.toLowerCase()),
+      ).map((h) => ({
+        name: h.name,
+        category: h.category,
+        qty: 1,
+        unit_price: 0,
+        amount: 0,
+      }));
+      return [...prev, ...additions];
+    });
+  }
+
   function removeItem(idx: number) {
     setItems((prev) => prev.filter((_, i) => i !== idx));
   }
 
   async function handleSave() {
-    if (items.length === 0) {
-      setError('Tap at least one service to generate a receipt.');
+    const activeItems = items.filter((it) => it.amount > 0);
+    if (activeItems.length === 0) {
+      setError('Enter an amount for at least one item to generate a receipt.');
       return;
     }
     setSaving(true);
@@ -251,7 +288,7 @@ export function InvoiceForm({ patient, clinic, catalog, onCreated }: InvoiceForm
         ipd_no: ipdNo.trim(),
         tpa_name: tpaName.trim(),
         policy_no: policyNo.trim(),
-        items,
+        items: activeItems,
         subtotal,
         discount: discountNum,
         total,
@@ -329,30 +366,41 @@ export function InvoiceForm({ patient, clinic, catalog, onCreated }: InvoiceForm
         <div className="card-obsidian flex flex-wrap items-center justify-between gap-3 p-4 sm:p-5">
           <div>
             <p className="text-[10.5px] font-semibold uppercase tracking-[0.18em] text-gold-300">
-              Itemized TPA-Ready Billing
+              Itemized Cash & TPA Billing
             </p>
             <h3 className="mt-0.5 font-display text-xl text-white">Quick POS & Voice Bill</h3>
           </div>
 
-          <button
-            type="button"
-            disabled={aiLoading}
-            onClick={voice.toggle}
-            className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold transition ${
-              voice.recording
-                ? 'animate-pulse bg-red-600 text-white'
-                : 'bg-gold-400 text-white hover:bg-gold-300'
-            }`}
-          >
-            {aiLoading ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : voice.recording ? (
-              <Square className="h-3.5 w-3.5" />
-            ) : (
-              <Mic className="h-3.5 w-3.5" />
-            )}
-            <span>{voice.recording ? `Stop (${voice.elapsedSec}s)` : 'Voice Fill Bill'}</span>
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={loadSurgicalHeads}
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3.5 py-2 text-xs font-semibold text-white backdrop-blur transition hover:bg-white/20"
+            >
+              <Plus className="h-3.5 w-3.5 text-gold-300" />
+              10-Head Surgical Sheet
+            </button>
+
+            <button
+              type="button"
+              disabled={aiLoading}
+              onClick={voice.toggle}
+              className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold transition ${
+                voice.recording
+                  ? 'animate-pulse bg-red-600 text-white'
+                  : 'bg-gold-400 text-white hover:bg-gold-300'
+              }`}
+            >
+              {aiLoading ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : voice.recording ? (
+                <Square className="h-3.5 w-3.5" />
+              ) : (
+                <Mic className="h-3.5 w-3.5" />
+              )}
+              <span>{voice.recording ? `Stop (${voice.elapsedSec}s)` : 'Voice Fill Bill'}</span>
+            </button>
+          </div>
 
           {(aiMessage || voice.micError) && (
             <div className="flex w-full items-start gap-2 rounded-2xl border border-gold-300/30 bg-white/[0.07] p-3 text-xs text-white/90">
@@ -393,58 +441,80 @@ export function InvoiceForm({ patient, clinic, catalog, onCreated }: InvoiceForm
             ))}
           </div>
 
-          <div className="grid max-h-72 gap-2 overflow-y-auto pr-0.5 sm:grid-cols-2">
+          <div className="grid max-h-80 gap-2 overflow-y-auto pr-0.5 sm:grid-cols-2">
             {filteredCatalog.map((svc) => {
               const inBill = items.find((x) => x.name === svc.name);
               return (
                 <div
                   key={svc.id}
-                  className={`flex items-center justify-between gap-2 rounded-2xl border p-3 transition ${
+                  className={`flex flex-col gap-2 rounded-2xl border p-3 transition ${
                     inBill
                       ? 'border-gold-400 bg-clinic-50/80 shadow-soft'
                       : 'border-ivory-50/10 bg-ink-950 hover:border-gold-400/50'
                   }`}
                 >
-                  <button
-                    type="button"
-                    onClick={() => addCatalogItem(svc)}
-                    className="min-w-0 flex-1 text-left"
-                  >
-                    <span className="block truncate text-xs font-semibold text-ivory-50">{svc.name}</span>
-                    <span className="text-[10.5px] text-ivory-400">
-                      {svc.category} · <strong className="text-ivory-100">{formatINR(svc.default_price)}</strong>
-                    </span>
-                  </button>
-
-                  {inBill ? (
-                    <div className="flex shrink-0 items-center gap-1 rounded-full bg-ivory-50 p-0.5 text-ink-900">
-                      <button
-                        type="button"
-                        onClick={() => decrementByName(svc.name)}
-                        className="grid h-6 w-6 place-items-center rounded-full hover:bg-white/15"
-                        aria-label="Decrease"
-                      >
-                        <Minus className="h-3 w-3" />
-                      </button>
-                      <span className="min-w-[1.25rem] text-center text-xs font-bold">{inBill.qty}</span>
-                      <button
-                        type="button"
-                        onClick={() => addCatalogItem(svc)}
-                        className="grid h-6 w-6 place-items-center rounded-full hover:bg-white/15"
-                        aria-label="Increase"
-                      >
-                        <Plus className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ) : (
+                  <div className="flex items-center justify-between gap-2">
                     <button
                       type="button"
                       onClick={() => addCatalogItem(svc)}
-                      className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-ivory-50/15 bg-ink-900 text-ivory-100 hover:bg-ivory-50 hover:text-ink-900 transition"
-                      aria-label="Add"
+                      className="min-w-0 flex-1 text-left"
                     >
-                      <Plus className="h-3.5 w-3.5" />
+                      <span className="block truncate text-xs font-semibold text-ivory-50">{svc.name}</span>
+                      <span className="text-[10.5px] text-ivory-400">
+                        {svc.category} · <strong className="text-ivory-100">{formatINR(svc.default_price)}</strong>
+                      </span>
                     </button>
+
+                    {inBill ? (
+                      <div className="flex shrink-0 items-center gap-1 rounded-full bg-ivory-50 p-0.5 text-ink-900">
+                        <button
+                          type="button"
+                          onClick={() => decrementByName(svc.name)}
+                          className="grid h-6 w-6 place-items-center rounded-full hover:bg-white/15"
+                          aria-label="Decrease"
+                        >
+                          <Minus className="h-3 w-3" />
+                        </button>
+                        <span className="min-w-[1.25rem] text-center text-xs font-bold">{inBill.qty}</span>
+                        <button
+                          type="button"
+                          onClick={() => addCatalogItem(svc)}
+                          className="grid h-6 w-6 place-items-center rounded-full hover:bg-white/15"
+                          aria-label="Increase"
+                        >
+                          <Plus className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => addCatalogItem(svc)}
+                        className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-ivory-50/15 bg-ink-900 text-ivory-100 hover:bg-ivory-50 hover:text-ink-900 transition"
+                        aria-label="Add"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {inBill && (
+                    <div className="flex items-center justify-between gap-2 border-t border-gold-400/20 pt-2">
+                      <span className="text-[10.5px] font-semibold text-ivory-400">Custom Rate (₹)</span>
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="number"
+                          min={0}
+                          value={inBill.unit_price}
+                          onChange={(e) => updateItemPriceByName(svc.name, e.target.value)}
+                          onClick={(e) => e.stopPropagation()}
+                          aria-label={`Price for ${svc.name}`}
+                          className="w-24 rounded-xl border border-gold-400/40 bg-ink-900 px-2.5 py-1 text-right text-xs font-bold text-ivory-50 focus:border-gold-500 focus:outline-none"
+                        />
+                        <span className="text-[11px] font-bold text-gold-600 tabular-nums">
+                          = {formatINR(inBill.amount)}
+                        </span>
+                      </div>
+                    </div>
                   )}
                 </div>
               );

@@ -94,19 +94,22 @@ export function PublicHome() {
               <div className="absolute inset-0 bg-gradient-to-r from-[#0c0a09]/70 via-[#0c0a09]/25 to-transparent" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#0c0a09]/80 via-transparent to-[#0c0a09]/20" />
               <div className="relative flex h-full flex-col justify-end px-5 pb-16 pt-24 sm:px-12 lg:px-20">
+                <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/75">
+                  {copy.hero.eyebrow}
+                </p>
                 <h1
-                  className={`max-w-4xl text-balance text-[2.65rem] font-medium leading-[0.98] tracking-[-0.035em] text-white sm:text-6xl lg:text-7xl ${
+                  className={`max-w-4xl text-balance text-[2.5rem] font-medium leading-[1.02] tracking-[-0.03em] text-white sm:text-6xl lg:text-7xl ${
                     isKn ? 'font-kannada leading-snug' : 'font-display'
                   }`}
                 >
                   {copy.hero.line}
                 </h1>
-                <div className="mt-6 inline-flex w-fit rounded-full border border-white/25 bg-black/40 p-0.5 backdrop-blur-md">
+                <div className="mt-6 inline-flex w-fit rounded-full border border-white/25 bg-black/45 p-0.5 backdrop-blur-md">
                   <button
                     type="button"
                     onClick={() => setBranch('magadi')}
-                    className={`rounded-full px-3.5 py-1.5 text-xs font-semibold ${
-                      branch === 'magadi' ? 'bg-white text-[#141210]' : 'text-white/80'
+                    className={`rounded-full px-4 py-1.5 text-xs font-semibold transition ${
+                      branch === 'magadi' ? 'bg-white text-[#141210] shadow-sm' : 'text-white/80 hover:text-white'
                     }`}
                   >
                     {isKn ? 'ಮಾಗಡಿ' : 'Magadi'}
@@ -114,16 +117,16 @@ export function PublicHome() {
                   <button
                     type="button"
                     onClick={() => setBranch('bangalore')}
-                    className={`rounded-full px-3.5 py-1.5 text-xs font-semibold ${
-                      branch === 'bangalore' ? 'bg-white text-[#141210]' : 'text-white/80'
+                    className={`rounded-full px-4 py-1.5 text-xs font-semibold transition ${
+                      branch === 'bangalore' ? 'bg-white text-[#141210] shadow-sm' : 'text-white/80 hover:text-white'
                     }`}
                   >
                     {isKn ? 'ಬೆಂಗಳೂರು' : 'Bangalore'}
                   </button>
                 </div>
-                <div className="mt-3 grid max-w-3xl gap-px overflow-hidden rounded-2xl border border-white/20 bg-white/20 sm:grid-cols-3">
-                  <div className="flex items-center gap-3 bg-black/50 px-4 py-3.5 backdrop-blur-md">
-                    <Clock className="h-4 w-4 shrink-0 text-white" strokeWidth={1.75} />
+                <div className="mt-3 grid max-w-3xl gap-px overflow-hidden rounded-2xl border border-white/20 bg-white/15 shadow-lift sm:grid-cols-3">
+                  <div className="flex items-center gap-3 bg-black/55 px-4 py-3.5 backdrop-blur-md">
+                    <Clock className="h-4 w-4 shrink-0 text-white/85" strokeWidth={1.75} />
                     <div className="min-w-0">
                       <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/60">
                         {copy.hero.timingsLabel}
@@ -139,14 +142,14 @@ export function PublicHome() {
                   </div>
                   <a
                     href={`tel:${clinic.phone}`}
-                    className="flex items-center gap-3 bg-black/50 px-4 py-3.5 backdrop-blur-md"
+                    className="flex items-center gap-3 bg-black/55 px-4 py-3.5 backdrop-blur-md transition hover:bg-black/70"
                   >
-                    <Phone className="h-4 w-4 shrink-0 text-white" strokeWidth={1.75} />
+                    <Phone className="h-4 w-4 shrink-0 text-white/85" strokeWidth={1.75} />
                     <div className="min-w-0">
                       <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/60">
                         {isKn ? 'ಸಂಪರ್ಕ (ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್)' : 'Contact (for appointments)'}
                       </div>
-                      <div className="mt-0.5 text-[13px] leading-snug text-white">{clinic.phone}</div>
+                      <div className="mt-0.5 text-[13px] font-medium leading-snug text-white">{clinic.phone}</div>
                     </div>
                   </a>
                   <a
@@ -157,15 +160,15 @@ export function PublicHome() {
                     }
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center gap-3 bg-black/50 px-4 py-3.5 backdrop-blur-md"
+                    className="flex items-center gap-3 bg-black/55 px-4 py-3.5 backdrop-blur-md transition hover:bg-black/70"
                   >
-                    <MapPin className="h-4 w-4 shrink-0 text-white" strokeWidth={1.75} />
+                    <MapPin className="h-4 w-4 shrink-0 text-white/85" strokeWidth={1.75} />
                     <div className="min-w-0">
                       <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/60">
-                        {isKn ? 'ನಕ್ಷೆ' : 'Map'}
+                        {isKn ? 'ನಕ್ಷೆ' : 'Directions'}
                       </div>
-                      <div className="mt-0.5 text-[13px] leading-snug text-white">
-                        {branch === 'bangalore' ? (isKn ? 'ಬೆಂಗಳೂರು' : 'Bangalore') : isKn ? 'ಮಾಗಡಿ' : 'Magadi'}
+                      <div className="mt-0.5 text-[13px] font-medium leading-snug text-white">
+                        {branch === 'bangalore' ? (isKn ? 'ಬೆಂಗಳೂರು' : 'Bangalore') : isKn ? 'ಮಾಗಡಿ' : 'Magadi'} →
                       </div>
                     </div>
                   </a>
@@ -189,6 +192,9 @@ export function PublicHome() {
                 <div className="absolute inset-0 bg-gradient-to-t from-[#0c0a09]/80 via-[#0c0a09]/10 to-transparent" />
                 <div className="absolute inset-x-0 bottom-0 px-5 pb-16 sm:px-12 lg:px-20">
                   <div className="max-w-2xl">
+                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/75">
+                      {item.tag}
+                    </p>
                     <h2
                       className={`text-[1.85rem] font-medium leading-tight text-white sm:text-5xl ${
                         isKn ? 'font-kannada' : 'font-display'
@@ -206,62 +212,70 @@ export function PublicHome() {
           </div>
         </section>
 
-        <section id="doctor" data-deck="doctor" className="snap-start bg-ink-950 pb-16">
-          <div className="relative h-[68vh] max-h-[720px] overflow-hidden bg-[#1a1614] pt-16">
-            <img
-              src={`${base}care/doctor.jpg`}
-              alt=""
-              className="absolute inset-0 h-full w-full scale-110 object-cover object-[center_30%] opacity-40 blur-2xl"
-            />
-            <div className="relative flex h-full items-end justify-center px-6">
-              <img
-                src={`${base}care/doctor.jpg`}
-                alt=""
-                className="max-h-full w-auto max-w-full object-contain object-bottom shadow-[0_18px_50px_rgba(0,0,0,0.45)]"
-              />
-            </div>
-          </div>
-          <div className="px-5 py-6 text-ivory-50 sm:px-10 lg:px-16">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gold-500">
-              {copy.doctor.eyebrow}
-            </p>
-            <h2
-              className={`mt-1.5 text-[1.85rem] font-medium leading-tight sm:text-4xl ${
-                isKn ? 'font-kannada' : 'font-display'
-              }`}
-            >
-              {isKn ? copy.doctor.name : clinic.doctor_name}
-            </h2>
-            <p className="mt-1 text-sm text-gold-600">{copy.doctor.role}</p>
-            <p className="mt-1 text-sm text-ivory-300">{copy.doctor.qualifications}</p>
-            <div className="mt-4 max-w-3xl space-y-3 text-sm leading-relaxed text-ivory-100">
-              {copy.doctor.paragraphs.map((paragraph) => (
-                <p key={paragraph}>{paragraph}</p>
-              ))}
-            </div>
-            <div className="mt-4 grid max-w-3xl gap-3 sm:grid-cols-3">
-              {copy.doctor.highlights.map((item) => (
-                <div key={item.title}>
-                  <div className={`text-sm ${isKn ? '' : 'font-display'}`}>{item.title}</div>
-                  <p className="mt-1 text-xs leading-relaxed text-ivory-300">{item.detail}</p>
-                </div>
-              ))}
-            </div>
-            {(clinic.doctor_kmc_no || clinic.kpme_reg_no) && (
-              <div className="mt-4 flex flex-wrap gap-2 pb-2">
-                {clinic.doctor_kmc_no && (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-ivory-50/15 px-3 py-1 text-[11px] text-ivory-200">
-                    <ShieldCheck className="h-3.5 w-3.5 text-gold-500" />
-                    {copy.doctor.kmcLabel}: {clinic.doctor_kmc_no}
-                  </span>
-                )}
-                {clinic.kpme_reg_no && (
-                  <span className="inline-flex items-center rounded-full border border-ivory-50/15 px-3 py-1 text-[11px] text-ivory-200">
-                    {copy.doctor.kpmeLabel}: {clinic.kpme_reg_no}
-                  </span>
-                )}
+        <section id="doctor" data-deck="doctor" className="snap-start bg-ink-950 px-5 pb-20 pt-24 sm:px-10 lg:px-16">
+          <div className="mx-auto grid max-w-6xl items-center gap-8 lg:grid-cols-12 lg:gap-12">
+            {/* Editorial Portrait */}
+            <div className="lg:col-span-5">
+              <div className="relative mx-auto aspect-[4/5] max-w-sm overflow-hidden rounded-[28px] border border-ivory-50/10 bg-[#1a1614] shadow-lift lg:max-w-none">
+                <img
+                  src={`${base}care/doctor.jpg`}
+                  alt={clinic.doctor_name}
+                  className="h-full w-full object-cover object-top"
+                />
               </div>
-            )}
+            </div>
+
+            {/* Clean Editorial Bio */}
+            <div className="min-w-0 text-ivory-50 lg:col-span-7">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-gold-500">
+                {copy.doctor.eyebrow}
+              </p>
+              <h2
+                className={`mt-2 text-3xl font-medium leading-tight sm:text-5xl ${
+                  isKn ? 'font-kannada' : 'font-display'
+                }`}
+              >
+                {isKn ? copy.doctor.name : clinic.doctor_name}
+              </h2>
+              <p className="mt-1.5 text-sm font-semibold text-gold-600">{copy.doctor.role}</p>
+              <p className="mt-1 text-xs font-medium tracking-wide text-ivory-400">{copy.doctor.qualifications}</p>
+
+              <div className="mt-6 space-y-4 border-t border-ivory-50/10 pt-6 text-[15px] leading-relaxed text-ivory-200">
+                {copy.doctor.paragraphs.map((paragraph) => (
+                  <p key={paragraph}>{paragraph}</p>
+                ))}
+              </div>
+
+              <div className="mt-7 grid gap-3 sm:grid-cols-3">
+                {copy.doctor.highlights.map((item) => (
+                  <div
+                    key={item.title}
+                    className="rounded-2xl border border-ivory-50/10 bg-ink-900 p-4 shadow-soft"
+                  >
+                    <div className={`text-sm font-semibold text-ivory-50 ${isKn ? '' : 'font-display'}`}>
+                      {item.title}
+                    </div>
+                    <p className="mt-1 text-xs leading-relaxed text-ivory-400">{item.detail}</p>
+                  </div>
+                ))}
+              </div>
+
+              {(clinic.doctor_kmc_no || clinic.kpme_reg_no) && (
+                <div className="mt-6 flex flex-wrap gap-2">
+                  {clinic.doctor_kmc_no && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-ivory-50/15 bg-ink-900 px-3.5 py-1.5 text-xs font-medium text-ivory-200 shadow-soft">
+                      <ShieldCheck className="h-3.5 w-3.5 text-gold-500" />
+                      {copy.doctor.kmcLabel}: {clinic.doctor_kmc_no}
+                    </span>
+                  )}
+                  {clinic.kpme_reg_no && (
+                    <span className="inline-flex items-center rounded-full border border-ivory-50/15 bg-ink-900 px-3.5 py-1.5 text-xs font-medium text-ivory-200 shadow-soft">
+                      {copy.doctor.kpmeLabel}: {clinic.kpme_reg_no}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </section>
       </div>

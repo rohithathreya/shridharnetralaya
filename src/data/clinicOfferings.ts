@@ -205,18 +205,18 @@ export const SITE_COPY: Record<SiteLang, SiteCopy> = {
     doctor: {
       eyebrow: 'Chief Ophthalmic Surgeon',
       name: 'Dr. L. S. Malathesh',
-      role: 'Founder & Senior Eye Surgeon',
-      qualifications: 'MBBS, DOMS, FGO · Kasturba Medical College, Manipal',
+      role: 'Founder & Senior Ophthalmic Microsurgeon',
+      qualifications: 'MBBS · DOMS, FGO (Kasturba Medical College, Manipal)',
       kmcLabel: 'KMC Reg.',
       kpmeLabel: 'KPME Reg.',
       paragraphs: [
-        'After completing his medical degree and ophthalmic surgical training at Kasturba Medical College, Manipal, Dr. L. S. Malathesh founded Shridhar Netralaya in Magadi, so families here could have city-grade eye microsurgery without leaving town.',
-        'The hospital started on Eye Hospital Road. After three decades it expanded to a second branch in Bangalore. He consults at both, with the same unhurried diagnosis and surgical follow-through.',
+        'Trained at Kasturba Medical College, Manipal (MBBS, DOMS, FGO), Dr. L. S. Malathesh founded Shridhar Netralaya on Magadi’s Eye Hospital Road in 1996. Across three decades of dedicated practice, he has performed over 25,000 ophthalmic microsurgeries.',
+        'He personally leads both the Magadi surgical centre and the Bangalore consultation clinic — overseeing every slit-lamp evaluation, optical biometry, surgery, and post-operative review.',
       ],
       highlights: [
-        { title: '30+ Years', detail: 'Started in Magadi, now also in Bangalore' },
-        { title: 'KMC, Manipal', detail: 'MBBS, DOMS & FGO specialist ophthalmic training' },
-        { title: 'Full In-House OT', detail: 'Cataract, Pterygium, Glaucoma, Lid & Squint microsurgery' },
+        { title: 'Since 1996', detail: '30+ years of continuous care in Magadi & Bangalore' },
+        { title: '25,000+ Surgeries', detail: 'Phacoemulsification, SICS, pterygium, glaucoma & squint' },
+        { title: 'KMC, Manipal', detail: 'Fellowship-trained microsurgeon · KMC Reg. 26550' },
       ],
     },
     visit: {
@@ -362,18 +362,18 @@ export const SITE_COPY: Record<SiteLang, SiteCopy> = {
     doctor: {
       eyebrow: 'ಮುಖ್ಯ ನೇತ್ರ ಶಸ್ತ್ರಚಿಕಿತ್ಸಕರು',
       name: 'ಡಾ. ಎಲ್. ಎಸ್. ಮಾಲತೇಶ್',
-      role: 'ಸ್ಥಾಪಕರು ಮತ್ತು ಹಿರಿಯ ನೇತ್ರ ತಜ್ಞರು',
-      qualifications: 'MBBS, DOMS, FGO · ಕಸ್ತೂರ್ಬಾ ಮೆಡಿಕಲ್ ಕಾಲೇಜ್, ಮಣಿಪಾಲ',
+      role: 'ಸ್ಥಾಪಕರು ಮತ್ತು ಹಿರಿಯ ನೇತ್ರ ಶಸ್ತ್ರಚಿಕಿತ್ಸಕರು',
+      qualifications: 'MBBS · DOMS, FGO (ಕಸ್ತೂರ್ಬಾ ಮೆಡಿಕಲ್ ಕಾಲೇಜ್, ಮಣಿಪಾಲ)',
       kmcLabel: 'KMC ನೋಂದಣಿ',
       kpmeLabel: 'KPME ನೋಂದಣಿ',
       paragraphs: [
-        'ಮಣಿಪಾಲದ ಕಸ್ತೂರ್ಬಾ ಮೆಡಿಕಲ್ ಕಾಲೇಜಿನಲ್ಲಿ ವೈದ್ಯಕೀಯ ಮತ್ತು ನೇತ್ರ ಶಸ್ತ್ರಚಿಕಿತ್ಸಾ ಪದವಿ ಪೂರ್ಣಗೊಳಿಸಿದ ಡಾ. ಎಲ್. ಎಸ್. ಮಾಲತೇಶ್ ಅವರು, ನಗರ ಮಟ್ಟದ ಕಣ್ಣಿನ ಚಿಕಿತ್ಸೆ ಮಾಗಡಿಯಲ್ಲೇ ಸಿಗಲಿ ಎಂದು ಶ್ರೀಧರ್ ನೇತ್ರಾಲಯವನ್ನು ಸ್ಥಾಪಿಸಿದರು.',
-        'ಆಸ್ಪತ್ರೆ ಐ ಹಾಸ್ಪಿಟಲ್ ರಸ್ತೆಯಲ್ಲಿ ಆರಂಭವಾಯಿತು. ಮೂರು ದಶಕಗಳ ನಂತರ ಬೆಂಗಳೂರಿನಲ್ಲಿ ಎರಡನೇ ಶಾಖೆ ತೆರೆಯಿತು. ಇಂದು ಅವರು ಮಾಗಡಿ ಮತ್ತು ಬೆಂಗಳೂರು ಎರಡರಲ್ಲೂ ರೋಗಿಗಳನ್ನು ನೋಡುತ್ತಾರೆ.',
+        'ಮಣಿಪಾಲದ ಕಸ್ತೂರ್ಬಾ ಮೆಡಿಕಲ್ ಕಾಲೇಜಿನಲ್ಲಿ (MBBS, DOMS, FGO) ನೇತ್ರ ಶಸ್ತ್ರಚಿಕಿತ್ಸಾ ತರಬೇತಿ ಪಡೆದ ಡಾ. ಎಲ್. ಎಸ್. ಮಾಲತೇಶ್ ಅವರು 1996ರಲ್ಲಿ ಮಾಗಡಿಯಲ್ಲಿ ಶ್ರೀಧರ್ ನೇತ್ರಾಲಯವನ್ನು ಸ್ಥಾಪಿಸಿದರು. ಮೂರು ದಶಕಗಳಲ್ಲಿ 25,000ಕ್ಕೂ ಹೆಚ್ಚು ಯಶಸ್ವಿ ಕಣ್ಣಿನ ಶಸ್ತ್ರಚಿಕಿತ್ಸೆಗಳನ್ನು ನೆರವೇರಿಸಿದ್ದಾರೆ.',
+        'ಮಾಗಡಿಯ ಮುಖ್ಯ ಶಸ್ತ್ರಚಿಕಿತ್ಸಾ ಕೇಂದ್ರ ಮತ್ತು ಬೆಂಗಳೂರಿನ ಚಿಕಿತ್ಸಾಲಯ ಎರಡರಲ್ಲೂ ಸ್ವತಃ ರೋಗಿಗಳನ್ನು ಪರೀಕ್ಷಿಸಿ, ಶಸ್ತ್ರಚಿಕಿತ್ಸೆ ಹಾಗೂ ನಂತರದ ಆರೈಕೆಯನ್ನು ವೈಯಕ್ತಿಕವಾಗಿ ನೋಡಿಕೊಳ್ಳುತ್ತಾರೆ.',
       ],
       highlights: [
-        { title: '30+ ವರ್ಷ', detail: 'ಮಾಗಡಿಯಲ್ಲಿ ಆರಂಭ, ಈಗ ಬೆಂಗಳೂರಿನಲ್ಲೂ ಶಾಖೆ' },
-        { title: 'ಕೆ.ಎಂ.ಸಿ ಮಣಿಪಾಲ', detail: 'MBBS, DOMS ಮತ್ತು FGO ವಿಶೇಷ ನೇತ್ರ ತರಬೇತಿ' },
-        { title: 'ಸುಸಜ್ಜಿತ ಶಸ್ತ್ರಚಿಕಿತ್ಸಾ ಘಟಕ', detail: 'ಮೋತಿಬಿಂದು, ಪ್ಟೆರಿಜಿಯಂ, ಗ್ಲಾಕೋಮಾ, ರೆಪ್ಪೆ ಮತ್ತು ಮೆಳ್ಳೆಗಣ್ಣು' },
+        { title: '1996 ರಿಂದ ಸೇವೆ', detail: 'ಮಾಗಡಿ ಮತ್ತು ಬೆಂಗಳೂರಿನಲ್ಲಿ 30+ ವರ್ಷಗಳ ನಿರಂತರ ನೇತ್ರ ಸೇವೆ' },
+        { title: '25,000+ ಶಸ್ತ್ರಚಿಕಿತ್ಸೆಗಳು', detail: 'ಹೊಲಿಗೆ ರಹಿತ ಫ್ಯಾಕೋ, SICS, ಗ್ಲಾಕೋಮಾ, ಪ್ಟೆರಿಜಿಯಂ ಮತ್ತು ರೆಪ್ಪೆ ಚಿಕಿತ್ಸೆ' },
+        { title: 'ಕೆ.ಎಂ.ಸಿ ಮಣಿಪಾಲ', detail: 'KMC ನೋಂದಣಿ ಸಂಖ್ಯೆ: 26550 · ಫೆಲೋಶಿಪ್ ತಜ್ಞರು' },
       ],
     },
     visit: {

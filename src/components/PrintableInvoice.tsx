@@ -1,4 +1,5 @@
-import { formatDisplayDateTime, formatINR } from '../lib/dates';
+import { formatDisplayDate, formatINR } from '../lib/dates';
+import { ClinicMark } from './ClinicMark';
 import type { ClinicSettings, Invoice, Patient } from '../types/database';
 
 function numberToIndianWords(num: number): string {
@@ -38,8 +39,10 @@ interface PrintableInvoiceProps {
 }
 
 export function PrintableInvoice({ clinic, patient, invoice }: PrintableInvoiceProps) {
+  const kmcNo = clinic.doctor_kmc_no || '26550';
+
   return (
-    <div className="print-sheet-a5 relative mx-auto rounded-2xl border border-stone-200 bg-white p-5 font-sans text-xs text-stone-900 shadow-sm">
+    <div className="print-sheet-a5 relative mx-auto rounded-2xl border border-stone-200 bg-white p-5 font-sans text-xs text-stone-900 shadow-sm sm:p-7">
       {invoice.status === 'voided' && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
           <div className="-rotate-12 rounded-xl border-4 border-red-600/60 px-6 py-2 text-4xl font-black uppercase tracking-widest text-red-600/40">
@@ -48,123 +51,134 @@ export function PrintableInvoice({ clinic, patient, invoice }: PrintableInvoiceP
         </div>
       )}
 
-      <div className="flex items-start justify-between gap-3 border-b-2 border-stone-900 pb-3">
-        <div>
-          <h1 className="font-display text-xl font-bold uppercase tracking-tight text-stone-950">
+      {/* ── TOP HEADER: Symmetrical Logos on Either Side + Centered Clinic Details ── */}
+      <div className="flex items-center justify-between gap-3 border-b border-stone-300 pb-3.5">
+        <ClinicMark className="h-11 w-11 shrink-0 sm:h-14 sm:w-14" />
+
+        <div className="min-w-0 flex-1 text-center">
+          <h1 className="font-display text-lg font-bold uppercase tracking-wide text-stone-950 sm:text-xl">
             {clinic.clinic_name}
           </h1>
-          <div className="text-[11px] font-semibold text-stone-700">{clinic.tagline}</div>
-          <div className="mt-0.5 text-[10.5px] text-stone-600">{clinic.address}</div>
-          <div className="mt-0.5 flex flex-wrap gap-x-2.5 text-[10px] font-semibold text-stone-800">
-            <span>Ph: {clinic.phone}</span>
-            {clinic.kpme_reg_no && <span>KPME: {clinic.kpme_reg_no}</span>}
-            {clinic.rohini_id && <span>ROHINI: {clinic.rohini_id}</span>}
-          </div>
+          <p className="mt-0.5 text-[10.5px] leading-snug text-stone-700">{clinic.address}</p>
+          <p className="mt-0.5 text-[10.5px] font-medium text-stone-800">
+            Mob No. +91 {clinic.phone}, 7026200077 · Email: shridharnetra@gmail.com
+          </p>
+          <p className="mt-0.5 text-[10.5px] font-semibold italic text-stone-700">
+            Timings: Mon – Sat 10:00 AM to 5:00 PM · Sunday Holiday
+          </p>
         </div>
-        <div className="shrink-0 text-right">
-          <div className="inline-block rounded border border-stone-900 bg-stone-900 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-white">
-            PAYMENT RECEIPT
-          </div>
-          <div className="mt-1.5 text-sm font-extrabold text-stone-900">{invoice.invoice_no}</div>
-          <div className="text-[10px] text-stone-600">{formatDisplayDateTime(invoice.created_at)}</div>
+
+        <ClinicMark className="h-11 w-11 shrink-0 sm:h-14 sm:w-14" />
+      </div>
+
+      {/* ── RECEIPT NUMBER & DATE ROW ── */}
+      <div className="mt-3 flex flex-wrap items-baseline justify-between gap-2">
+        <div className="text-sm font-bold text-stone-950">
+          Details of Cash Receipt No:{' '}
+          <span className="font-mono font-extrabold tracking-tight">{invoice.invoice_no}</span>
+        </div>
+        <div className="text-xs font-semibold text-stone-700">
+          Date: <span className="font-bold text-stone-950">{formatDisplayDate(invoice.created_at)}</span>
         </div>
       </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-3 rounded-lg border border-stone-200 bg-stone-50 p-2.5 text-[11px]">
-        <div className="space-y-0.5">
-          <div>
-            <span className="text-stone-500">Patient:</span>{' '}
-            <span className="font-extrabold uppercase text-stone-950">{patient.full_name}</span>
-          </div>
-          <div>
-            <span className="text-stone-500">MRD No.:</span>{' '}
-            <span className="font-mono font-bold text-stone-950">{patient.patient_code}</span>
-            {invoice.ipd_no ? <span className="ml-2 font-mono text-stone-700">· {invoice.ipd_no}</span> : null}
-          </div>
-          {patient.village_address && (
-            <div>
-              <span className="text-stone-500">Address:</span> {patient.village_address}
-            </div>
-          )}
+      {/* ── COMPACT AT-A-GLANCE PATIENT STRIP ── */}
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-lg border border-stone-200 bg-stone-50/80 px-3 py-2 text-[11px] text-stone-700">
+        <div>
+          <span className="text-stone-500">Patient:</span>{' '}
+          <span className="font-bold uppercase text-stone-950">{patient.full_name}</span>
+          <span className="ml-2 font-mono text-[10.5px] font-semibold text-stone-600">
+            ({patient.patient_code})
+          </span>
+          {invoice.ipd_no ? <span className="ml-1.5 font-mono text-[10.5px]">· {invoice.ipd_no}</span> : null}
         </div>
-        <div className="space-y-0.5 text-right">
-          <div>
-            <span className="text-stone-500">Age / Sex:</span> {patient.age ?? '—'} Yrs / {patient.sex || '—'}
-          </div>
-          <div>
-            <span className="text-stone-500">Consultant:</span> {clinic.doctor_name}
-          </div>
-          <div>
-            <span className="text-stone-500">Payment:</span>{' '}
-            <span className="font-extrabold">{invoice.payment_mode}</span>
+        <div className="flex flex-wrap items-center gap-x-3">
+          <span>
+            {patient.age ?? '—'} Yrs / {patient.sex || '—'}
+          </span>
+          <span>
+            Mode: <strong className="text-stone-950">{invoice.payment_mode}</strong>
             {invoice.payment_ref ? ` (${invoice.payment_ref})` : ''}
-          </div>
-          {(invoice.tpa_name || invoice.policy_no) && (
-            <div className="text-[10px] text-stone-700">
-              TPA: {[invoice.tpa_name, invoice.policy_no].filter(Boolean).join(' · ')}
-            </div>
-          )}
+          </span>
         </div>
       </div>
 
-      <table className="mt-3 w-full border-collapse text-xs">
-        <thead>
-          <tr className="border-y border-stone-800 bg-stone-100 text-left text-[11px]">
-            <th className="w-8 px-2 py-1.5 font-bold">#</th>
-            <th className="px-2 py-1.5 font-bold">Particulars / Service Head</th>
-            <th className="w-12 px-2 py-1.5 text-center font-bold">Qty</th>
-            <th className="w-20 px-2 py-1.5 text-right font-bold">Rate (₹)</th>
-            <th className="w-24 px-2 py-1.5 text-right font-bold">Amount (₹)</th>
-          </tr>
-        </thead>
-        <tbody>
-          {invoice.items.length === 0 ? (
-            <tr>
-              <td colSpan={5} className="px-2 py-4 text-center text-stone-400">
-                Tap services on the left to build itemized receipt
+      {/* ── CLEAN 3-COLUMN TABLE (Sl.No | Details | Amount in Rs.) ── */}
+      <div className="mt-3 overflow-hidden rounded-lg border border-stone-400">
+        <table className="w-full border-collapse text-xs">
+          <thead>
+            <tr className="border-b border-stone-400 bg-stone-100/90 text-stone-900">
+              <th className="w-12 border-r border-stone-300 px-2.5 py-2 text-center font-bold">Sl.No</th>
+              <th className="border-r border-stone-300 px-3 py-2 text-left font-bold">Details</th>
+              <th className="w-32 px-3 py-2 text-right font-bold">Amount in Rs.</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-stone-200">
+            {invoice.items.length === 0 ? (
+              <tr>
+                <td colSpan={3} className="px-3 py-6 text-center text-stone-400">
+                  Tap items on the left or load the 10-head surgical bill to preview
+                </td>
+              </tr>
+            ) : (
+              invoice.items.map((item, idx) => (
+                <tr key={idx}>
+                  <td className="border-r border-stone-300 px-2.5 py-1.5 text-center font-medium text-stone-600 tabular-nums">
+                    {idx + 1}.
+                  </td>
+                  <td className="border-r border-stone-300 px-3 py-1.5 font-medium text-stone-900">
+                    {item.name}
+                    {item.qty > 1 && (
+                      <span className="ml-1.5 text-[10.5px] text-stone-500">
+                        ({item.qty} × ₹{item.unit_price.toLocaleString('en-IN')})
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-3 py-1.5 text-right font-semibold text-stone-950 tabular-nums">
+                    {item.amount > 0 ? item.amount.toLocaleString('en-IN') : '—'}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+          <tfoot>
+            {invoice.discount > 0 && (
+              <tr className="border-t border-stone-300 bg-stone-50/70 text-[11px] text-emerald-800">
+                <td className="border-r border-stone-300 px-2.5 py-1.5" />
+                <td className="border-r border-stone-300 px-3 py-1.5 text-right font-semibold">
+                  Concession / Discount
+                </td>
+                <td className="px-3 py-1.5 text-right font-bold tabular-nums">
+                  - {invoice.discount.toLocaleString('en-IN')}
+                </td>
+              </tr>
+            )}
+            <tr className="border-t-2 border-stone-500 bg-stone-50 font-bold text-stone-950">
+              <td className="border-r border-stone-300 px-2.5 py-2" />
+              <td className="border-r border-stone-300 px-3 py-2 text-right text-xs uppercase tracking-wide">
+                Total:
+              </td>
+              <td className="px-3 py-2 text-right text-sm font-extrabold tabular-nums">
+                {formatINR(invoice.total)}
               </td>
             </tr>
-          ) : (
-            invoice.items.map((item, idx) => (
-              <tr key={idx} className="border-b border-stone-200">
-                <td className="px-2 py-1.5 text-stone-500">{idx + 1}</td>
-                <td className="px-2 py-1.5 font-semibold">
-                  {item.name}
-                  <span className="ml-1.5 text-[10px] font-normal text-stone-500">({item.category})</span>
-                </td>
-                <td className="px-2 py-1.5 text-center">{item.qty}</td>
-                <td className="px-2 py-1.5 text-right">{item.unit_price.toLocaleString('en-IN')}</td>
-                <td className="px-2 py-1.5 text-right font-bold">{item.amount.toLocaleString('en-IN')}</td>
-              </tr>
-            ))
+          </tfoot>
+        </table>
+      </div>
+
+      {/* ── TPA / NOTES / VOIDED ── */}
+      {(invoice.tpa_name || invoice.policy_no || invoice.notes) && (
+        <div className="mt-2 space-y-1 text-[10.5px] text-stone-700">
+          {(invoice.tpa_name || invoice.policy_no) && (
+            <div>
+              <strong>TPA / Scheme:</strong> {[invoice.tpa_name, invoice.policy_no].filter(Boolean).join(' · ')}
+            </div>
           )}
-        </tbody>
-      </table>
-
-      <div className="mt-3 flex flex-col items-end space-y-1 text-xs">
-        <div className="flex w-60 justify-between">
-          <span className="text-stone-600">Subtotal:</span>
-          <span className="font-semibold">{formatINR(invoice.subtotal)}</span>
-        </div>
-        {invoice.discount > 0 && (
-          <div className="flex w-60 justify-between text-emerald-700">
-            <span>Concession / Discount:</span>
-            <span className="font-semibold">- {formatINR(invoice.discount)}</span>
-          </div>
-        )}
-        <div className="flex w-60 justify-between border-t-2 border-stone-900 pt-1.5 text-sm font-extrabold">
-          <span>Total Received:</span>
-          <span>{formatINR(invoice.total)}</span>
-        </div>
-      </div>
-
-      <div className="mt-2 rounded bg-stone-50 px-2.5 py-1.5 text-[10.5px] text-stone-700">
-        <strong>Amount in words:</strong> Rupees {numberToIndianWords(invoice.total)} Only
-      </div>
-
-      {invoice.notes && (
-        <div className="mt-2 rounded bg-stone-50 px-2.5 py-1.5 text-[10.5px] text-stone-700">
-          <strong>Remarks:</strong> {invoice.notes}
+          {invoice.notes && (
+            <div>
+              <strong>Remarks:</strong> {invoice.notes}
+            </div>
+          )}
         </div>
       )}
 
@@ -174,16 +188,19 @@ export function PrintableInvoice({ clinic, patient, invoice }: PrintableInvoiceP
         </div>
       )}
 
-      <div className="mt-5 flex items-end justify-between border-t border-stone-300 pt-3 text-[10px] text-stone-600">
-        <div>
-          <div>Healthcare services are exempt from GST (SAC 9993).</div>
-          <div>Thank you for trusting {clinic.clinic_name}, Magadi.</div>
+      {/* ── FOOTER: Amount in words (Left) + Doctor Signature & KMC Reg (Right) ── */}
+      <div className="mt-6 flex items-end justify-between gap-4 pt-2 text-[11px] text-stone-800">
+        <div className="max-w-[62%]">
+          <span className="font-semibold text-stone-600">Amount in words:</span>{' '}
+          <span className="font-bold text-stone-950">
+            Rupees {numberToIndianWords(invoice.total)} Only
+          </span>
         </div>
-        <div className="text-right">
-          <div className="h-6" />
-          <div className="border-t border-stone-400 pt-0.5 font-bold text-stone-900">
-            Authorized Signatory ({invoice.created_by})
-          </div>
+
+        <div className="shrink-0 text-right leading-snug">
+          <div className="text-[10.5px] font-semibold text-stone-600">Signature:</div>
+          <div className="mt-5 font-bold text-stone-950">{clinic.doctor_name}</div>
+          <div className="text-[10px] font-semibold text-stone-700">KMC Reg no: {kmcNo}</div>
         </div>
       </div>
     </div>
