@@ -1,14 +1,14 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   CheckCircle2,
+  ChevronDown,
+  ChevronRight,
   Eye,
   Loader2,
   MessageCircle,
   Mic,
-  Minus,
   Plus,
   Printer,
-  Search,
   Sparkles,
   Square,
   Trash2,
@@ -46,11 +46,6 @@ const PAYMENT_MODE_OPTIONS: CustomSelectOption[] = [
   { value: 'TPA / Scheme', label: 'TPA / Insurance Scheme', sublabel: 'Cashless / Reimbursement' },
 ];
 
-const HEAD_OPTIONS: CustomSelectOption[] = BILL_HEADS.map((h, i) => ({
-  value: h,
-  label: `${i + 1}. ${h}`,
-}));
-
 interface InvoiceFormProps {
   patient: Patient;
   clinic: ClinicSettings;
@@ -59,12 +54,7 @@ interface InvoiceFormProps {
 }
 
 export function InvoiceForm({ patient, clinic, catalog, onCreated }: InvoiceFormProps) {
-  const [activeCat, setActiveCat] = useState<ServiceCategory | 'All'>('All');
-  const [catalogSearch, setCatalogSearch] = useState('');
   const [items, setItems] = useState<InvoiceLineItem[]>([]);
-  const [customHead, setCustomHead] = useState<BillHead>('Others');
-  const [customName, setCustomName] = useState('');
-  const [customPrice, setCustomPrice] = useState('');
   const [discount, setDiscount] = useState('0');
   const [paymentMode, setPaymentMode] = useState<PaymentMode>('Cash');
   const [paymentRef, setPaymentRef] = useState('');
@@ -77,10 +67,26 @@ export function InvoiceForm({ patient, clinic, catalog, onCreated }: InvoiceForm
   const [error, setError] = useState('');
   const [savedInvoice, setSavedInvoice] = useState<Invoice | null>(null);
 
+  // Layered Procedure Dropdown state (Layer 1: Category -> Layer 2: Procedures)
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [expandedCat, setExpandedCat] = useState<ServiceCategory | null>(null);
+  const pickerRef = useRef<HTMLDivElement>(null);
+
   const [aiLoading, setAiLoading] = useState(false);
   const [aiMessage, setAiMessage] = useState('');
   const [showMoreOptions, setShowMoreOptions] = useState(false);
   const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
+
+  // Close layered dropdown on outside click
+  useEffect(() => {
+    function handleOutside(e: MouseEvent) {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
+        setPickerOpen(false);
+      }
+    }
+    if (pickerOpen) document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
+  }, [pickerOpen]);
 
   const handleVoiceComplete = useCallback(
     async (base64: string, mimeType: string) => {
@@ -161,32 +167,19 @@ export function InvoiceForm({ patient, clinic, catalog, onCreated }: InvoiceForm
 
   const voice = useVoiceRecorder(handleVoiceComplete);
 
-  const filteredCatalog = useMemo(() => {
-    return catalog.filter((c) => {
-      if (!c.is_active) return false;
-      if (activeCat !== 'All' && c.category !== activeCat) return false;
-      if (catalogSearch.trim() && !c.name.toLowerCase().includes(catalogSearch.toLowerCase())) {
-        return false;
-      }
-      return true;
-    });
-  }, [catalog, activeCat, catalogSearch]);
+  const catalogByCategory = useMemo(() => {
+    const map = new Map<ServiceCategory, ServiceCatalogItem[]>();
+    for (const cat of CATEGORIES) {
+      const list = catalog.filter((c) => c.is_active && c.category === cat);
+      if (list.length > 0) map.set(cat, list);
+    }
+    return map;
+  }, [catalog]);
 
   const groupedByHead = useMemo(() => groupItemsByBillHead(items), [items]);
   const subtotal = useMemo(() => items.reduce((sum, i) => sum + i.amount, 0), [items]);
   const discountNum = Math.max(0, Math.min(subtotal, parseInt(discount || '0', 10) || 0));
   const total = Math.max(0, subtotal - discountNum);
-
-  // Track count & total per service name for catalog card badges
-  const serviceSummary = useMemo(() => {
-    const map = new Map<string, { count: number; total: number }>();
-    for (const it of items) {
-      const cur = map.get(it.name) || { count: 0, total: 0 };
-      cur.total += it.amount;
-      map.set(it.name, cur);
-    }
-    return map;
-  }, [items]);
 
   const previewInvoice: Invoice = useMemo(
     () => ({
@@ -228,27 +221,28 @@ export function InvoiceForm({ patient, clinic, catalog, onCreated }: InvoiceForm
       }
       return next;
     });
+    // Collapse dropdown immediately on selection
+    setPickerOpen(false);
+    setExpandedCat(null);
   }
 
-  function removeServiceByName(name: string) {
-    setItems((prev) => prev.filter((x) => x.name !== name));
-  }
-
-  function addCustomItem() {
-    const price = Math.max(0, parseInt(customPrice, 10) || 0);
-    if (!customName.trim()) return;
-    setItems((prev) => [
-      ...prev,
-      {
-        name: customName.trim(),
-        category: customHead,
-        qty: 1,
-        unit_price: price,
-        amount: price,
-      },
-    ]);
-    setCustomName('');
-    setCustomPrice('');
+  function setDirectHeadAmount(head: BillHead, raw: string) {
+    const val = Math.max(0, parseInt(raw, 10) || 0);
+    setItems((prev) => {
+      const idx = prev.findIndex((it) => it.category === head && it.name === head);
+      if (val === 0) {
+        return idx >= 0 ? prev.filter((_, i) => i !== idx) : prev;
+      }
+      if (idx >= 0) {
+        return prev.map((it, i) =>
+          i === idx ? { ...it, unit_price: val, amount: val } : it,
+        );
+      }
+      return [
+        ...prev,
+        { name: head, category: head, qty: 1, unit_price: val, amount: val },
+      ];
+    });
   }
 
   function updateLineItemPrice(targetItem: InvoiceLineItem, raw: string) {
@@ -267,7 +261,7 @@ export function InvoiceForm({ patient, clinic, catalog, onCreated }: InvoiceForm
   async function handleSave() {
     const activeItems = items.filter((it) => it.amount > 0);
     if (activeItems.length === 0) {
-      setError('Tap a service or enter an amount under any bill head to generate a receipt.');
+      setError('Enter an amount under any bill head or select a procedure to generate a receipt.');
       return;
     }
     setSaving(true);
@@ -352,14 +346,14 @@ export function InvoiceForm({ patient, clinic, catalog, onCreated }: InvoiceForm
 
   return (
     <div className="grid min-w-0 max-w-full gap-6 xl:grid-cols-12">
-      {/* LEFT PANE: PROCEDURE PICKER + 10-HEAD COST SPLIT LEDGER (7 cols) */}
+      {/* LEFT PANE: 10-HEAD ITEMIZED RECEIPT (7 cols) */}
       <div className="no-print min-w-0 space-y-5 xl:col-span-7">
-        {/* Card 1: Tap Procedure / Service (Auto-Splits into 10 Heads) */}
         <div className="card-surface space-y-4 p-4 sm:p-5">
+          {/* Header */}
           <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-ivory-50/[0.07] pb-3.5">
             <div>
-              <span className="eyebrow">Step 1 · Procedures</span>
-              <h3 className="font-display text-xl font-medium text-ivory-50">Tap to Split into Bill Heads</h3>
+              <span className="eyebrow">Cash Receipt</span>
+              <h3 className="font-display text-xl font-medium text-ivory-50">Itemized Receipt Heads</h3>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
@@ -401,173 +395,136 @@ export function InvoiceForm({ patient, clinic, catalog, onCreated }: InvoiceForm
             </div>
           )}
 
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ivory-400" />
-            <input
-              type="text"
-              value={catalogSearch}
-              onChange={(e) => setCatalogSearch(e.target.value)}
-              placeholder="Search procedures (Phaco, SICS, OPD, Pterygium, YAG)…"
-              className="input-field !min-h-[44px] pl-10 text-xs"
-            />
-          </div>
-
-          <div className="flex flex-wrap gap-1.5">
-            {(['All', ...CATEGORIES] as const).map((cat) => (
-              <button
-                key={cat}
-                type="button"
-                onClick={() => setActiveCat(cat)}
-                className={`rounded-full px-3 py-1 text-[11px] font-semibold transition ${
-                  activeCat === cat
-                    ? 'bg-ivory-50 text-ink-900 shadow-soft'
-                    : 'border border-ivory-50/12 bg-ink-950 text-ivory-300 hover:border-gold-400/40'
+          {/* ── LAYERED PROCEDURE DROPDOWN (Layer 1: Category -> Layer 2: Procedure) ── */}
+          <div className="relative" ref={pickerRef}>
+            <button
+              type="button"
+              onClick={() => setPickerOpen((o) => !o)}
+              className={`flex min-h-[48px] w-full items-center justify-between gap-3 rounded-2xl border px-4 py-2.5 text-left transition ${
+                pickerOpen
+                  ? 'border-gold-400 bg-ink-900 ring-4 ring-gold-400/10'
+                  : 'border-ivory-50/15 bg-ink-950 hover:border-gold-400/50'
+              }`}
+            >
+              <div className="flex min-w-0 items-center gap-2">
+                <Plus className="h-4 w-4 shrink-0 text-gold-500" />
+                <span className="truncate text-xs font-semibold text-ivory-50">
+                  Add Procedure / Service (auto-splits into heads)
+                </span>
+              </div>
+              <ChevronDown
+                className={`h-4 w-4 shrink-0 text-ivory-400 transition-transform ${
+                  pickerOpen ? 'rotate-180 text-gold-500' : ''
                 }`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
+              />
+            </button>
 
-          <div className="grid w-full min-w-0 grid-cols-1 gap-2 sm:grid-cols-2">
-            {filteredCatalog.map((svc) => {
-              const info = serviceSummary.get(svc.name);
-              const isAdded = Boolean(info);
-              return (
-                <div
-                  key={svc.id}
-                  className={`box-border flex w-full min-w-0 max-w-full items-center justify-between gap-2 rounded-2xl border p-3 transition ${
-                    isAdded
-                      ? 'border-gold-400 bg-clinic-50/80 shadow-soft'
-                      : 'border-ivory-50/10 bg-ink-950 hover:border-gold-400/50'
-                  }`}
-                >
-                  <button
-                    type="button"
-                    onClick={() => addCatalogItem(svc)}
-                    className="min-w-0 flex-1 text-left"
-                  >
-                    <span className="block truncate text-xs font-semibold text-ivory-50">{svc.name}</span>
-                    <span className="text-[10.5px] text-ivory-400">
-                      {svc.category} ·{' '}
-                      <strong className="text-ivory-100">
-                        {isAdded ? `${formatINR(info!.total)} allocated` : formatINR(svc.default_price)}
-                      </strong>
-                    </span>
-                  </button>
-
-                  {isAdded ? (
-                    <div className="flex shrink-0 items-center gap-1">
+            {pickerOpen && (
+              <div className="absolute left-0 right-0 top-full z-40 mt-2 max-h-80 overflow-y-auto rounded-2xl border border-ivory-50/15 bg-ink-900 p-1.5 shadow-lift">
+                {Array.from(catalogByCategory.entries()).map(([cat, list]) => {
+                  const isExpanded = expandedCat === cat;
+                  return (
+                    <div key={cat} className="border-b border-ivory-50/[0.06] last:border-b-0">
+                      {/* Layer 1: Category */}
                       <button
                         type="button"
-                        onClick={() => addCatalogItem(svc)}
-                        className="grid h-7 w-7 place-items-center rounded-full bg-ivory-50 text-ink-900 transition hover:bg-gold-500 hover:text-white"
-                        title="Add another"
-                        aria-label={`Add another ${svc.name}`}
+                        onClick={() => setExpandedCat(isExpanded ? null : cat)}
+                        className={`flex w-full items-center justify-between gap-2 rounded-xl px-3.5 py-2.5 text-left transition ${
+                          isExpanded ? 'bg-clinic-50 text-ivory-50' : 'text-ivory-100 hover:bg-ink-950'
+                        }`}
                       >
-                        <Plus className="h-3.5 w-3.5" />
+                        <div className="flex items-center gap-2">
+                          <ChevronRight
+                            className={`h-3.5 w-3.5 text-gold-500 transition-transform ${
+                              isExpanded ? 'rotate-90' : ''
+                            }`}
+                          />
+                          <span className="text-xs font-semibold">{cat}</span>
+                        </div>
+                        <span className="rounded-full bg-ink-950 px-2 py-0.5 text-[10px] font-semibold text-ivory-400">
+                          {list.length}
+                        </span>
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => removeServiceByName(svc.name)}
-                        className="grid h-7 w-7 place-items-center rounded-full border border-ivory-50/15 bg-ink-900 text-ivory-400 hover:border-red-300 hover:text-red-600"
-                        title="Remove from all heads"
-                        aria-label={`Remove ${svc.name}`}
-                      >
-                        <Minus className="h-3.5 w-3.5" />
-                      </button>
+
+                      {/* Layer 2: Procedures under this Category */}
+                      {isExpanded && (
+                        <div className="space-y-1 bg-ink-950/60 px-2 py-1.5">
+                          {list.map((svc) => (
+                            <button
+                              key={svc.id}
+                              type="button"
+                              onClick={() => addCatalogItem(svc)}
+                              className="flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left transition hover:bg-clinic-50"
+                            >
+                              <span className="min-w-0 flex-1 truncate text-xs font-medium text-ivory-50">
+                                {svc.name}
+                              </span>
+                              <span className="shrink-0 text-xs font-bold text-gold-600 tabular-nums">
+                                {formatINR(svc.default_price)}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => addCatalogItem(svc)}
-                      className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-ivory-50/15 bg-ink-900 text-ivory-100 hover:bg-ivory-50 hover:text-ink-900 transition"
-                      aria-label={`Add ${svc.name}`}
-                    >
-                      <Plus className="h-3.5 w-3.5" />
-                    </button>
-                  )}
-                </div>
-              );
-            })}
+                  );
+                })}
+              </div>
+            )}
           </div>
 
-          {/* Add Custom Sub-Item Directly to Any of the 10 Heads */}
-          <div className="border-t border-ivory-50/10 pt-3.5 space-y-2.5">
-            <label className="label-field mb-0">Add Custom Item to a Bill Head</label>
-            <div className="grid gap-2 sm:grid-cols-12">
-              <div className="sm:col-span-5">
-                <CustomSelect
-                  value={customHead}
-                  onChange={(val) => setCustomHead(val as BillHead)}
-                  options={HEAD_OPTIONS}
-                />
-              </div>
-              <div className="sm:col-span-4">
-                <input
-                  type="text"
-                  value={customName}
-                  onChange={(e) => setCustomName(e.target.value)}
-                  placeholder="Item / IOL / Medicine…"
-                  className="input-field !min-h-[50px] text-xs"
-                />
-              </div>
-              <div className="flex gap-2 sm:col-span-3">
-                <input
-                  type="number"
-                  value={customPrice}
-                  onChange={(e) => setCustomPrice(e.target.value)}
-                  placeholder="₹"
-                  className="input-field !min-h-[50px] min-w-0 flex-1 text-xs"
-                />
-                <button
-                  type="button"
-                  onClick={addCustomItem}
-                  className="btn-ghost !min-h-[50px] shrink-0 px-4 text-xs"
-                >
-                  <Plus className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Card 2: The 10-Head Cost Split Ledger (Always Structured, Inline Editable) */}
-        <div id="invoice-checkout" className="card-surface space-y-4 p-4 sm:p-5">
-          <div className="flex items-center justify-between border-b border-ivory-50/[0.07] pb-3">
-            <div>
-              <span className="eyebrow">Step 2 · 10-Head Breakdown</span>
-              <h4 className="font-display text-xl font-medium text-ivory-50">Itemized Receipt Heads</h4>
-            </div>
-            <span className="font-display text-2xl font-semibold text-gold-600 tabular-nums">
-              {formatINR(total)}
-            </span>
-          </div>
-
+          {/* ── ALWAYS-VISIBLE 10-HEAD LEDGER (Direct Edit OR Indented Procedure Sub-Items) ── */}
           <div className="divide-y divide-ivory-50/[0.08] overflow-hidden rounded-2xl border border-ivory-50/10 bg-ink-950">
             {BILL_HEADS.map((head, idx) => {
               const headItems = groupedByHead[head];
+              const subItems = headItems.filter((sub) => sub.name !== head);
+              const directItem = headItems.find((sub) => sub.name === head);
               const headTotal = headItems.reduce((s, it) => s + it.amount, 0);
 
               return (
-                <div key={head} className={`p-3 transition ${headItems.length > 0 ? 'bg-ink-900' : 'opacity-70'}`}>
+                <div
+                  key={head}
+                  className={`p-3 transition ${headTotal > 0 || subItems.length > 0 ? 'bg-ink-900' : ''}`}
+                >
                   <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
+                    <div className="flex min-w-0 items-center gap-2">
                       <span className="w-5 shrink-0 text-xs font-bold text-ivory-400 tabular-nums">
                         {idx + 1}.
                       </span>
-                      <span className={`truncate text-xs font-semibold ${headItems.length > 0 ? 'text-ivory-50' : 'text-ivory-400'}`}>
+                      <span
+                        className={`truncate text-xs font-semibold ${
+                          headTotal > 0 || subItems.length > 0 ? 'text-ivory-50' : 'text-ivory-300'
+                        }`}
+                      >
                         {head}
                       </span>
                     </div>
-                    <span className={`shrink-0 text-xs font-bold tabular-nums ${headTotal > 0 ? 'text-gold-600' : 'text-ivory-400'}`}>
-                      {headTotal > 0 ? formatINR(headTotal) : '—'}
-                    </span>
+
+                    {/* Direct editable input when no procedure sub-items exist; summed total when sub-items exist */}
+                    {subItems.length === 0 ? (
+                      <div className="flex shrink-0 items-center gap-1">
+                        <span className="text-[11px] font-medium text-ivory-400">₹</span>
+                        <input
+                          type="number"
+                          min={0}
+                          placeholder="0"
+                          value={directItem ? directItem.unit_price : ''}
+                          onChange={(e) => setDirectHeadAmount(head, e.target.value)}
+                          aria-label={head}
+                          className="w-24 min-w-0 rounded-xl border border-ivory-50/15 bg-ink-950 px-2.5 py-1.5 text-right text-xs font-bold text-ivory-50 placeholder:text-ivory-500/60 focus:border-gold-500 focus:bg-ink-900 focus:outline-none"
+                        />
+                      </div>
+                    ) : (
+                      <span className="shrink-0 text-xs font-bold text-gold-600 tabular-nums">
+                        {formatINR(headTotal)}
+                      </span>
+                    )}
                   </div>
 
-                  {headItems.length > 0 && (
+                  {/* Indented Sub-Items from Selected Procedures */}
+                  {subItems.length > 0 && (
                     <div className="mt-2 space-y-1.5 pl-6">
-                      {headItems.map((sub, subIdx) => (
+                      {subItems.map((sub, subIdx) => (
                         <div
                           key={`${sub.name}-${subIdx}`}
                           className="flex w-full min-w-0 items-center justify-between gap-2 rounded-xl border border-ivory-50/[0.08] bg-ink-950 px-2.5 py-1.5"
@@ -603,6 +560,15 @@ export function InvoiceForm({ patient, clinic, catalog, onCreated }: InvoiceForm
             })}
           </div>
 
+          {/* Total Strip */}
+          <div className="flex items-center justify-between rounded-2xl border border-gold-400/25 bg-clinic-50/70 px-4 py-3">
+            <span className="text-xs font-bold uppercase tracking-wider text-ivory-300">Total Payable</span>
+            <span className="font-display text-2xl font-semibold text-gold-600 tabular-nums">
+              {formatINR(total)}
+            </span>
+          </div>
+
+          {/* Payment & Concession */}
           <div className="grid gap-3 sm:grid-cols-2">
             <CustomSelect
               label="Payment Mode"
@@ -695,7 +661,7 @@ export function InvoiceForm({ patient, clinic, catalog, onCreated }: InvoiceForm
 
           <button
             type="button"
-            disabled={saving || items.length === 0}
+            disabled={saving || total <= 0}
             onClick={handleSave}
             className="btn-primary w-full"
           >

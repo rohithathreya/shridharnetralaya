@@ -122,6 +122,7 @@ export function PrintableInvoice({ clinic, patient, invoice }: PrintableInvoiceP
           <tbody className="divide-y divide-stone-200">
             {BILL_HEADS.map((head, idx) => {
               const headItems = grouped[head];
+              const subItems = headItems.filter((sub) => sub.name !== head);
               const headTotal = headItems.reduce((s, it) => s + it.amount, 0);
 
               return (
@@ -133,9 +134,9 @@ export function PrintableInvoice({ clinic, patient, invoice }: PrintableInvoiceP
                     <div className={`font-semibold ${headTotal > 0 ? 'text-stone-950' : 'text-stone-500'}`}>
                       {head}
                     </div>
-                    {headItems.length > 0 && (
+                    {subItems.length > 0 && (
                       <div className="mt-0.5 space-y-0.5 pl-3">
-                        {headItems.map((sub, subIdx) => (
+                        {subItems.map((sub, subIdx) => (
                           <div
                             key={`${sub.name}-${subIdx}`}
                             className="flex items-baseline justify-between gap-2 text-[10.5px] text-stone-600"
