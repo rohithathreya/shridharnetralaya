@@ -1,20 +1,64 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase, SUPABASE_ANON_KEY, SUPABASE_URL } from './supabase';
 import { blobToBase64 } from './imageCompress';
+import type { BillHead } from './invoiceHeads';
 import type { ServiceCatalogItem } from '../types/database';
 
-export interface AiExtractResult {
-  extracted: Record<string, unknown>;
+export interface AiExtractResult<T = Record<string, unknown>> {
+  extracted: T;
   warnings: string[];
 }
 
-export async function runAiExtract(params: {
+export interface InvoiceVoiceExtraction {
+  procedures?: Array<{ name: string; qty: number; total_price: number }>;
+  head_charges?: Array<{ head: BillHead | string; amount: number }>;
+  // Legacy fallback field
+  items?: Array<{ name: string; category: string; qty: number; unit_price: number }>;
+  discount?: number;
+  payment_mode?: string;
+  payment_ref?: string;
+  notes?: string;
+  warnings?: string[];
+}
+
+export interface DischargeAiExtraction {
+  operated_eye?: string;
+  case_type?: string;
+  discharge_status?: string;
+  billing_category?: string;
+  chief_complaints?: string;
+  diagnosis?: string;
+  icd10_code?: string;
+  procedure_name?: string;
+  anesthesia?: string;
+  dressing_status?: string;
+  discharge_condition?: string;
+  pre_op_va_re?: string;
+  pre_op_va_le?: string;
+  pre_op_iop_re?: string;
+  pre_op_iop_le?: string;
+  pre_op_bp?: string;
+  pre_op_rbs?: string;
+  comorbidities?: string[];
+  allergies?: string;
+  iol_model?: string;
+  iol_power?: string;
+  iol_batch?: string;
+  intra_op_notes?: string;
+  in_clinic_meds?: string;
+  eye_drops?: Array<{ name: string; eye: string; schedule: string; duration: string }>;
+  oral_meds?: Array<{ name: string; dosage: string; timing: string; duration: string }>;
+  head_bath_days?: number | null;
+  warnings?: string[];
+}
+
+export async function runAiExtract<T = Record<string, unknown>>(params: {
   target: 'discharge' | 'invoice';
   mode: 'image' | 'audio';
   mimeType: string;
   base64: string;
   catalog?: Pick<ServiceCatalogItem, 'name' | 'category' | 'default_price'>[];
-}): Promise<AiExtractResult> {
+}): Promise<AiExtractResult<T>> {
   const { data: sessionData } = await supabase.auth.getSession();
   const accessToken = sessionData.session?.access_token;
 
@@ -38,9 +82,38 @@ export async function runAiExtract(params: {
   }
 
   return {
-    extracted: (payload.extracted as Record<string, unknown>) || {},
+    extracted: (payload.extracted as T) || ({} as T),
     warnings: Array.isArray(payload.warnings) ? payload.warnings.map(String) : [],
   };
+}
+
+/** Dedicated Invoice Voice Pipeline */
+export function extractInvoiceFromVoice(params: {
+  mimeType: string;
+  base64: string;
+  catalog: Pick<ServiceCatalogItem, 'name' | 'category' | 'default_price'>[];
+}) {
+  return runAiExtract<InvoiceVoiceExtraction>({
+    target: 'invoice',
+    mode: 'audio',
+    mimeType: params.mimeType,
+    base64: params.base64,
+    catalog: params.catalog,
+  });
+}
+
+/** Dedicated Discharge Summary Voice & Image Pipeline */
+export function extractDischargeFromMedia(params: {
+  mode: 'image' | 'audio';
+  mimeType: string;
+  base64: string;
+}) {
+  return runAiExtract<DischargeAiExtraction>({
+    target: 'discharge',
+    mode: params.mode,
+    mimeType: params.mimeType,
+    base64: params.base64,
+  });
 }
 
 function pickSupportedAudioMime(): string {

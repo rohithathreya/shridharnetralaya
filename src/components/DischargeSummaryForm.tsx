@@ -21,7 +21,11 @@ import {
 import { supabase } from '../lib/supabase';
 import { addDaysIso, nowLocalDateTimeInput } from '../lib/dates';
 import { blobToBase64, compressClinicalImage } from '../lib/imageCompress';
-import { runAiExtract, useVoiceRecorder } from '../lib/aiExtract';
+import {
+  type DischargeAiExtraction,
+  extractDischargeFromMedia,
+  useVoiceRecorder,
+} from '../lib/aiExtract';
 import { shareDischargeSummaryOnWhatsApp } from '../lib/whatsapp';
 import { PrintableDischargeSummary, type PrintLang } from './PrintableDischargeSummary';
 import { CustomSelect, CustomSelectOption } from './CustomSelect';
@@ -383,14 +387,28 @@ export function DischargeSummaryForm({
     setError('');
   }
 
-  const applyAiExtraction = useCallback((ext: Record<string, unknown>) => {
+  const applyAiExtraction = useCallback((ext: DischargeAiExtraction) => {
     const tagged: Record<string, boolean> = {};
-    const str = (k: string) => (typeof ext[k] === 'string' ? (ext[k] as string).trim() : '');
+    const str = (k: keyof DischargeAiExtraction) =>
+      typeof ext[k] === 'string' ? (ext[k] as string).trim() : '';
 
     const eye = str('operated_eye');
     if (eye === 'RE (OD)' || eye === 'LE (OS)' || eye === 'BE (OU)') {
       setOperatedEye(eye);
       tagged.operated_eye = true;
+    }
+    const ct = str('case_type');
+    if (ct === 'Day Care' || ct === 'In-Patient') setCaseType(ct);
+    const ds = str('discharge_status');
+    if (ds === 'Routine' || ds === 'DAMA' || ds === 'Referred') setDischargeStatus(ds);
+    const bc = str('billing_category');
+    if (
+      bc === 'Cash' ||
+      bc === 'TPA / Insurance' ||
+      bc === 'Ayushman Bharat (AB-ArK)' ||
+      bc === 'Yashaswini'
+    ) {
+      setBillingCategory(bc);
     }
     if (str('chief_complaints')) {
       setChiefComplaints(str('chief_complaints'));
@@ -413,6 +431,8 @@ export function DischargeSummaryForm({
       tagged.procedure_name = true;
     }
     if (str('anesthesia')) setAnesthesia(str('anesthesia'));
+    if (str('dressing_status')) setDressingStatus(str('dressing_status'));
+    if (str('discharge_condition')) setDischargeCondition(str('discharge_condition'));
     if (str('pre_op_va_re')) setVaRe(str('pre_op_va_re'));
     if (str('pre_op_va_le')) setVaLe(str('pre_op_va_le'));
     if (str('pre_op_iop_re')) setIopRe(str('pre_op_iop_re'));
@@ -441,13 +461,14 @@ export function DischargeSummaryForm({
       tagged.iol = true;
     }
     if (str('intra_op_notes')) setIntraOpNotes(str('intra_op_notes'));
+    if (str('in_clinic_meds')) setInClinicMeds(str('in_clinic_meds'));
     const aiComorbidities = ext.comorbidities;
     if (Array.isArray(aiComorbidities) && aiComorbidities.length > 0) {
       setComorbidities((prev) => Array.from(new Set([...prev, ...aiComorbidities.map(String)])));
     }
     if (Array.isArray(ext.eye_drops) && ext.eye_drops.length > 0) {
       setEyeDrops(
-        ext.eye_drops.map((d: any) => ({
+        ext.eye_drops.map((d) => ({
           name: String(d.name || ''),
           eye: String(d.eye || 'Operated Eye'),
           schedule: String(d.schedule || '4 times/day'),
@@ -457,7 +478,7 @@ export function DischargeSummaryForm({
     }
     if (Array.isArray(ext.oral_meds) && ext.oral_meds.length > 0) {
       setOralMeds(
-        ext.oral_meds.map((m: any) => ({
+        ext.oral_meds.map((m) => ({
           name: String(m.name || ''),
           dosage: String(m.dosage || '1 - 0 - 1'),
           timing: String(m.timing || 'After Food'),
@@ -480,8 +501,7 @@ export function DischargeSummaryForm({
       setAiWarnings([]);
       setError('');
       try {
-        const { extracted, warnings } = await runAiExtract({
-          target: 'discharge',
+        const { extracted, warnings } = await extractDischargeFromMedia({
           mode: 'audio',
           mimeType,
           base64,
@@ -511,8 +531,7 @@ export function DischargeSummaryForm({
     try {
       const comp = await compressClinicalImage(file, 1400, 0.78);
       const b64 = await blobToBase64(comp.blob);
-      const { extracted, warnings } = await runAiExtract({
-        target: 'discharge',
+      const { extracted, warnings } = await extractDischargeFromMedia({
         mode: 'image',
         mimeType: comp.mimeType,
         base64: b64,

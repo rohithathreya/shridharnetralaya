@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { formatINR } from '../lib/dates';
-import { runAiExtract, useVoiceRecorder } from '../lib/aiExtract';
+import { extractInvoiceFromVoice, useVoiceRecorder } from '../lib/aiExtract';
 import {
   BILL_HEADS,
   BillHead,
@@ -98,41 +98,97 @@ export function InvoiceForm({ patient, clinic, catalog, onCreated }: InvoiceForm
           .filter((c) => c.is_active)
           .map((c) => ({ name: c.name, category: c.category, default_price: c.default_price }));
 
-        const { extracted, warnings } = await runAiExtract({
-          target: 'invoice',
-          mode: 'audio',
+        const { extracted, warnings } = await extractInvoiceFromVoice({
           mimeType,
           base64,
           catalog: activeCatalog,
         });
 
-        if (Array.isArray(extracted.items) && extracted.items.length > 0) {
-          const parsed: InvoiceLineItem[] = [];
-          for (const raw of extracted.items as any[]) {
+        const parsed: InvoiceLineItem[] = [];
+
+        // 1. Procedures matched from catalog -> split across the 10 heads (scaled if custom total_price spoken)
+        if (Array.isArray(extracted.procedures)) {
+          for (const proc of extracted.procedures) {
+            const name = String(proc.name || '').trim();
+            if (!name) continue;
+            const qty = Math.max(1, Number(proc.qty) || 1);
+            const matchedSvc = catalog.find((c) => c.name.toLowerCase() === name.toLowerCase());
+            if (matchedSvc) {
+              const spokenTotal = Number(proc.total_price);
+              const basePrice = matchedSvc.default_price;
+              const targetUnitTotal =
+                Number.isFinite(spokenTotal) && spokenTotal > 0 ? spokenTotal : basePrice;
+              const ratio = basePrice > 0 ? targetUnitTotal / basePrice : 1;
+
+              for (let q = 0; q < qty; q++) {
+                const splits = splitServiceIntoHeads(matchedSvc);
+                let running = 0;
+                splits.forEach((sp, idx) => {
+                  const isLast = idx === splits.length - 1;
+                  const amt =
+                    ratio === 1
+                      ? sp.amount
+                      : isLast
+                        ? Math.max(0, Math.round(targetUnitTotal) - running)
+                        : Math.round((sp.amount * ratio) / 10) * 10;
+                  running += amt;
+                  parsed.push({ ...sp, unit_price: amt, amount: amt });
+                });
+              }
+            } else {
+              const price = Math.max(0, Number(proc.total_price) || 0);
+              const rawItem: InvoiceLineItem = {
+                name,
+                category: 'Others',
+                qty,
+                unit_price: price,
+                amount: qty * price,
+              };
+              parsed.push({ ...rawItem, category: mapItemToBillHead(rawItem) });
+            }
+          }
+        }
+
+        // 2. Direct 10-head charges dictated by staff
+        if (Array.isArray(extracted.head_charges)) {
+          for (const hc of extracted.head_charges) {
+            const amt = Math.max(0, Math.round(Number(hc.amount) || 0));
+            if (amt <= 0) continue;
+            const head = mapItemToBillHead({
+              name: String(hc.head || ''),
+              category: String(hc.head || ''),
+              qty: 1,
+              unit_price: amt,
+              amount: amt,
+            });
+            parsed.push({
+              name: head,
+              category: head,
+              qty: 1,
+              unit_price: amt,
+              amount: amt,
+            });
+          }
+        }
+
+        // 3. Fallback for legacy items array
+        if (parsed.length === 0 && Array.isArray(extracted.items)) {
+          for (const raw of extracted.items) {
             const name = String(raw.name || 'Service');
             const qty = Math.max(1, Number(raw.qty) || 1);
             const unit_price = Math.max(0, Number(raw.unit_price) || 0);
-            const matchedSvc = catalog.find(
-              (c) => c.name.toLowerCase() === name.toLowerCase(),
-            );
-            if (matchedSvc && unit_price === matchedSvc.default_price) {
-              for (let q = 0; q < qty; q++) {
-                parsed.push(...splitServiceIntoHeads(matchedSvc));
-              }
-            } else {
-              const rawItem: InvoiceLineItem = {
-                name,
-                category: String(raw.category || 'Others'),
-                qty,
-                unit_price,
-                amount: qty * unit_price,
-              };
-              parsed.push({
-                ...rawItem,
-                category: mapItemToBillHead(rawItem),
-              });
-            }
+            const rawItem: InvoiceLineItem = {
+              name,
+              category: String(raw.category || 'Others'),
+              qty,
+              unit_price,
+              amount: qty * unit_price,
+            };
+            parsed.push({ ...rawItem, category: mapItemToBillHead(rawItem) });
           }
+        }
+
+        if (parsed.length > 0) {
           setItems((prev) => [...prev, ...parsed]);
         }
 

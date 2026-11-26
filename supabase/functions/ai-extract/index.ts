@@ -1,118 +1,87 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
 
-const DISCHARGE_SCHEMA = {
-  type: 'OBJECT',
-  properties: {
-    operated_eye: { type: 'STRING', enum: ['RE (OD)', 'LE (OS)', 'BE (OU)', ''] },
-    chief_complaints: { type: 'STRING' },
-    diagnosis: { type: 'STRING' },
-    icd10_code: { type: 'STRING' },
-    procedure_name: { type: 'STRING' },
-    anesthesia: {
-      type: 'STRING',
-      enum: ['Topical', 'Peribulbar', 'Sub-Tenon', 'Local Infiltration', 'General', ''],
-    },
-    pre_op_va_re: { type: 'STRING' },
-    pre_op_va_le: { type: 'STRING' },
-    pre_op_iop_re: { type: 'STRING' },
-    pre_op_iop_le: { type: 'STRING' },
-    pre_op_bp: { type: 'STRING' },
-    pre_op_rbs: { type: 'STRING' },
-    comorbidities: { type: 'ARRAY', items: { type: 'STRING' } },
-    allergies: { type: 'STRING' },
-    iol_model: { type: 'STRING' },
-    iol_power: { type: 'STRING' },
-    iol_batch: { type: 'STRING' },
-    intra_op_notes: { type: 'STRING' },
-    eye_drops: {
-      type: 'ARRAY',
-      items: {
-        type: 'OBJECT',
-        properties: {
-          name: { type: 'STRING' },
-          eye: { type: 'STRING' },
-          schedule: { type: 'STRING' },
-          duration: { type: 'STRING' },
-        },
-        required: ['name', 'eye', 'schedule', 'duration'],
-      },
-    },
-    oral_meds: {
-      type: 'ARRAY',
-      items: {
-        type: 'OBJECT',
-        properties: {
-          name: { type: 'STRING' },
-          dosage: { type: 'STRING' },
-          timing: { type: 'STRING' },
-          duration: { type: 'STRING' },
-        },
-        required: ['name', 'dosage', 'timing', 'duration'],
-      },
-    },
-    head_bath_days: { type: 'INTEGER' },
-    warnings: { type: 'ARRAY', items: { type: 'STRING' } },
-  },
-};
+const OPENROUTER_MODEL = 'google/gemini-2.5-flash';
 
-const INVOICE_SCHEMA = {
-  type: 'OBJECT',
-  properties: {
-    items: {
-      type: 'ARRAY',
-      items: {
-        type: 'OBJECT',
-        properties: {
-          name: { type: 'STRING' },
-          category: {
-            type: 'STRING',
-            enum: ['Consultation', 'Diagnostic', 'Procedure', 'Surgery', 'Optical', 'Other'],
-          },
-          qty: { type: 'INTEGER' },
-          unit_price: { type: 'INTEGER' },
-        },
-        required: ['name', 'category', 'qty', 'unit_price'],
-      },
-    },
-    discount: { type: 'INTEGER' },
-    payment_mode: { type: 'STRING', enum: ['Cash', 'UPI', 'Card', 'TPA / Scheme', ''] },
-    payment_ref: { type: 'STRING' },
-    notes: { type: 'STRING' },
-    warnings: { type: 'ARRAY', items: { type: 'STRING' } },
-  },
-};
+const BILL_HEADS = [
+  'Bed charges',
+  'Nursing charges',
+  'Asst charges',
+  'Professional charges',
+  'Intra ocular lens',
+  'Anesthetist',
+  'Anesthesia',
+  'OT charges',
+  'OT drugs and implants',
+  'Others',
+] as const;
 
-const DISCHARGE_PROMPT = `You extract structured ophthalmology discharge data for Shridhar Netralaya (Magadi, Karnataka).
-Inputs may be a clinical photo (IOL box sticker, OT slip, prescription) or a spoken voice note in English, Kannada, or mixed Kanglish.
-
-RULES:
-1. Extract ONLY facts explicitly spoken or clearly legible. Never invent or guess values.
-2. Return "" for unmentioned strings, [] for unmentioned arrays, and omit head_bath_days if unmentioned.
-3. Clinical mappings:
-   - RE / OD / right eye / bala kannu -> "RE (OD)"
-   - LE / OS / left eye / eda kannu -> "LE (OS)"
-   - BE / OU / both eyes / eradu kannu -> "BE (OU)"
-   - SIMC -> diagnosis "Senile Immature Cataract", icd10_code "H25.1"
-   - SMC -> diagnosis "Senile Mature Cataract", icd10_code "H25.2"
-   - Pterygium -> icd10_code "H11.0"
-   - QID = 4 times/day, TDS = 3 times/day, BD = 2 times/day, OD (dose) = 1 time/day, HS = At night
-   - IOL stickers: put lens brand/model in iol_model, diopter (e.g. "+21.5 D") in iol_power, and SN/LOT in iol_batch.
-   - Comorbidities must map to standard labels when mentioned: "Diabetes", "Hypertension", "Cardiac / IHD", "Asthma / COPD", "Thyroid", "Blood Thinners".
-4. List any unclear handwriting, low audio confidence, or ambiguous values in "warnings".`;
-
-function buildInvoicePrompt(catalogLines: string): string {
-  return `You extract structured billing line items for Shridhar Netralaya (Magadi, Karnataka) from a staff voice note in English, Kannada, or Kanglish.
-
-ACTIVE SERVICE CATALOG (match spoken items to these exact names and default prices unless the speaker specifies a different price):
-${catalogLines}
-
-RULES:
-1. Only include items explicitly requested by the speaker.
-2. Match to catalog entries whenever possible. If the speaker overrides the rate, use the spoken rate.
-3. For custom items not in the catalog, include the spoken name and rate (or 0 with a warning if rate was not spoken).
-4. Extract integer discount (in INR), payment_mode ("Cash", "UPI", "Card", "TPA / Scheme", or ""), payment_ref, and notes when stated.`;
+const INVOICE_SYSTEM_PROMPT = `You are a fast billing extractor for Shridhar Netralaya (Magadi, Karnataka).
+Input is a staff voice note in English, Kannada, or Kanglish.
+Return ONE compact JSON object matching this exact shape (omit nothing, use "" or [] or 0 when unmentioned):
+{
+  "procedures": [{"name": "exact catalog name", "qty": 1, "total_price": 0}],
+  "head_charges": [{"head": "one of the 10 bill heads", "amount": 0}],
+  "discount": 0,
+  "payment_mode": "Cash" | "UPI" | "Card" | "TPA / Scheme" | "",
+  "payment_ref": "",
+  "notes": "",
+  "warnings": []
 }
+
+VALID 10 BILL HEADS:
+${BILL_HEADS.map((h, i) => `${i + 1}. ${h}`).join('\n')}
+
+RULES:
+1. If the speaker names a procedure/service from the catalog (e.g. Phaco, SICS, OPD Consultation, YAG, A-Scan, Pterygium), put it in "procedures" with its exact catalog name. Set "total_price" to the spoken price (or catalog default if no override was spoken).
+2. If the speaker dictates specific head amounts directly (e.g. "bed charges 1000, nursing 500, IOL 4500, anesthetist 1500, OT 2000"), put those in "head_charges" using the exact head name from the 10-head list above. Do NOT duplicate an amount in both "procedures" and "head_charges".
+3. Never invent items or prices. If an item's price is unknown, set 0 and add a brief note in "warnings".`;
+
+const DISCHARGE_SYSTEM_PROMPT = `You are a fast ophthalmology discharge extractor for Shridhar Netralaya (Magadi, Karnataka).
+Input is a voice note (English/Kannada/Kanglish) or clinical photo (IOL box sticker, prescription, OT slip).
+Return ONE compact JSON object matching this exact shape (use "" for unmentioned strings, [] for unmentioned arrays, null for unmentioned numbers):
+{
+  "operated_eye": "RE (OD)" | "LE (OS)" | "BE (OU)" | "",
+  "case_type": "Day Care" | "In-Patient" | "",
+  "discharge_status": "Routine" | "DAMA" | "Referred" | "",
+  "billing_category": "Cash" | "TPA / Insurance" | "Ayushman Bharat (AB-ArK)" | "Yashaswini" | "",
+  "chief_complaints": "",
+  "diagnosis": "",
+  "icd10_code": "",
+  "procedure_name": "",
+  "anesthesia": "Topical" | "Peribulbar" | "Sub-Tenon" | "Local Infiltration" | "General" | "",
+  "dressing_status": "Dark Glasses" | "Pad & Bandage" | "Clear Protective Shield" | "None" | "",
+  "discharge_condition": "",
+  "pre_op_va_re": "",
+  "pre_op_va_le": "",
+  "pre_op_iop_re": "",
+  "pre_op_iop_le": "",
+  "pre_op_bp": "",
+  "pre_op_rbs": "",
+  "comorbidities": [],
+  "allergies": "",
+  "iol_model": "",
+  "iol_power": "",
+  "iol_batch": "",
+  "intra_op_notes": "",
+  "in_clinic_meds": "",
+  "eye_drops": [{"name": "", "eye": "Operated Eye" | "RE (OD)" | "LE (OS)" | "BE (OU)", "schedule": "", "duration": ""}],
+  "oral_meds": [{"name": "", "dosage": "", "timing": "", "duration": ""}],
+  "head_bath_days": null,
+  "warnings": []
+}
+
+CLINICAL MAPPINGS:
+- Right eye / RE / OD / bala kannu -> "RE (OD)"
+- Left eye / LE / OS / eda kannu -> "LE (OS)"
+- Both eyes / BE / OU / eradu kannu -> "BE (OU)"
+- SIMC -> diagnosis "Senile Immature Cataract", icd10_code "H25.1"
+- SMC -> diagnosis "Senile Mature Cataract", icd10_code "H25.2"
+- Pterygium -> icd10_code "H11.0"
+- QID = "4 times/day", TDS = "3 times/day", BD = "2 times/day", OD = "1 time/day", HS = "At night"
+- Comorbidities allowed labels: "Diabetes", "Hypertension", "Cardiac / IHD", "Asthma / COPD", "Thyroid", "Blood Thinners"
+- IOL stickers: brand/model -> iol_model, diopter (e.g. "+21.5 D") -> iol_power, SN/LOT -> iol_batch.
+- Extract ONLY explicitly stated or clearly legible facts. Put unclear audio/handwriting in "warnings".`;
 
 function audioFormat(mime: string): string {
   const subtype = mime.split('/')[1] || '';
@@ -135,6 +104,85 @@ function messageText(content: unknown): string {
   return '';
 }
 
+async function callOpenRouterJson(params: {
+  apiKey: string;
+  systemPrompt: string;
+  userText: string;
+  mediaPart: Record<string, unknown>;
+  maxTokens: number;
+}): Promise<Record<string, unknown>> {
+  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${params.apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: OPENROUTER_MODEL,
+      temperature: 0,
+      max_tokens: params.maxTokens,
+      // Disable thinking tokens on Gemini 2.5 Flash for 3-4x faster & cheaper extraction
+      reasoning: { effort: 'none' },
+      response_format: { type: 'json_object' },
+      messages: [
+        { role: 'system', content: params.systemPrompt },
+        { role: 'user', content: [{ type: 'text', text: params.userText }, params.mediaPart] },
+      ],
+    }),
+  });
+
+  if (!res.ok) {
+    const errDetail = await res.text();
+    console.error('OpenRouter API failure:', errDetail);
+    throw new Error('AI extraction failed. Please retry or enter manually.');
+  }
+
+  const data = await res.json();
+  const raw = messageText(data?.choices?.[0]?.message?.content).trim();
+  if (!raw) throw new Error('AI returned an empty response.');
+
+  const start = raw.indexOf('{');
+  const end = raw.lastIndexOf('}');
+  return JSON.parse(start >= 0 && end > start ? raw.slice(start, end + 1) : raw);
+}
+
+async function runInvoicePipeline(params: {
+  apiKey: string;
+  mediaPart: Record<string, unknown>;
+  catalog: Array<{ name: string; category: string; default_price: number }>;
+}) {
+  const catalogText = params.catalog.length
+    ? params.catalog.map((c) => `- ${c.name} (₹${c.default_price})`).join('\n')
+    : 'No catalog provided';
+
+  return callOpenRouterJson({
+    apiKey: params.apiKey,
+    systemPrompt: `${INVOICE_SYSTEM_PROMPT}\n\nCATALOG:\n${catalogText}`,
+    userText: 'Extract procedures, 10-head charges, discount, and payment mode from this voice note.',
+    mediaPart: params.mediaPart,
+    maxTokens: 550,
+  });
+}
+
+async function runDischargePipeline(params: {
+  apiKey: string;
+  mode: 'image' | 'audio';
+  mediaPart: Record<string, unknown>;
+}) {
+  const userText =
+    params.mode === 'image'
+      ? 'Extract discharge summary, prescription, or IOL sticker fields from this image.'
+      : 'Extract ophthalmology discharge summary fields from this voice note.';
+
+  return callOpenRouterJson({
+    apiKey: params.apiKey,
+    systemPrompt: DISCHARGE_SYSTEM_PROMPT,
+    userText,
+    mediaPart: params.mediaPart,
+    maxTokens: 900,
+  });
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -148,7 +196,6 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    // The saved secret is an OpenRouter key. Older deploys stored it under GEMINI_API_KEY.
     const openRouterKey = Deno.env.get('OPENROUTER_API_KEY') || Deno.env.get('GEMINI_API_KEY');
     if (!openRouterKey) {
       return jsonResponse({ error: 'OPENROUTER_API_KEY secret is not configured in Supabase.' }, 503);
@@ -179,80 +226,21 @@ Deno.serve(async (req) => {
     }
 
     const cleanMimeType = rawMimeType.split(';')[0].trim();
-
-    const systemText =
-      target === 'invoice'
-        ? buildInvoicePrompt(
-            catalog.length
-              ? catalog.map((c) => `- ${c.name} [${c.category}]: ₹${c.default_price}`).join('\n')
-              : 'No catalog items supplied',
-          )
-        : DISCHARGE_PROMPT;
-
-    const schema = target === 'invoice' ? INVOICE_SCHEMA : DISCHARGE_SCHEMA;
-    const userText =
-      target === 'invoice'
-        ? 'Extract billable items, discount, and payment details from this voice note.'
-        : mode === 'image'
-          ? 'Extract ophthalmology discharge, prescription, or IOL box sticker fields from this image.'
-          : 'Extract ophthalmology discharge summary fields from this voice note.';
-
     const mediaPart =
       mode === 'image'
-        ? {
-            type: 'image_url',
-            image_url: { url: `data:${cleanMimeType};base64,${base64}` },
-          }
-        : {
-            type: 'input_audio',
-            input_audio: { data: base64, format: audioFormat(cleanMimeType) },
-          };
+        ? { type: 'image_url', image_url: { url: `data:${cleanMimeType};base64,${base64}` } }
+        : { type: 'input_audio', input_audio: { data: base64, format: audioFormat(cleanMimeType) } };
 
-    const openRouterRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${openRouterKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        temperature: 0,
-        response_format: { type: 'json_object' },
-        messages: [
-          {
-            role: 'system',
-            content: `${systemText}\n\nReturn one JSON object and nothing else. Match this schema:\n${JSON.stringify(schema)}`,
-          },
-          {
-            role: 'user',
-            content: [{ type: 'text', text: userText }, mediaPart],
-          },
-        ],
-      }),
-    });
+    const extracted =
+      target === 'invoice'
+        ? await runInvoicePipeline({ apiKey: openRouterKey, mediaPart, catalog })
+        : await runDischargePipeline({ apiKey: openRouterKey, mode, mediaPart });
 
-    if (!openRouterRes.ok) {
-      const errDetail = await openRouterRes.text();
-      console.error('OpenRouter API failure:', errDetail);
-      return jsonResponse({ error: 'AI extraction failed. Please retry or enter manually.' }, 502);
-    }
-
-    const openRouterJson = await openRouterRes.json();
-    const rawJsonText = messageText(openRouterJson?.choices?.[0]?.message?.content).trim();
-    if (!rawJsonText) {
-      return jsonResponse({ error: 'AI returned an empty response.' }, 502);
-    }
-
-    const jsonStart = rawJsonText.indexOf('{');
-    const jsonEnd = rawJsonText.lastIndexOf('}');
-    const extracted = JSON.parse(
-      jsonStart >= 0 && jsonEnd > jsonStart ? rawJsonText.slice(jsonStart, jsonEnd + 1) : rawJsonText,
-    );
     const warnings = Array.isArray(extracted.warnings) ? extracted.warnings.map(String) : [];
-
     return jsonResponse({ extracted, warnings });
   } catch (err) {
     console.error('ai-extract exception:', err);
-    return jsonResponse({ error: 'Could not process extraction request.' }, 500);
+    const msg = err instanceof Error ? err.message : 'Could not process extraction request.';
+    return jsonResponse({ error: msg }, 500);
   }
 });
