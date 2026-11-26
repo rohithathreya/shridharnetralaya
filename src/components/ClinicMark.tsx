@@ -1,16 +1,48 @@
 export function ClinicMark({ className = 'h-10 w-10' }: { className?: string }) {
   return (
-    <svg viewBox="0 0 64 64" className={className} aria-hidden>
-      <circle cx="32" cy="32" r="30" fill="#FFFDF9" stroke="#1F1A16" strokeWidth="1.25" />
-      <path
-        d="M8 32c6.2-10.5 14.2-16 24-16s17.8 5.5 24 16c-6.2 10.5-14.2 16-24 16S14.2 42.5 8 32z"
-        fill="none"
-        stroke="#1F1A16"
-        strokeWidth="1.35"
+    <svg viewBox="0 0 100 100" className={className} aria-hidden>
+      {/* Crisp outer square emblem frame */}
+      <rect
+        x="2"
+        y="2"
+        width="96"
+        height="96"
+        rx="6"
+        fill="#FFFFFF"
+        stroke="#272420"
+        strokeWidth="2.5"
       />
-      <circle cx="32" cy="32" r="9.2" fill="#8C5928" />
-      <circle cx="32" cy="32" r="3.6" fill="#1F1A16" />
-      <circle cx="29.4" cy="29.2" r="1.35" fill="#FFFDF9" />
+      {/* Stylized double-arc eye mark matching clinic stationery */}
+      <path
+        d="M12 41 C28 19, 72 19, 88 41 C72 63, 28 63, 12 41 Z"
+        fill="none"
+        stroke="#0277BD"
+        strokeWidth="4.2"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M19 41 C33 27, 67 27, 81 41 C67 55, 33 55, 19 41 Z"
+        fill="none"
+        stroke="#0277BD"
+        strokeWidth="2.6"
+        strokeLinejoin="round"
+      />
+      {/* Central pupil */}
+      <circle cx="50" cy="41" r="7.5" fill="#141210" />
+      <circle cx="47.5" cy="38.5" r="2" fill="#FFFFFF" />
+      {/* Wordmark inside emblem */}
+      <text
+        x="50"
+        y="83"
+        textAnchor="middle"
+        fill="#01579B"
+        fontSize="8.8"
+        fontWeight="700"
+        fontFamily="Figtree, system-ui, sans-serif"
+        letterSpacing="0.35"
+      >
+        SHRIDHAR NETRALAYA
+      </text>
     </svg>
   );
 }

@@ -799,20 +799,18 @@ export function DischargeSummaryForm({
     <div className="grid min-w-0 max-w-full gap-6 xl:grid-cols-12">
       {/* LEFT PANE: CLINICAL WORKBENCH (7 cols on xl) */}
       <div className="no-print min-w-0 space-y-4 xl:col-span-7">
-        {/* Obsidian AI Command & Quick-Preset Strip */}
-        <div className="card-obsidian space-y-4 p-4 sm:p-5">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+        {/* Calm Protocol Selector & AI Tools */}
+        <div className="card-surface space-y-4 p-4 sm:p-5">
+          <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-ivory-50/[0.07] pb-3.5">
             <div>
-              <p className="text-[10.5px] font-semibold uppercase tracking-[0.18em] text-gold-300">
-                AI Assist & One-Tap Presets
-              </p>
-              <h3 className="mt-0.5 font-display text-xl text-white">Discharge Summary</h3>
+              <span className="eyebrow">Step 1 · Protocol</span>
+              <h3 className="font-display text-xl font-medium text-ivory-50">Surgical Discharge</h3>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3.5 py-2 text-xs font-semibold text-white backdrop-blur transition hover:bg-white/20">
-                {aiLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Camera className="h-3.5 w-3.5 text-gold-300" />}
-                <span>Scan IOL Sticker</span>
+              <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-ivory-50/15 bg-ink-950 px-3 py-1.5 text-xs font-semibold text-ivory-100 transition hover:border-gold-400">
+                {aiLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Camera className="h-3.5 w-3.5 text-gold-500" />}
+                <span>Scan IOL</span>
                 <input
                   type="file"
                   accept="image/*"
@@ -827,10 +825,10 @@ export function DischargeSummaryForm({
                 type="button"
                 disabled={aiLoading}
                 onClick={voice.toggle}
-                className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold transition ${
+                className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
                   voice.recording
-                    ? 'animate-pulse bg-red-600 text-white shadow-lift'
-                    : 'bg-gold-400 text-white hover:bg-gold-300'
+                    ? 'animate-pulse bg-red-600 text-white'
+                    : 'bg-ivory-50 text-ink-900 hover:bg-gold-500 hover:text-white'
                 }`}
               >
                 {voice.recording ? <Square className="h-3.5 w-3.5" /> : <Mic className="h-3.5 w-3.5" />}
@@ -840,17 +838,17 @@ export function DischargeSummaryForm({
               <button
                 type="button"
                 onClick={() => setMobilePreviewOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-2 text-xs font-semibold text-white/90 xl:hidden"
+                className="inline-flex items-center gap-1 rounded-full border border-ivory-50/15 bg-ink-950 px-3 py-1.5 text-xs font-semibold text-ivory-100 xl:hidden"
               >
-                <Eye className="h-3.5 w-3.5 text-gold-300" />
-                A4
+                <Eye className="h-3.5 w-3.5 text-gold-500" />
+                Preview
               </button>
             </div>
           </div>
 
-          {/* 1-Tap Protocol Chips (faster than dropdown on phones) */}
+          {/* Wrapped 1-Tap Protocol Chips (Zero horizontal scrolling) */}
           {activeProtocols.length > 0 && (
-            <div className="flex gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="flex flex-wrap gap-1.5">
               {activeProtocols.map((p) => {
                 const active = selectedProtocolId === p.id;
                 return (
@@ -858,10 +856,10 @@ export function DischargeSummaryForm({
                     key={p.id}
                     type="button"
                     onClick={() => applyProtocol(p)}
-                    className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
+                    className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
                       active
-                        ? 'bg-[#FBF9F6] text-[#141210]'
-                        : 'border border-white/15 bg-white/[0.06] text-white/80 hover:bg-white/15'
+                        ? 'bg-ivory-50 text-ink-900 shadow-soft'
+                        : 'border border-ivory-50/12 bg-ink-950 text-ivory-300 hover:border-gold-400/40'
                     }`}
                   >
                     {p.short_label}
@@ -872,12 +870,12 @@ export function DischargeSummaryForm({
           )}
 
           {(aiMessage || voice.micError) && (
-            <div className="flex items-start gap-2 rounded-2xl border border-gold-300/30 bg-white/[0.07] p-3 text-xs text-white/90">
-              <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-gold-300" />
+            <div className="flex items-start gap-2 rounded-2xl border border-gold-400/30 bg-clinic-50 p-3 text-xs text-ivory-100">
+              <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-gold-500" />
               <div className="space-y-1">
                 <div className="font-semibold">{voice.micError || aiMessage}</div>
                 {aiWarnings.length > 0 && (
-                  <ul className="list-disc pl-4 text-white/75">
+                  <ul className="list-disc pl-4 text-ivory-300">
                     {aiWarnings.map((w, i) => (
                       <li key={i}>{w}</li>
                     ))}

@@ -172,14 +172,14 @@ export function StaffWorkspace() {
   const today = todayIsoDate();
 
   const patientTabs = [
-    { id: 'invoice' as PatientTab, label: 'Bill', long: 'New Invoice', icon: <Receipt className="h-3.5 w-3.5" /> },
-    { id: 'discharge' as PatientTab, label: 'Discharge', long: 'Discharge Summary', icon: <FileText className="h-3.5 w-3.5" /> },
-    { id: 'upload' as PatientTab, label: 'Upload', long: 'Upload Rx / Scan', icon: <FileImage className="h-3.5 w-3.5" /> },
+    { id: 'invoice' as PatientTab, label: 'Bill', long: 'New Invoice', icon: <Receipt className="h-3.5 w-3.5 shrink-0" /> },
+    { id: 'discharge' as PatientTab, label: 'Discharge', long: 'Discharge Summary', icon: <FileText className="h-3.5 w-3.5 shrink-0" /> },
+    { id: 'upload' as PatientTab, label: 'Upload', long: 'Upload Rx / Scan', icon: <FileImage className="h-3.5 w-3.5 shrink-0" /> },
     {
       id: 'history' as PatientTab,
-      label: `Files (${invoices.length + summaries.length + documents.length})`,
+      label: `Files`,
       long: `History (${invoices.length + summaries.length + documents.length})`,
-      icon: <History className="h-3.5 w-3.5" />,
+      icon: <History className="h-3.5 w-3.5 shrink-0" />,
     },
   ];
 

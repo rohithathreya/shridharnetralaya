@@ -42,7 +42,7 @@ export function PrintableInvoice({ clinic, patient, invoice }: PrintableInvoiceP
   const kmcNo = clinic.doctor_kmc_no || '26550';
 
   return (
-    <div className="print-sheet-a5 relative mx-auto rounded-2xl border border-stone-200 bg-white p-5 font-sans text-xs text-stone-900 shadow-sm sm:p-7">
+    <div className="print-sheet-a5 relative mx-auto w-full max-w-[680px] rounded-2xl border border-stone-200 bg-white p-4 font-sans text-xs text-stone-900 shadow-sm sm:p-7">
       {invoice.status === 'voided' && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
           <div className="-rotate-12 rounded-xl border-4 border-red-600/60 px-6 py-2 text-4xl font-black uppercase tracking-widest text-red-600/40">
@@ -51,46 +51,48 @@ export function PrintableInvoice({ clinic, patient, invoice }: PrintableInvoiceP
         </div>
       )}
 
-      {/* ── TOP HEADER: Symmetrical Logos on Either Side + Centered Clinic Details ── */}
-      <div className="flex items-center justify-between gap-3 border-b border-stone-300 pb-3.5">
-        <ClinicMark className="h-11 w-11 shrink-0 sm:h-14 sm:w-14" />
+      {/* ── TOP HEADER: Symmetrical Logos on Either Side + Crisp Centered Clinic Details ── */}
+      <div className="flex items-center justify-between gap-2 border-b border-stone-300 pb-3 sm:gap-4">
+        <ClinicMark className="h-10 w-10 shrink-0 sm:h-14 sm:w-14" />
 
         <div className="min-w-0 flex-1 text-center">
-          <h1 className="font-display text-lg font-bold uppercase tracking-wide text-stone-950 sm:text-xl">
+          <h1 className="whitespace-nowrap font-display text-[15px] font-bold uppercase tracking-wide text-stone-950 sm:text-xl">
             {clinic.clinic_name}
           </h1>
-          <p className="mt-0.5 text-[10.5px] leading-snug text-stone-700">{clinic.address}</p>
-          <p className="mt-0.5 text-[10.5px] font-medium text-stone-800">
-            Mob No. +91 {clinic.phone}, 7026200077 · Email: shridharnetra@gmail.com
+          <p className="mt-0.5 text-[9.5px] leading-snug text-stone-600 sm:text-[10.5px]">
+            {clinic.address}
           </p>
-          <p className="mt-0.5 text-[10.5px] font-semibold italic text-stone-700">
-            Timings: Mon – Sat 10:00 AM to 5:00 PM · Sunday Holiday
+          <p className="mt-0.5 text-[9.5px] font-medium text-stone-800 sm:text-[10.5px]">
+            Mob: +91 {clinic.phone}, 7026200077 · shridharnetra@gmail.com
+          </p>
+          <p className="mt-0.5 text-[9.5px] font-semibold italic text-stone-600 sm:text-[10.5px]">
+            Timings: Mon – Sat 10:00 AM – 5:00 PM · Sunday Holiday
           </p>
         </div>
 
-        <ClinicMark className="h-11 w-11 shrink-0 sm:h-14 sm:w-14" />
+        <ClinicMark className="h-10 w-10 shrink-0 sm:h-14 sm:w-14" />
       </div>
 
-      {/* ── RECEIPT NUMBER & DATE ROW ── */}
-      <div className="mt-3 flex flex-wrap items-baseline justify-between gap-2">
-        <div className="text-sm font-bold text-stone-950">
+      {/* ── RECEIPT NUMBER & DATE ── */}
+      <div className="mt-3 flex flex-wrap items-baseline justify-between gap-2 text-xs sm:text-[13px]">
+        <div className="font-bold text-stone-950">
           Details of Cash Receipt No:{' '}
-          <span className="font-mono font-extrabold tracking-tight">{invoice.invoice_no}</span>
+          <span className="font-mono font-extrabold">{invoice.invoice_no}</span>
         </div>
-        <div className="text-xs font-semibold text-stone-700">
+        <div className="font-semibold text-stone-700">
           Date: <span className="font-bold text-stone-950">{formatDisplayDate(invoice.created_at)}</span>
         </div>
       </div>
 
       {/* ── COMPACT AT-A-GLANCE PATIENT STRIP ── */}
-      <div className="mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-lg border border-stone-200 bg-stone-50/80 px-3 py-2 text-[11px] text-stone-700">
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-y border-stone-200 bg-stone-50/70 px-2.5 py-1.5 text-[11px] text-stone-700">
         <div>
           <span className="text-stone-500">Patient:</span>{' '}
           <span className="font-bold uppercase text-stone-950">{patient.full_name}</span>
-          <span className="ml-2 font-mono text-[10.5px] font-semibold text-stone-600">
+          <span className="ml-1.5 font-mono text-[10px] font-semibold text-stone-600">
             ({patient.patient_code})
           </span>
-          {invoice.ipd_no ? <span className="ml-1.5 font-mono text-[10.5px]">· {invoice.ipd_no}</span> : null}
+          {invoice.ipd_no ? <span className="ml-1.5 font-mono text-[10px]">· {invoice.ipd_no}</span> : null}
         </div>
         <div className="flex flex-wrap items-center gap-x-3">
           <span>
@@ -108,25 +110,27 @@ export function PrintableInvoice({ clinic, patient, invoice }: PrintableInvoiceP
         <table className="w-full border-collapse text-xs">
           <thead>
             <tr className="border-b border-stone-400 bg-stone-100/90 text-stone-900">
-              <th className="w-12 border-r border-stone-300 px-2.5 py-2 text-center font-bold">Sl.No</th>
-              <th className="border-r border-stone-300 px-3 py-2 text-left font-bold">Details</th>
-              <th className="w-32 px-3 py-2 text-right font-bold">Amount in Rs.</th>
+              <th className="w-10 border-r border-stone-300 px-2 py-2 text-center font-bold sm:w-12">Sl.No</th>
+              <th className="border-r border-stone-300 px-2.5 py-2 text-left font-bold sm:px-3">Details</th>
+              <th className="w-24 whitespace-nowrap px-2.5 py-2 text-right font-bold sm:w-28 sm:px-3">
+                Amount in Rs.
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-200">
             {invoice.items.length === 0 ? (
               <tr>
                 <td colSpan={3} className="px-3 py-6 text-center text-stone-400">
-                  Tap items on the left or load the 10-head surgical bill to preview
+                  Add items on the left to preview receipt
                 </td>
               </tr>
             ) : (
               invoice.items.map((item, idx) => (
                 <tr key={idx}>
-                  <td className="border-r border-stone-300 px-2.5 py-1.5 text-center font-medium text-stone-600 tabular-nums">
+                  <td className="border-r border-stone-300 px-2 py-1.5 text-center font-medium text-stone-600 tabular-nums">
                     {idx + 1}.
                   </td>
-                  <td className="border-r border-stone-300 px-3 py-1.5 font-medium text-stone-900">
+                  <td className="border-r border-stone-300 px-2.5 py-1.5 font-medium text-stone-900 sm:px-3">
                     {item.name}
                     {item.qty > 1 && (
                       <span className="ml-1.5 text-[10.5px] text-stone-500">
@@ -134,7 +138,7 @@ export function PrintableInvoice({ clinic, patient, invoice }: PrintableInvoiceP
                       </span>
                     )}
                   </td>
-                  <td className="px-3 py-1.5 text-right font-semibold text-stone-950 tabular-nums">
+                  <td className="whitespace-nowrap px-2.5 py-1.5 text-right font-semibold text-stone-950 tabular-nums sm:px-3">
                     {item.amount > 0 ? item.amount.toLocaleString('en-IN') : '—'}
                   </td>
                 </tr>
@@ -144,21 +148,21 @@ export function PrintableInvoice({ clinic, patient, invoice }: PrintableInvoiceP
           <tfoot>
             {invoice.discount > 0 && (
               <tr className="border-t border-stone-300 bg-stone-50/70 text-[11px] text-emerald-800">
-                <td className="border-r border-stone-300 px-2.5 py-1.5" />
-                <td className="border-r border-stone-300 px-3 py-1.5 text-right font-semibold">
+                <td className="border-r border-stone-300 px-2 py-1.5" />
+                <td className="border-r border-stone-300 px-2.5 py-1.5 text-right font-semibold sm:px-3">
                   Concession / Discount
                 </td>
-                <td className="px-3 py-1.5 text-right font-bold tabular-nums">
+                <td className="whitespace-nowrap px-2.5 py-1.5 text-right font-bold tabular-nums sm:px-3">
                   - {invoice.discount.toLocaleString('en-IN')}
                 </td>
               </tr>
             )}
             <tr className="border-t-2 border-stone-500 bg-stone-50 font-bold text-stone-950">
-              <td className="border-r border-stone-300 px-2.5 py-2" />
-              <td className="border-r border-stone-300 px-3 py-2 text-right text-xs uppercase tracking-wide">
+              <td className="border-r border-stone-300 px-2 py-2" />
+              <td className="border-r border-stone-300 px-2.5 py-2 text-right text-xs uppercase tracking-wide sm:px-3">
                 Total:
               </td>
-              <td className="px-3 py-2 text-right text-sm font-extrabold tabular-nums">
+              <td className="whitespace-nowrap px-2.5 py-2 text-right text-sm font-extrabold tabular-nums sm:px-3">
                 {formatINR(invoice.total)}
               </td>
             </tr>
@@ -189,8 +193,8 @@ export function PrintableInvoice({ clinic, patient, invoice }: PrintableInvoiceP
       )}
 
       {/* ── FOOTER: Amount in words (Left) + Doctor Signature & KMC Reg (Right) ── */}
-      <div className="mt-6 flex items-end justify-between gap-4 pt-2 text-[11px] text-stone-800">
-        <div className="max-w-[62%]">
+      <div className="mt-5 flex items-end justify-between gap-4 pt-2 text-[11px] text-stone-800">
+        <div className="min-w-0 flex-1">
           <span className="font-semibold text-stone-600">Amount in words:</span>{' '}
           <span className="font-bold text-stone-950">
             Rupees {numberToIndianWords(invoice.total)} Only

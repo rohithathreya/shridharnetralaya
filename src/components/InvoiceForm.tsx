@@ -77,6 +77,7 @@ export function InvoiceForm({ patient, clinic, catalog, onCreated }: InvoiceForm
 
   const [aiLoading, setAiLoading] = useState(false);
   const [aiMessage, setAiMessage] = useState('');
+  const [showMoreOptions, setShowMoreOptions] = useState(false);
 
   const handleVoiceComplete = useCallback(
     async (base64: string, mimeType: string) => {
@@ -361,76 +362,73 @@ export function InvoiceForm({ patient, clinic, catalog, onCreated }: InvoiceForm
   return (
     <div className="grid min-w-0 max-w-full gap-6 xl:grid-cols-12">
       {/* LEFT PANE: POS SERVICE PICKER & PAYMENT (7 cols) */}
-      <div className="no-print min-w-0 space-y-4 xl:col-span-7">
-        {/* Obsidian Voice Billing Bar */}
-        <div className="card-obsidian flex flex-wrap items-center justify-between gap-3 p-4 sm:p-5">
-          <div>
-            <p className="text-[10.5px] font-semibold uppercase tracking-[0.18em] text-gold-300">
-              Itemized Cash & TPA Billing
-            </p>
-            <h3 className="mt-0.5 font-display text-xl text-white">Quick POS & Voice Bill</h3>
-          </div>
+      <div className="no-print min-w-0 space-y-5 xl:col-span-7">
+        {/* Card 1: Service Catalog Picker with calm integrated tools */}
+        <div className="card-surface space-y-4 p-4 sm:p-5">
+          <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-ivory-50/[0.07] pb-3.5">
+            <div>
+              <span className="eyebrow">Step 1 · Services</span>
+              <h3 className="font-display text-xl font-medium text-ivory-50">Select & Price Items</h3>
+            </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={loadSurgicalHeads}
-              className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3.5 py-2 text-xs font-semibold text-white backdrop-blur transition hover:bg-white/20"
-            >
-              <Plus className="h-3.5 w-3.5 text-gold-300" />
-              10-Head Surgical Sheet
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={loadSurgicalHeads}
+                className="inline-flex items-center gap-1 rounded-full border border-ivory-50/15 bg-ink-950 px-3 py-1.5 text-xs font-semibold text-ivory-100 transition hover:border-gold-400"
+              >
+                <Plus className="h-3.5 w-3.5 text-gold-500" />
+                10-Head Bill
+              </button>
 
-            <button
-              type="button"
-              disabled={aiLoading}
-              onClick={voice.toggle}
-              className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold transition ${
-                voice.recording
-                  ? 'animate-pulse bg-red-600 text-white'
-                  : 'bg-gold-400 text-white hover:bg-gold-300'
-              }`}
-            >
-              {aiLoading ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : voice.recording ? (
-                <Square className="h-3.5 w-3.5" />
-              ) : (
-                <Mic className="h-3.5 w-3.5" />
-              )}
-              <span>{voice.recording ? `Stop (${voice.elapsedSec}s)` : 'Voice Fill Bill'}</span>
-            </button>
+              <button
+                type="button"
+                disabled={aiLoading}
+                onClick={voice.toggle}
+                className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
+                  voice.recording
+                    ? 'animate-pulse bg-red-600 text-white'
+                    : 'bg-ivory-50 text-ink-900 hover:bg-gold-500 hover:text-white'
+                }`}
+              >
+                {aiLoading ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : voice.recording ? (
+                  <Square className="h-3.5 w-3.5" />
+                ) : (
+                  <Mic className="h-3.5 w-3.5" />
+                )}
+                <span>{voice.recording ? `Stop (${voice.elapsedSec}s)` : 'Voice Fill'}</span>
+              </button>
+            </div>
           </div>
 
           {(aiMessage || voice.micError) && (
-            <div className="flex w-full items-start gap-2 rounded-2xl border border-gold-300/30 bg-white/[0.07] p-3 text-xs text-white/90">
-              <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-gold-300" />
+            <div className="flex items-start gap-2 rounded-2xl border border-gold-400/30 bg-clinic-50 p-3 text-xs text-ivory-100">
+              <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-gold-500" />
               <span>{voice.micError || aiMessage}</span>
             </div>
           )}
-        </div>
 
-        {/* Service Catalog Picker */}
-        <div className="card-surface space-y-3.5 p-4 sm:p-5">
           <div className="relative">
             <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ivory-400" />
             <input
               type="text"
               value={catalogSearch}
               onChange={(e) => setCatalogSearch(e.target.value)}
-              placeholder="Filter services (Phaco, OPD, A-Scan, YAG)…"
+              placeholder="Search services (Phaco, OPD, A-Scan, YAG)…"
               className="input-field !min-h-[44px] pl-10 text-xs"
             />
           </div>
 
-          {/* Horizontal Category Pills */}
-          <div className="flex gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {/* Wrapped Category Pills (No horizontal scroll) */}
+          <div className="flex flex-wrap gap-1.5">
             {(['All', ...CATEGORIES] as const).map((cat) => (
               <button
                 key={cat}
                 type="button"
                 onClick={() => setActiveCat(cat)}
-                className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
+                className={`rounded-full px-3 py-1 text-[11px] font-semibold transition ${
                   activeCat === cat
                     ? 'bg-ivory-50 text-ink-900 shadow-soft'
                     : 'border border-ivory-50/12 bg-ink-950 text-ivory-300 hover:border-gold-400/40'
@@ -441,19 +439,19 @@ export function InvoiceForm({ patient, clinic, catalog, onCreated }: InvoiceForm
             ))}
           </div>
 
-          <div className="grid max-h-80 gap-2 overflow-y-auto pr-0.5 sm:grid-cols-2">
+          <div className="grid w-full min-w-0 grid-cols-1 gap-2 sm:grid-cols-2">
             {filteredCatalog.map((svc) => {
               const inBill = items.find((x) => x.name === svc.name);
               return (
                 <div
                   key={svc.id}
-                  className={`flex flex-col gap-2 rounded-2xl border p-3 transition ${
+                  className={`box-border flex w-full min-w-0 max-w-full flex-col gap-2 rounded-2xl border p-3 transition ${
                     inBill
                       ? 'border-gold-400 bg-clinic-50/80 shadow-soft'
                       : 'border-ivory-50/10 bg-ink-950 hover:border-gold-400/50'
                   }`}
                 >
-                  <div className="flex items-center justify-between gap-2">
+                  <div className="flex w-full min-w-0 items-center justify-between gap-2">
                     <button
                       type="button"
                       onClick={() => addCatalogItem(svc)}
@@ -498,22 +496,17 @@ export function InvoiceForm({ patient, clinic, catalog, onCreated }: InvoiceForm
                   </div>
 
                   {inBill && (
-                    <div className="flex items-center justify-between gap-2 border-t border-gold-400/20 pt-2">
-                      <span className="text-[10.5px] font-semibold text-ivory-400">Custom Rate (₹)</span>
-                      <div className="flex items-center gap-1.5">
-                        <input
-                          type="number"
-                          min={0}
-                          value={inBill.unit_price}
-                          onChange={(e) => updateItemPriceByName(svc.name, e.target.value)}
-                          onClick={(e) => e.stopPropagation()}
-                          aria-label={`Price for ${svc.name}`}
-                          className="w-24 rounded-xl border border-gold-400/40 bg-ink-900 px-2.5 py-1 text-right text-xs font-bold text-ivory-50 focus:border-gold-500 focus:outline-none"
-                        />
-                        <span className="text-[11px] font-bold text-gold-600 tabular-nums">
-                          = {formatINR(inBill.amount)}
-                        </span>
-                      </div>
+                    <div className="flex w-full min-w-0 items-center justify-between gap-2 border-t border-gold-400/20 pt-2">
+                      <span className="text-[11px] font-medium text-ivory-400">Rate (₹)</span>
+                      <input
+                        type="number"
+                        min={0}
+                        value={inBill.unit_price}
+                        onChange={(e) => updateItemPriceByName(svc.name, e.target.value)}
+                        onClick={(e) => e.stopPropagation()}
+                        aria-label={`Price for ${svc.name}`}
+                        className="w-24 min-w-0 rounded-xl border border-gold-400/40 bg-ink-900 px-2.5 py-1 text-right text-xs font-bold text-ivory-50 focus:border-gold-500 focus:outline-none"
+                      />
                     </div>
                   )}
                 </div>
@@ -596,7 +589,7 @@ export function InvoiceForm({ patient, clinic, catalog, onCreated }: InvoiceForm
             </div>
           )}
 
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <CustomSelect
               label="Payment Mode"
               value={paymentMode}
@@ -614,31 +607,57 @@ export function InvoiceForm({ patient, clinic, catalog, onCreated }: InvoiceForm
                 className="input-field !min-h-[46px] text-xs font-bold"
               />
             </div>
-            <div>
-              <label className="label-field">UTR / Ref / Claim ID</label>
-              <input
-                type="text"
-                value={paymentRef}
-                onChange={(e) => setPaymentRef(e.target.value)}
-                placeholder="Optional"
-                className="input-field !min-h-[46px] text-xs"
-              />
-            </div>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div>
-              <label className="label-field">IPD No. (Optional)</label>
-              <input value={ipdNo} onChange={(e) => setIpdNo(e.target.value.toUpperCase())} placeholder="IPD-26-XXXX" className="input-field !min-h-[42px] font-mono text-xs uppercase" />
-            </div>
-            <div>
-              <label className="label-field">Billed By</label>
-              <input value={createdBy} onChange={(e) => setCreatedBy(e.target.value)} className="input-field !min-h-[42px] text-xs" />
-            </div>
-            <div>
-              <label className="label-field">Remarks</label>
-              <input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Optional" className="input-field !min-h-[42px] text-xs" />
-            </div>
+          <div>
+            <button
+              type="button"
+              onClick={() => setShowMoreOptions((prev) => !prev)}
+              className="text-xs font-semibold text-gold-600 hover:underline"
+            >
+              {showMoreOptions ? '− Hide optional details' : '+ Add IPD No., UTR / Ref or Remarks'}
+            </button>
+
+            {showMoreOptions && (
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="label-field">UTR / Ref / Claim ID</label>
+                  <input
+                    type="text"
+                    value={paymentRef}
+                    onChange={(e) => setPaymentRef(e.target.value)}
+                    placeholder="Optional"
+                    className="input-field !min-h-[42px] text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="label-field">IPD No. (Optional)</label>
+                  <input
+                    value={ipdNo}
+                    onChange={(e) => setIpdNo(e.target.value.toUpperCase())}
+                    placeholder="IPD-26-XXXX"
+                    className="input-field !min-h-[42px] font-mono text-xs uppercase"
+                  />
+                </div>
+                <div>
+                  <label className="label-field">Billed By</label>
+                  <input
+                    value={createdBy}
+                    onChange={(e) => setCreatedBy(e.target.value)}
+                    className="input-field !min-h-[42px] text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="label-field">Remarks</label>
+                  <input
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Optional"
+                    className="input-field !min-h-[42px] text-xs"
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           {paymentMode === 'TPA / Scheme' && (
@@ -681,29 +700,6 @@ export function InvoiceForm({ patient, clinic, catalog, onCreated }: InvoiceForm
           <PrintableInvoice clinic={clinic} patient={patient} invoice={previewInvoice} />
         </div>
       </div>
-
-      {/* MOBILE FLOATING TOTAL BAR */}
-      {items.length > 0 && (
-        <div className="mobile-float-dock">
-          <div className="flex items-center justify-between gap-3 px-2 py-1">
-            <div>
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-gold-300">
-                {items.length} item(s) · {paymentMode}
-              </div>
-              <div className="font-display text-lg font-semibold text-white">{formatINR(total)}</div>
-            </div>
-            <button
-              type="button"
-              disabled={saving}
-              onClick={handleSave}
-              className="inline-flex min-h-[44px] items-center gap-1.5 rounded-2xl bg-[#FBF9F6] px-5 text-xs font-bold text-[#141210] active:scale-[0.97] transition"
-            >
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-              Save Receipt
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
